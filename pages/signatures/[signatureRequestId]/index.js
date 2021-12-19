@@ -1,0 +1,136 @@
+import {
+  Box,
+  Heading,
+  Flex,
+  Icon,
+  Text,
+  Stack,
+  FormControl,
+  Input,
+  FormErrorMessage,
+} from "@chakra-ui/react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { encodeVoucherToEnvelope } from "../../../utils/fclCLI";
+import { decode } from "rlp";
+
+import * as fcl from "@onflow/fcl";
+
+const iconFn = (color) => () =>
+  (
+    <Icon viewBox="0 0 200 200" color={color}>
+      <path
+        fill="currentColor"
+        d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
+      />
+    </Icon>
+  );
+
+const GreenDot = iconFn("green.500");
+const RedDot = iconFn("red.500");
+
+export default function () {
+  const [signatures, setSignatures] = useState([]);
+  const [rlpStatusMessage, setRLPStatusMessage] = useState("");
+  const router = useRouter();
+  const { signatureRequestId } = router.query;
+
+  useEffect(async () => {
+    if (signatureRequestId) {
+      const { data } = await fetch(`/api/${signatureRequestId}`).then((r) =>
+        r.json()
+      );
+
+      setSignatures(data);
+    }
+  }, [signatureRequestId]);
+
+  // Deal with dat flash and/or bad sig request id.
+  if (signatures.length === 0) {
+    return (
+      <Stack margin={"50"}>
+        <Flex
+          flex="1"
+          borderWidth="1px"
+          borderRadius="lg"
+          overflow="hidden"
+          padding="4"
+        >
+          <Text>
+            There does not appear to be an active signature request id
+            {signatureRequestId}
+          </Text>
+        </Flex>
+      </Stack>
+    );
+  }
+
+  // The voucher is the same for all these. Doesn't matter which we pick here.
+  const cliRLP = encodeVoucherToEnvelope({
+    ...signatures[0].signable.voucher,
+    envelopeSigs: [],
+    payloadSigs: [],
+  });
+
+  const onRLPChange = async (e) => {
+    setRLPStatusMessage("");
+    try {
+      // This just confirms it is a valid encoding.
+      decode("0x" + e.target.value);
+
+      setRLPStatusMessage("Updating signature.....");
+      const { data } = await fetch(`/api/${signatureRequestId}/envelope`, {
+        method: "post",
+        body: JSON.stringify({ envelope: e.target.value }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then((r) => r.json());
+
+      setSignatures(data);
+      setRLPStatusMessage("Signature Updated.");
+    } catch (e) {
+      console.error(e);
+      setRLPStatusMessage("Could not decode");
+    }
+  };
+
+  return (
+    <Stack margin="4" alignContent="left">
+      <Stack>
+        <Heading>Key status</Heading>
+        {signatures.map(({ address, sig, keyId }) => {
+          return (
+            <Flex
+              flex="1"
+              borderWidth="1px"
+              borderRadius="lg"
+              overflow="hidden"
+              padding="4"
+              key={address + keyId}
+            >
+              <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+              <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+            </Flex>
+          );
+        })}
+      </Stack>
+      <Stack>
+        <Heading>CLI Entry</Heading>
+        <Text>{cliRLP}</Text>
+      </Stack>
+      <Stack>
+        <FormControl id="selected-account-payload">
+          <Heading>Paste signed rlp here</Heading>
+          <Input size="lg" onChange={onRLPChange} />
+          {rlpStatusMessage}
+          {!!rlpStatusMessage ? (
+            <FormErrorMessage>{rlpStatusMessage}</FormErrorMessage>
+          ) : (
+            <div> </div>
+          )}
+        </FormControl>
+      </Stack>
+    </Stack>
+  );
+}

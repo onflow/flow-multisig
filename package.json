@@ -8,9 +8,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^1.7.3",
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@onflow/fcl": "^0.0.77",
+    "@onflow/sdk": "0.0.56-alpha.1",
+    "@onflow/rlp": "^0.0.3",
+    "rlp": "^2.2.7",
+    "@supabase/supabase-js": "^1.29.0",
+    "framer-motion": "^4.1.17",
     "next": "12.0.7",
+    "prettier": "^2.5.1",
     "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react-dom": "17.0.2",
+    "react-table": "^7.7.0",
+    "sha3": "^2.1.4"
   },
   "devDependencies": {
     "eslint": "8.4.1",
