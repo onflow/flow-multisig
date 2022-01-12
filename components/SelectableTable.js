@@ -1,23 +1,24 @@
-import React, { useEffect } from "react";
+import React, { forwardRef, useEffect, useRef } from "react";
 import { useRowSelect, useTable } from "react-table";
 import { Table, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 
-const IndeterminateCheckbox = React.forwardRef(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = React.useRef();
-    const resolvedRef = ref || defaultRef;
+const IndeterminateCheckbox = forwardRef(function Checkbox(
+  { indeterminate, ...rest },
+  ref
+) {
+  const defaultRef = useRef();
+  const resolvedRef = ref || defaultRef;
 
-    React.useEffect(() => {
-      resolvedRef.current.indeterminate = indeterminate;
-    }, [resolvedRef, indeterminate]);
+  useEffect(() => {
+    resolvedRef.current.indeterminate = indeterminate;
+  }, [resolvedRef, indeterminate]);
 
-    return (
-      <>
-        <input type="checkbox" ref={resolvedRef} {...rest} />
-      </>
-    );
-  }
-);
+  return (
+    <>
+      <input type="checkbox" ref={resolvedRef} {...rest} />
+    </>
+  );
+});
 
 export function SelectableTable({ columns, data, setSelectedRows }) {
   // Use the state and functions returned from useTable to build your UI
@@ -62,29 +63,33 @@ export function SelectableTable({ columns, data, setSelectedRows }) {
 
   useEffect(() => {
     setSelectedRows(selectedFlatRows.map((r) => r.original));
-  }, [selectedFlatRows]);
+  }, [selectedFlatRows, setSelectedRows]);
 
   // Render the UI for your table
   return (
     <>
       <Table {...getTableProps()} size="sm">
         <Thead>
-          {headerGroups.map((headerGroup) => (
-            <Tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
-                <Td {...column.getHeaderProps()}>{column.render("Header")}</Td>
+          {headerGroups.map((headerGroup, index) => (
+            <Tr key={index} {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column, index) => (
+                <Td key={index} {...column.getHeaderProps()}>
+                  {column.render("Header")}
+                </Td>
               ))}
             </Tr>
           ))}
         </Thead>
         <Tbody {...getTableBodyProps()}>
-          {rows.slice().map((row) => {
+          {rows.slice().map((row, index) => {
             prepareRow(row);
             return (
-              <Tr {...row.getRowProps()}>
-                {row.cells.map((cell) => {
+              <Tr key={index} {...row.getRowProps()}>
+                {row.cells.map((cell, index) => {
                   return (
-                    <Td {...cell.getCellProps()}>{cell.render("Cell")}</Td>
+                    <Td key={index} {...cell.getCellProps()}>
+                      {cell.render("Cell")}
+                    </Td>
                   );
                 })}
               </Tr>
@@ -92,8 +97,8 @@ export function SelectableTable({ columns, data, setSelectedRows }) {
           })}
         </Tbody>
         <Tfoot>
-          {footerGroups.map((group) => (
-            <Tr {...group.getFooterGroupProps()}>
+          {footerGroups.map((group, index) => (
+            <Tr key={index} {...group.getFooterGroupProps()}>
               <Td colSpan={2}>
                 <Tr>Total Weights Selected:</Tr>
               </Td>

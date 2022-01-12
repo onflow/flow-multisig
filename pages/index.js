@@ -23,15 +23,17 @@ import {
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
 
-const iconFn = (color) => () =>
-  (
-    <Icon viewBox="0 0 200 200" color={color}>
-      <path
-        fill="currentColor"
-        d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
-      />
-    </Icon>
-  );
+const iconFn = (color) =>
+  function CustomIcon() {
+    return (
+      <Icon viewBox="0 0 200 200" color={color}>
+        <path
+          fill="currentColor"
+          d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
+        />
+      </Icon>
+    );
+  };
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
@@ -74,7 +76,7 @@ function reducer(state, action) {
   }
 }
 
-export default function () {
+export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,

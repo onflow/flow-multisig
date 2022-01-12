@@ -16,34 +16,40 @@ import { decode } from "rlp";
 
 import * as fcl from "@onflow/fcl";
 
-const iconFn = (color) => () =>
-  (
-    <Icon viewBox="0 0 200 200" color={color}>
-      <path
-        fill="currentColor"
-        d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
-      />
-    </Icon>
-  );
+const iconFn = (color) =>
+  function CustomIcon() {
+    return (
+      <Icon viewBox="0 0 200 200" color={color}>
+        <path
+          fill="currentColor"
+          d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
+        />
+      </Icon>
+    );
+  };
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
 
-export default function () {
+export default function SignatureRequestPage() {
   const [signatures, setSignatures] = useState([]);
   const [rlpStatusMessage, setRLPStatusMessage] = useState("");
   const router = useRouter();
   const { signatureRequestId } = router.query;
 
-  useEffect(async () => {
-    if (signatureRequestId) {
-      const { data } = await fetch(`/api/${signatureRequestId}`).then((r) =>
-        r.json()
-      );
+  useEffect(
+    () =>
+      async function getSignatures() {
+        if (signatureRequestId) {
+          const { data } = await fetch(`/api/${signatureRequestId}`).then((r) =>
+            r.json()
+          );
 
-      setSignatures(data);
-    }
-  }, [signatureRequestId]);
+          setSignatures(data);
+        }
+      },
+    [signatureRequestId]
+  );
 
   // Deal with dat flash and/or bad sig request id.
   if (signatures.length === 0) {
