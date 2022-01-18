@@ -10,11 +10,14 @@ import {
   FormErrorMessage,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../utils/fclCLI";
 import { decode } from "rlp";
+import useSWR from "swr";
 
 import * as fcl from "@onflow/fcl";
+
+const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -32,24 +35,15 @@ const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
 
 export default function SignatureRequestPage() {
-  const [signatures, setSignatures] = useState([]);
   const [rlpStatusMessage, setRLPStatusMessage] = useState("");
   const router = useRouter();
   const { signatureRequestId } = router.query;
 
-  useEffect(
-    () =>
-      async function getSignatures() {
-        if (signatureRequestId) {
-          const { data } = await fetch(`/api/${signatureRequestId}`).then((r) =>
-            r.json()
-          );
+  const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
+    refreshInterval: 3,
+  });
 
-          setSignatures(data);
-        }
-      },
-    [signatureRequestId]
-  );
+  const signatures = data ? data.data : [];
 
   // Deal with dat flash and/or bad sig request id.
   if (signatures.length === 0) {
@@ -85,7 +79,7 @@ export default function SignatureRequestPage() {
       decode("0x" + e.target.value);
 
       setRLPStatusMessage("Updating signature.....");
-      const { data } = await fetch(`/api/${signatureRequestId}/envelope`, {
+      await fetch(`/api/${signatureRequestId}/envelope`, {
         method: "post",
         body: JSON.stringify({ envelope: e.target.value }),
         headers: {
@@ -93,7 +87,6 @@ export default function SignatureRequestPage() {
         },
       }).then((r) => r.json());
 
-      setSignatures(data);
       setRLPStatusMessage("Signature Updated.");
     } catch (e) {
       console.error(e);
