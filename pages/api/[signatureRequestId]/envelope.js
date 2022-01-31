@@ -1,5 +1,6 @@
 import { supabase } from "../../../utils/supabaseClient";
 import { decode } from "rlp";
+import { getSignatureRequestIdFromRLP } from "../../../utils/fclCLI";
 
 const unique = (value, index, self) => {
   return self.indexOf(value) === index;
@@ -32,6 +33,8 @@ export const decodedEnvelopeSignature = (envelopeRLP) => {
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "POST":
+      const signatureRequestId = getSignatureRequestIdFromRLP(body.envelope);
+
       for (const { address, keyId, sig } of decodedEnvelopeSignature(
         body.envelope
       )) {

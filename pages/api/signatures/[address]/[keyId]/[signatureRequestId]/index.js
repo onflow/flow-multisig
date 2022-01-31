@@ -1,11 +1,11 @@
-import { supabase } from "../../../../../../utils/supabaseClient";
+import { supabase } from "../../../../../../utils/supabaseClient.js";
 
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "GET":
       const { data, error, status } = await supabase
         .from("payloadSigs")
-        .select("sig, keyId, address, signable")
+        .select("signatureRequestId, sig, keyId, address, signable, created_at")
         .match(query)
         .maybeSingle();
 

@@ -1,11 +1,8 @@
 import { supabase } from "../../../../../utils/supabaseClient";
-import { SHA3 } from "sha3";
-
-const sha3_256 = (msg) => {
-  const sha = new SHA3(256);
-  sha.update(Buffer.from(msg, "hex"));
-  return sha.digest().toString("hex");
-};
+import {
+  encodeVoucherToEnvelope,
+  getSignatureRequestIdFromRLP,
+} from "../../../../../utils/fclCLI";
 
 export default async function handler({ body, method, query }, res) {
   switch (method) {
@@ -27,8 +24,13 @@ export default async function handler({ body, method, query }, res) {
       });
 
     case "POST":
-      // Update Signature here.
-      const signatureRequestId = sha3_256(body.message);
+      const cliRLP = encodeVoucherToEnvelope({
+        ...body.voucher,
+        envelopeSigs: [],
+        payloadSigs: [],
+      });
+
+      const signatureRequestId = getSignatureRequestIdFromRLP(cliRLP);
 
       await supabase.from("payloadSigs").upsert({
         signatureRequestId,

@@ -13,6 +13,12 @@ export const encodeVoucherToEnvelope = (voucher) =>
 export const encodeTxIdFromVoucher = (voucher) =>
   sha3_256(rlpEncode(prepareVoucher(voucher)));
 
+export const getSignatureRequestIdFromRLP = (envelopeRLP) => {
+  const decoded = decode("0x" + envelopeRLP);
+  decoded[1] = [];
+  return sha3_256(encode(decoded));
+};
+
 const rightPaddedHexBuffer = (value, pad) =>
   Buffer.from(value.padEnd(pad * 2, 0), "hex");
 
@@ -236,7 +242,3 @@ const missingFieldError = (field, base, index) =>
   new Error(`Missing field ${printFieldName(field, base, index)}`);
 const invalidFieldError = (field, base, index) =>
   new Error(`Invalid field ${printFieldName(field, base, index)}`);
-
-export const voucherToCommandLineInterface = (voucher) => {};
-
-export const commandLineInterfaceToVoucher = (rlp) => {};
