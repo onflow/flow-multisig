@@ -21,11 +21,6 @@ export const buildAuthz = ({ address, index }, dispatch) => {
           }
         ).then((r) => r.json());
 
-        dispatch({
-          type: "update-signature-request-id",
-          data: id,
-        });
-
         // Check status and update UI with status here.
         while (true) {
           await wait();

@@ -8,20 +8,17 @@ import {
   FormHelperText,
   FormLabel,
   Heading,
-  HStack,
   Icon,
   Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
+  Link,
   Stack,
   Text,
   Textarea,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
+
+if (typeof window !== "undefined") window.fcl = fcl;
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -52,25 +49,27 @@ function upsert(array, element) {
 const initialState = {
   compositeKeys: [],
   signatureRequestId: "",
+  inFlightRequests: {},
   inFlight: false,
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case "update-composite-key":
+      const relevantRequest =
+        state.inFlightRequests[action.data.signatureRequestId] || [];
+
       return {
         ...state,
-        compositeKeys: upsert(state.compositeKeys, action.data),
+        inFlightRequests: {
+          ...state.inFlightRequests,
+          [action.data.signatureRequestId]: upsert(
+            relevantRequest,
+            action.data
+          ),
+        },
       };
-    case "update-signature-request-id":
-      return { ...state, signatureRequestId: action.data };
-    case "tx-start":
-      return {
-        ...state,
-        inFlight: true,
-      };
-    case "tx-complete":
-      return initialState;
+
     default:
       throw new Error();
   }
@@ -109,14 +108,12 @@ transaction() {
   }, [authAccountAddress]);
 
   const onSubmit = async () => {
-    dispatch({ type: "tx-start" });
     await fcl.mutate({
       cadence: cadencePayload,
       authorizations: selectedAccountKeys.map(({ index }) =>
         buildAuthz({ address: authAccountAddress, index }, dispatch)
       ),
     });
-    dispatch({ type: "tx-complete" });
   };
 
   const AuthedState = () => {
@@ -141,8 +138,8 @@ transaction() {
     selectedAccountKeys.reduce((acc, r) => r.weight + acc, 0) < 1000;
 
   return (
-    <>
-      <Stack minH={"100vh"} margin={"50"}>
+    <Stack minH={"100vh"} margin={"50"}>
+      <Stack>
         <Stack>
           <Stack>
             <Heading>Flow App</Heading>
@@ -198,39 +195,35 @@ transaction() {
           </Stack>
         </Stack>
       </Stack>
-      <Modal isOpen={state.inFlight} size="full">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Transaction In Flight</ModalHeader>
-          <ModalBody>
-            <Stack margin="4" alignContent="left">
-              <HStack>
-                <Text>Signature Reference ID</Text>
-                <Text>{state.signatureRequestId}</Text>
-              </HStack>
-              <Stack>
-                <Heading>Key status</Heading>
-                {state.compositeKeys.map(({ address, sig, keyId }) => {
-                  return (
-                    <Flex
-                      flex="1"
-                      borderWidth="1px"
-                      borderRadius="lg"
-                      overflow="hidden"
-                      padding="4"
-                      key={address + keyId}
-                    >
-                      <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                      <Text>{fcl.withPrefix(address)}</Text>-
-                      <Text>{keyId}</Text>
-                    </Flex>
-                  );
-                })}
-              </Stack>
-            </Stack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </>
+
+      {Object.entries(state.inFlightRequests).map(
+        ([signatureRequestId, compositeKeys]) => (
+          <Stack
+            key={signatureRequestId}
+            flex="1"
+            borderWidth="1px"
+            borderRadius="lg"
+            overflow="hidden"
+            padding="4"
+          >
+            <Link
+              href={
+                window.location.origin + "/signatures/" + signatureRequestId
+              }
+            >
+              Share this Link
+            </Link>
+            {compositeKeys.map(({ address, sig, keyId }) => {
+              return (
+                <Flex key={address + keyId}>
+                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                </Flex>
+              );
+            })}
+          </Stack>
+        )
+      )}
+    </Stack>
   );
 }
