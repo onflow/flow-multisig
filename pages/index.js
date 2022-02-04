@@ -108,12 +108,13 @@ transaction() {
   }, [authAccountAddress]);
 
   const onSubmit = async () => {
-    await fcl.mutate({
+    const txInfo = await fcl.mutate({
       cadence: cadencePayload,
       authorizations: selectedAccountKeys.map(({ index }) =>
         buildAuthz({ address: authAccountAddress, index }, dispatch)
       ),
     });
+    console.log(txInfo);
   };
 
   const AuthedState = () => {

@@ -35,5 +35,18 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
-## Account Setup
+## Set up flow
+Install/setup Flow CLI
+`brew install flow-cli`
+https://docs.onflow.org/flow-cli/install/
+
+Get Service Account information
+`flow init`
+`flow keys generate`
+
+
+### Create Account and fund
+https://testnet-faucet.onflow.org/
+Add public key from `flow keys generate` command
+ 
 
