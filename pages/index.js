@@ -207,6 +207,7 @@ transaction() {
             padding="4"
           >
             <Link
+            isExternal
               href={
                 window.location.origin + "/signatures/" + signatureRequestId
               }
