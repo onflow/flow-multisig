@@ -7,7 +7,6 @@ import {
   FormControl,
   FormErrorMessage,
   FormHelperText,
-  Field,
   HStack,
   FormLabel,
   Heading,
@@ -37,6 +36,8 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
+const flowscan = "https://flowscan.org/transaction/";
+const cleanAddress = (address) => address.replace("0x", "");
 
 function upsert(array, element) {
   const i = array.findIndex(
@@ -45,7 +46,6 @@ function upsert(array, element) {
   );
   if (i > -1) array[i] = element;
   else array.push(element);
-
   return array;
 }
 
@@ -59,17 +59,22 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case "update-composite-key":
+      if (!state.inFlightRequests[action.data.address]) {
+        state.inFlightRequests[action.data.address] = {}
+      }
       const relevantRequest =
-        state.inFlightRequests[action.data.signatureRequestId] || [];
+        state.inFlightRequests[action.data.address][action.data.signatureRequestId] || [];
 
       return {
         ...state,
         inFlightRequests: {
           ...state.inFlightRequests,
-          [action.data.signatureRequestId]: upsert(
-            relevantRequest,
-            action.data
-          ),
+          [action.data.address]: {
+            [action.data.signatureRequestId]: upsert(
+              relevantRequest,
+              action.data
+            ),
+          }
         },
       };
 
@@ -85,8 +90,6 @@ export default function MainPage() {
   });
   const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
-  const [accountKeys, setAccountKeys] = useState([]);
-  const [selectedAccountKeys, setSelectedAccountKeys] = useState([]);
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
 
@@ -101,11 +104,10 @@ export default function MainPage() {
           keys,
           enabledKeys: [],
           link: null,
-          txInfo: null,
-          processing: false,
+          flowScanUrl: null,
         }
       })
-      setAccountKeys(keys);
+      setAuthAccountAddress("");
     }).catch((err) => {
       console.log("unexpected error occured", err)
     });
@@ -118,9 +120,9 @@ export default function MainPage() {
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
-    if (authAccountAddress !== "") { // && authAccountAddress.length === 18) {
+    if (authAccountAddress !== "") {
       fcl.account(authAccountAddress).then(({ keys }) => {
-        setAccountKeys(keys);
+        // used to test account validity
       }).catch(() => {
         setError("Account not valid");
       });
@@ -131,19 +133,19 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
-    console.log('account', account);
     const payload = CadencePayloads[cadencePayload]
-    account.processing = true;
-    const txInfo = await fcl.mutate({
+    const flowScanUrl = await fcl.mutate({
       cadence: payload,
       authorizations: keys.map(({ index }) =>
         buildAuthz({ address: accountKey, index }, dispatch)
       ),
     });
-    account.processing = false;
-    account.txInfo = txInfo;
-    console.log('account with tx info', account);
-    console.log(txInfo);
+    account.flowScanUrl = `${flowscan}/${flowScanUrl}`;
+    setAccounts({
+      ...accounts,
+      [accountKey]: account
+    })
+    console.log(flowScanUrl);
   };
 
   const AuthedState = () => {
@@ -164,11 +166,7 @@ export default function MainPage() {
     );
   };
 
-  const isNextDisabled =
-    selectedAccountKeys.reduce((acc, r) => r.weight + acc, 0) < 1000;
-
-    console.log('accounts added', accounts)
-
+  console.log('state', state);
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -214,16 +212,54 @@ export default function MainPage() {
                 return (
                   <>
                     <FormControl>
-                      <FormLabel>Select Signing Keys</FormLabel>
+                      <HStack align="baseline"><FormLabel>Select Signing Keys</FormLabel><Text>{account}</Text></HStack>
                       <AccountsTable
-                        accountKeys={accountKeys}
+                        accountKeys={accounts[account].keys}
                         setSelectedKeys={(keys) => selectAccountKeys(account, keys)}
                       />
                     </FormControl>
+
                     <Stack direction="row" spacing={4} align="center">
-                      <Button isDisabled={accounts[account].processing} onClick={() => onSubmit(account)}>
+                      <Button onClick={() => onSubmit(account)}>
                         Submit
                       </Button>
+
+                      {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(
+                        ([signatureRequestId, compositeKeys]) => (
+                          <Stack
+                            key={signatureRequestId}
+                            flex="1"
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            padding="4"
+                          >
+                            <Link
+                              isExternal
+                              href={
+                                window.location.origin + "/signatures/" + signatureRequestId
+                              }
+                            >
+                              Share this Link
+                            </Link>
+                            {compositeKeys.map(({ address, sig, keyId }) => {
+                              return (
+                                <Flex key={address + keyId}>
+                                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+                                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                                </Flex>
+                              );
+                            })}
+                          </Stack>
+                        )
+                      )}
+
+                      {accounts[account].flowScanUrl &&
+                        (
+                          <Link isExternal href={
+                            accounts[account].flowScanUrl
+                          }>Transaction</Link>
+                        )}
                     </Stack>
                   </>
                 )
@@ -233,7 +269,7 @@ export default function MainPage() {
         </Stack>
       </Stack>
 
-      {Object.entries(state.inFlightRequests).map(
+      {/*Object.entries(state.inFlightRequests).map(
         ([signatureRequestId, compositeKeys]) => (
           <Stack
             key={signatureRequestId}
@@ -261,7 +297,7 @@ export default function MainPage() {
             })}
           </Stack>
         )
-      )}
+          )*/}
     </Stack>
   );
 }
