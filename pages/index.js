@@ -58,6 +58,11 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
+    case "in-flight":
+      return {
+        ...state,
+        inFlight: action.data.inFlight
+      };
     case "update-composite-key":
       if (!state.inFlightRequests[action.data.address]) {
         state.inFlightRequests[action.data.address] = {}
@@ -67,6 +72,7 @@ function reducer(state, action) {
 
       return {
         ...state,
+        inFlight: false,
         inFlightRequests: {
           ...state.inFlightRequests,
           [action.data.address]: {
