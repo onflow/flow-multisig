@@ -5,7 +5,10 @@ import {
   Button,
   Flex,
   FormControl,
+  FormErrorMessage,
   FormHelperText,
+  Field,
+  HStack,
   FormLabel,
   Heading,
   Icon,
@@ -13,11 +16,11 @@ import {
   Link,
   Stack,
   Text,
-  Textarea,
+  Select
 } from "@chakra-ui/react";
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
-
+import { CadencePayloadTypes, CadencePayloads } from "../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 
 const iconFn = (color) =>
@@ -80,40 +83,66 @@ export default function MainPage() {
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
   });
-  const [cadencePayload, setCadencePayload] = useState(`
-transaction() {
-      prepare(acct: AuthAccount) {
-        log("hello world")
-      }
-    }
-  `);
+  const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [accountKeys, setAccountKeys] = useState([]);
   const [selectedAccountKeys, setSelectedAccountKeys] = useState([]);
+  const [error, setError] = useState(null);
+  const [accounts, setAccounts] = useState({});
 
-  const handleAuthAccountAddressChange = (e) =>
-    setAuthAccountAddress(e.target.value);
-  const handleCadencePayloadChange = (e) => setCadencePayload(e.target.value);
+  const selectAccountKeys = (account, keys) => {
+    accounts[account].enabledKeys = keys
+  }
+  const addAuthAccountAddress = () => {
+    fcl.account(authAccountAddress).then(({ keys }) => {
+      setAccounts({
+        ...accounts,
+        [authAccountAddress]: {
+          keys,
+          enabledKeys: [],
+          link: null,
+          txInfo: null,
+          processing: false,
+        }
+      })
+      setAccountKeys(keys);
+    }).catch((err) => {
+      console.log("unexpected error occured", err)
+    });
+  }
 
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
-  useEffect(() => {
-    if (authAccountAddress !== "") {
+  const validateAccount = (authAccountAddress) => {
+    setAuthAccountAddress(authAccountAddress);
+    setError(null);
+    if (authAccountAddress !== "") { // && authAccountAddress.length === 18) {
       fcl.account(authAccountAddress).then(({ keys }) => {
         setAccountKeys(keys);
+      }).catch(() => {
+        setError("Account not valid");
       });
     }
-  }, [authAccountAddress]);
+  };
 
-  const onSubmit = async () => {
+  const onSubmit = async (accountKey) => {
+    const account = accounts[accountKey];
+    const keys = account.enabledKeys;
+    if (keys.length === 0) return;
+    console.log('account', account);
+    const payload = CadencePayloads[cadencePayload]
+    account.processing = true;
     const txInfo = await fcl.mutate({
-      cadence: cadencePayload,
-      authorizations: selectedAccountKeys.map(({ index }) =>
-        buildAuthz({ address: authAccountAddress, index }, dispatch)
+      cadence: payload,
+      authorizations: keys.map(({ index }) =>
+        buildAuthz({ address: accountKey, index }, dispatch)
       ),
     });
+    account.processing = false;
+    account.txInfo = txInfo;
+    console.log('account with tx info', account);
     console.log(txInfo);
   };
 
@@ -138,6 +167,8 @@ transaction() {
   const isNextDisabled =
     selectedAccountKeys.reduce((acc, r) => r.weight + acc, 0) < 1000;
 
+    console.log('accounts added', accounts)
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -152,46 +183,51 @@ transaction() {
           <Stack>
             <Stack>
               <FormControl>
-                <FormLabel>Cadence Payload</FormLabel>
-                <Textarea
-                  size="lg"
-                  placeholder="Enter Cadence payload here"
-                  onChange={handleCadencePayloadChange}
-                  value={cadencePayload}
-                />
-                <FormHelperText>
-                  Cadence syntax is not currently validated in this app
-                </FormHelperText>
+                <FormLabel>Cadence Payload Type</FormLabel>
+                <Select isDisabled onChange={setCadencePayload}>
+                  {Object.keys(CadencePayloadTypes).map(payloadType => {
+                    return (<option key={payloadType} value={payloadType} size='lg'>{CadencePayloadTypes[payloadType]}</option>)
+                  })}
+                </Select>
               </FormControl>
             </Stack>
             <Stack>
-              <FormControl>
+              <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
-                <Input
-                  size="lg"
-                  placeholder="Enter Cadence payload here"
-                  onChange={handleAuthAccountAddressChange}
-                  value={authAccountAddress}
-                />
+                <HStack spacing={4}>
+                  <Input
+                    size="lg"
+                    id="account"
+                    placeholder="Enter Cadence payload here"
+                    onChange={(e) => validateAccount(e.target.value)}
+                    value={authAccountAddress}
+                  />
+                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
+                </HStack>
+                <FormErrorMessage>
+                  {error}
+                </FormErrorMessage>
               </FormControl>
             </Stack>
             <Stack>
-              <FormControl>
-                <FormLabel>Select Signing Keys</FormLabel>
-                <AccountsTable
-                  accountKeys={accountKeys}
-                  setSelectedKeys={setSelectedAccountKeys}
-                />
-              </FormControl>
-            </Stack>
-          </Stack>
-          <Stack>
-            <Stack direction="row" spacing={4} align="center">
-              <p>
-                <Button isDisabled={isNextDisabled} onClick={onSubmit}>
-                  Submit
-                </Button>
-              </p>
+              {Object.keys(accounts).map(account => {
+                return (
+                  <>
+                    <FormControl>
+                      <FormLabel>Select Signing Keys</FormLabel>
+                      <AccountsTable
+                        accountKeys={accountKeys}
+                        setSelectedKeys={(keys) => selectAccountKeys(account, keys)}
+                      />
+                    </FormControl>
+                    <Stack direction="row" spacing={4} align="center">
+                      <Button isDisabled={accounts[account].processing} onClick={() => onSubmit(account)}>
+                        Submit
+                      </Button>
+                    </Stack>
+                  </>
+                )
+              })}
             </Stack>
           </Stack>
         </Stack>
@@ -208,7 +244,7 @@ transaction() {
             padding="4"
           >
             <Link
-            isExternal
+              isExternal
               href={
                 window.location.origin + "/signatures/" + signatureRequestId
               }
