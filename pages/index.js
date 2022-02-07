@@ -15,7 +15,8 @@ import {
   Link,
   Stack,
   Text,
-  Select
+  Select,
+  CircularProgress
 } from "@chakra-ui/react";
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
@@ -229,7 +230,9 @@ export default function MainPage() {
                       <Button onClick={() => onSubmit(account)}>
                         Submit
                       </Button>
-
+                      {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
+                        <CircularProgress isIndeterminate color='green.300' />
+                      }
                       {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(
                         ([signatureRequestId, compositeKeys]) => (
                           <Stack
