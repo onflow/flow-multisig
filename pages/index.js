@@ -152,7 +152,6 @@ export default function MainPage() {
       ...accounts,
       [accountKey]: account
     })
-    console.log(flowScanUrl);
   };
 
   const AuthedState = () => {
@@ -173,7 +172,6 @@ export default function MainPage() {
     );
   };
 
-  console.log('state', state);
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
