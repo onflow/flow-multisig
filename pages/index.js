@@ -276,37 +276,7 @@ export default function MainPage() {
             </Stack>
           </Stack>
         </Stack>
-      </Stack>
-
-      {/*Object.entries(state.inFlightRequests).map(
-        ([signatureRequestId, compositeKeys]) => (
-          <Stack
-            key={signatureRequestId}
-            flex="1"
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-            padding="4"
-          >
-            <Link
-              isExternal
-              href={
-                window.location.origin + "/signatures/" + signatureRequestId
-              }
-            >
-              Share this Link
-            </Link>
-            {compositeKeys.map(({ address, sig, keyId }) => {
-              return (
-                <Flex key={address + keyId}>
-                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
-                </Flex>
-              );
-            })}
-          </Stack>
-        )
-          )*/}
+      </Stack>     
     </Stack>
   );
 }
