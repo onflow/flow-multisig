@@ -8,9 +8,11 @@ import {
   FormControl,
   Input,
   FormErrorMessage,
+  Button,
+  VStack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
@@ -39,11 +41,28 @@ export default function SignatureRequestPage() {
   const router = useRouter();
   const { signatureRequestId } = router.query;
 
+  const [currentUser, setCurrentUser] = useState({
+    loggedIn: false,
+  });
+  useEffect(() => {
+    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
+  }, []);
+
   const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
     refreshInterval: 3,
   });
 
   const signatures = data ? data.data : [];
+
+  // Get the keys
+  useEffect(
+    () => async () => {
+      if (currentUser && signatures?.length > 0) {
+        console.log("resolveResult", resolveResult);
+      }
+    },
+    [currentUser, signatures]
+  );
 
   // Deal with dat flash and/or bad sig request id.
   if (signatures.length === 0) {
@@ -94,11 +113,54 @@ export default function SignatureRequestPage() {
     }
   };
 
+  const signTheMessage = (signable) => async () => {
+    const result = await fcl.authz();
+    const resolveResult = await result.resolve({}, signable);
+    const signedResult = await resolveResult[0].signingFunction(signable);
+
+    await fetch(`/api/${signatureRequestId}`, {
+      method: "post",
+      body: JSON.stringify(signedResult),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((r) => r.json());
+  };
+
+  const AuthedState = () => {
+    return (
+      <VStack>
+        <Stack>Hello</Stack>
+        <Stack direction="row" spacing={4} align="center">
+          <div>Address: {currentUser?.addr ?? "No Address"}</div>
+          <Button onClick={fcl.unauthenticate}>Log Out</Button>
+        </Stack>
+      </VStack>
+    );
+  };
+
+  const UnauthenticatedState = () => {
+    return (
+      <VStack>
+        <Stack direction="row" spacing={4} align="center">
+          <Button onClick={fcl.logIn}>Log In</Button>
+          <Button onClick={fcl.signUp}>Sign Up</Button>
+        </Stack>
+      </VStack>
+    );
+  };
+
   return (
     <Stack margin="4" alignContent="left">
+      <Stack maxW="container.xl">
+        <Stack>
+          <Heading>Sign with fcl a wallet</Heading>
+          {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
+        </Stack>
+      </Stack>
       <Stack>
         <Heading>Key status</Heading>
-        {signatures.map(({ address, sig, keyId }) => {
+        {signatures.map(({ address, sig, keyId, signable }) => {
           return (
             <Flex
               flex="1"
@@ -110,6 +172,9 @@ export default function SignatureRequestPage() {
             >
               <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
               <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+              <Button onClick={signTheMessage(signable)}>
+                Sign the message!
+              </Button>
             </Flex>
           );
         })}
