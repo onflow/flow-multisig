@@ -5,7 +5,9 @@ import {
   Button,
   Flex,
   FormControl,
+  FormErrorMessage,
   FormHelperText,
+  HStack,
   FormLabel,
   Heading,
   Icon,
@@ -13,11 +15,12 @@ import {
   Link,
   Stack,
   Text,
-  Textarea,
+  Select,
+  CircularProgress
 } from "@chakra-ui/react";
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
-
+import { CadencePayloadTypes, CadencePayloads } from "../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 
 const iconFn = (color) =>
@@ -34,6 +37,8 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
+const flowscan = "https://flowscan.org/transaction/";
+const cleanAddress = (address) => address.replace("0x", "");
 
 function upsert(array, element) {
   const i = array.findIndex(
@@ -42,7 +47,6 @@ function upsert(array, element) {
   );
   if (i > -1) array[i] = element;
   else array.push(element);
-
   return array;
 }
 
@@ -55,18 +59,29 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
+    case "in-flight":
+      return {
+        ...state,
+        inFlight: action.data.inFlight
+      };
     case "update-composite-key":
+      if (!state.inFlightRequests[action.data.address]) {
+        state.inFlightRequests[action.data.address] = {}
+      }
       const relevantRequest =
-        state.inFlightRequests[action.data.signatureRequestId] || [];
+        state.inFlightRequests[action.data.address][action.data.signatureRequestId] || [];
 
       return {
         ...state,
+        inFlight: false,
         inFlightRequests: {
           ...state.inFlightRequests,
-          [action.data.signatureRequestId]: upsert(
-            relevantRequest,
-            action.data
-          ),
+          [action.data.address]: {
+            [action.data.signatureRequestId]: upsert(
+              relevantRequest,
+              action.data
+            ),
+          }
         },
       };
 
@@ -80,41 +95,63 @@ export default function MainPage() {
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
   });
-  const [cadencePayload, setCadencePayload] = useState(`
-transaction() {
-      prepare(acct: AuthAccount) {
-        log("hello world")
-      }
-    }
-  `);
+  const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
-  const [accountKeys, setAccountKeys] = useState([]);
-  const [selectedAccountKeys, setSelectedAccountKeys] = useState([]);
+  const [error, setError] = useState(null);
+  const [accounts, setAccounts] = useState({});
 
-  const handleAuthAccountAddressChange = (e) =>
-    setAuthAccountAddress(e.target.value);
-  const handleCadencePayloadChange = (e) => setCadencePayload(e.target.value);
+  const selectAccountKeys = (account, keys) => {
+    accounts[account].enabledKeys = keys
+  }
+  const addAuthAccountAddress = () => {
+    fcl.account(authAccountAddress).then(({ keys }) => {
+      setAccounts({
+        ...accounts,
+        [authAccountAddress]: {
+          keys,
+          enabledKeys: [],
+          link: null,
+          flowScanUrl: null,
+        }
+      })
+      setAuthAccountAddress("");
+    }).catch((err) => {
+      console.log("unexpected error occured", err)
+    });
+  }
 
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
-  useEffect(() => {
+  const validateAccount = (authAccountAddress) => {
+    setAuthAccountAddress(authAccountAddress);
+    setError(null);
     if (authAccountAddress !== "") {
       fcl.account(authAccountAddress).then(({ keys }) => {
-        setAccountKeys(keys);
+        // used to test account validity
+      }).catch(() => {
+        setError("Account not valid");
       });
     }
-  }, [authAccountAddress]);
+  };
 
-  const onSubmit = async () => {
-    const txInfo = await fcl.mutate({
-      cadence: cadencePayload,
-      authorizations: selectedAccountKeys.map(({ index }) =>
-        buildAuthz({ address: authAccountAddress, index }, dispatch)
+  const onSubmit = async (accountKey) => {
+    const account = accounts[accountKey];
+    const keys = account.enabledKeys;
+    if (keys.length === 0) return;
+    const payload = CadencePayloads[cadencePayload]
+    const flowScanUrl = await fcl.mutate({
+      cadence: payload,
+      authorizations: keys.map(({ index }) =>
+        buildAuthz({ address: accountKey, index }, dispatch)
       ),
     });
-    console.log(txInfo);
+    account.flowScanUrl = `${flowscan}/${flowScanUrl}`;
+    setAccounts({
+      ...accounts,
+      [accountKey]: account
+    })
   };
 
   const AuthedState = () => {
@@ -135,9 +172,6 @@ transaction() {
     );
   };
 
-  const isNextDisabled =
-    selectedAccountKeys.reduce((acc, r) => r.weight + acc, 0) < 1000;
-
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -152,80 +186,95 @@ transaction() {
           <Stack>
             <Stack>
               <FormControl>
-                <FormLabel>Cadence Payload</FormLabel>
-                <Textarea
-                  size="lg"
-                  placeholder="Enter Cadence payload here"
-                  onChange={handleCadencePayloadChange}
-                  value={cadencePayload}
-                />
-                <FormHelperText>
-                  Cadence syntax is not currently validated in this app
-                </FormHelperText>
+                <FormLabel>Cadence Payload Type</FormLabel>
+                <Select isDisabled onChange={setCadencePayload}>
+                  {Object.keys(CadencePayloadTypes).map(payloadType => {
+                    return (<option key={payloadType} value={payloadType} size='lg'>{CadencePayloadTypes[payloadType]}</option>)
+                  })}
+                </Select>
               </FormControl>
             </Stack>
             <Stack>
-              <FormControl>
+              <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
-                <Input
-                  size="lg"
-                  placeholder="Enter Cadence payload here"
-                  onChange={handleAuthAccountAddressChange}
-                  value={authAccountAddress}
-                />
+                <HStack spacing={4}>
+                  <Input
+                    size="lg"
+                    id="account"
+                    placeholder="Enter Cadence payload here"
+                    onChange={(e) => validateAccount(e.target.value)}
+                    value={authAccountAddress}
+                  />
+                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
+                </HStack>
+                <FormErrorMessage>
+                  {error}
+                </FormErrorMessage>
               </FormControl>
             </Stack>
             <Stack>
-              <FormControl>
-                <FormLabel>Select Signing Keys</FormLabel>
-                <AccountsTable
-                  accountKeys={accountKeys}
-                  setSelectedKeys={setSelectedAccountKeys}
-                />
-              </FormControl>
-            </Stack>
-          </Stack>
-          <Stack>
-            <Stack direction="row" spacing={4} align="center">
-              <p>
-                <Button isDisabled={isNextDisabled} onClick={onSubmit}>
-                  Submit
-                </Button>
-              </p>
+              {Object.keys(accounts).map(account => {
+                return (
+                  <>
+                    <FormControl>
+                      <HStack align="baseline"><FormLabel>Select Signing Keys</FormLabel><Text>{account}</Text></HStack>
+                      <AccountsTable
+                        accountKeys={accounts[account].keys}
+                        setSelectedKeys={(keys) => selectAccountKeys(account, keys)}
+                      />
+                    </FormControl>
+
+                    <Stack direction="row" spacing={4} align="center">
+                      <Button onClick={() => onSubmit(account)}>
+                        Submit
+                      </Button>
+                      {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
+                        <CircularProgress isIndeterminate color='green.300' />
+                      }
+                      {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(
+                        ([signatureRequestId, compositeKeys]) => (
+                          <Stack
+                            key={signatureRequestId}
+                            flex="1"
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            padding="4"
+                          >
+                            <Link
+                              isExternal
+                              href={
+                                window.location.origin + "/signatures/" + signatureRequestId
+                              }
+                            >
+                              Share this Link
+                            </Link>
+                            {compositeKeys.map(({ address, sig, keyId }) => {
+                              return (
+                                <Flex key={address + keyId}>
+                                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+                                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                                </Flex>
+                              );
+                            })}
+                          </Stack>
+                        )
+                      )}
+
+                      {accounts[account].flowScanUrl &&
+                        (
+                          <Link isExternal href={
+                            accounts[account].flowScanUrl
+                          }>Transaction</Link>
+                        )}
+                    </Stack>
+                  </>
+                )
+              })}
             </Stack>
           </Stack>
         </Stack>
-      </Stack>
-
-      {Object.entries(state.inFlightRequests).map(
-        ([signatureRequestId, compositeKeys]) => (
-          <Stack
-            key={signatureRequestId}
-            flex="1"
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-            padding="4"
-          >
-            <Link
-            isExternal
-              href={
-                window.location.origin + "/signatures/" + signatureRequestId
-              }
-            >
-              Share this Link
-            </Link>
-            {compositeKeys.map(({ address, sig, keyId }) => {
-              return (
-                <Flex key={address + keyId}>
-                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
-                </Flex>
-              );
-            })}
-          </Stack>
-        )
-      )}
+      </Stack>     
     </Stack>
   );
 }

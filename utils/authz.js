@@ -10,6 +10,12 @@ export const buildAuthz = ({ address, index }, dispatch) => {
       addr: fcl.sansPrefix(address),
       keyId: Number(index),
       signingFunction: async (signable) => {
+        dispatch({
+          type: "in-flight",
+          data: {
+            inFlight: true
+          },
+        });
         const { id } = await fetch(
           `/api/signatures/${signable.addr}/${signable.keyId}`,
           {
