@@ -16,7 +16,8 @@ import {
   Stack,
   Text,
   Select,
-  CircularProgress
+  CircularProgress,
+  useClipboard
 } from "@chakra-ui/react";
 import { AccountsTable } from "../components/AccountsTable";
 import { buildAuthz } from "../utils/authz";
@@ -99,6 +100,8 @@ export default function MainPage() {
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
+  const [link, setLink] = useState("");
+  const { hasCopied, onCopy } = useClipboard(link);
 
   const selectAccountKeys = (account, keys) => {
     accounts[account].enabledKeys = keys
@@ -224,9 +227,9 @@ export default function MainPage() {
                       />
                     </FormControl>
 
-                    <Stack direction="row" spacing={4} align="center">
+                    <Stack direction="row" spacing={4} align="start">
                       <Button onClick={() => onSubmit(account)}>
-                        Submit
+                        Sign and Generate Link
                       </Button>
                       {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
                         <CircularProgress isIndeterminate color='green.300' />
@@ -241,14 +244,20 @@ export default function MainPage() {
                             overflow="hidden"
                             padding="4"
                           >
-                            <Link
-                              isExternal
-                              href={
-                                window.location.origin + "/signatures/" + signatureRequestId
-                              }
-                            >
-                              Share this Link
-                            </Link>
+                            <HStack>
+                              <Button onClick={() => {
+                                setLink(window.location.origin + "/signatures/" + signatureRequestId);
+                                onCopy()
+                              }}>{hasCopied ? 'Copied!' : 'Copy Link'}</Button>
+                              <Link
+                                isExternal
+                                href={
+                                  window.location.origin + "/signatures/" + signatureRequestId
+                                }
+                              >
+                                {window.location.origin + "/signatures/" + signatureRequestId}
+                              </Link>
+                            </HStack>
                             {compositeKeys.map(({ address, sig, keyId }) => {
                               return (
                                 <Flex key={address + keyId}>
@@ -274,7 +283,7 @@ export default function MainPage() {
             </Stack>
           </Stack>
         </Stack>
-      </Stack>     
+      </Stack>
     </Stack>
   );
 }

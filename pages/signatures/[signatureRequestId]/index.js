@@ -10,6 +10,7 @@ import {
   FormErrorMessage,
   Button,
   VStack,
+  HStack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -58,7 +59,7 @@ export default function SignatureRequestPage() {
   useEffect(
     () => async () => {
       if (currentUser && signatures?.length > 0) {
-        console.log("resolveResult", resolveResult);
+        console.log("currentUser", currentUser, signatures?.length);
       }
     },
     [currentUser, signatures]
@@ -152,9 +153,12 @@ export default function SignatureRequestPage() {
 
   return (
     <Stack margin="4" alignContent="left">
-      <Stack maxW="container.xl">
+      <Stack maxW="container.xl" align="start">
         <Stack>
-          <Heading>Sign with fcl a wallet</Heading>
+          <Heading>Sign with FCL wallet</Heading>
+        </Stack>
+        <Stack maxW="container.xl">
+          User Address:
           {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
         </Stack>
       </Stack>
@@ -162,7 +166,7 @@ export default function SignatureRequestPage() {
         <Heading>Key status</Heading>
         {signatures.map(({ address, sig, keyId, signable }) => {
           return (
-            <Flex
+            <HStack
               flex="1"
               borderWidth="1px"
               borderRadius="lg"
@@ -170,12 +174,15 @@ export default function SignatureRequestPage() {
               padding="4"
               key={address + keyId}
             >
-              <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-              <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
-              <Button onClick={signTheMessage(signable)}>
+              <Button width="200px" onClick={signTheMessage(signable)}>
                 Sign the message!
               </Button>
-            </Flex>
+
+              <HStack>
+                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+                <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+              </HStack>
+            </HStack>
           );
         })}
       </Stack>
