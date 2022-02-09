@@ -6,7 +6,6 @@ const unique = (value, index, self) => {
   return self.indexOf(value) === index;
 };
 
-// This method will only return the first signature in the payload signature array.
 export const decodedEnvelopeSignature = (envelopeRLP) => {
   const decoded = decode("0x" + envelopeRLP);
 
@@ -33,8 +32,6 @@ export const decodedEnvelopeSignature = (envelopeRLP) => {
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "POST":
-      const signatureRequestId = getSignatureRequestIdFromRLP(body.envelope);
-
       for (const { address, keyId, sig } of decodedEnvelopeSignature(
         body.envelope
       )) {
