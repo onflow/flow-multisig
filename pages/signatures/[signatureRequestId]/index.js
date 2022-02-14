@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
+import QRCode from "react-qr-code";
 
 import * as fcl from "@onflow/fcl";
 
@@ -53,16 +54,6 @@ export default function SignatureRequestPage() {
   });
 
   const signatures = data ? data.data : [];
-
-  // Get the keys
-  useEffect(
-    () => async () => {
-      if (currentUser && signatures?.length > 0) {
-        console.log("resolveResult", resolveResult);
-      }
-    },
-    [currentUser, signatures]
-  );
 
   // Deal with dat flash and/or bad sig request id.
   if (signatures.length === 0) {
@@ -152,6 +143,9 @@ export default function SignatureRequestPage() {
 
   return (
     <Stack margin="4" alignContent="left">
+      <Stack>
+        <QRCode value={window.location.href || ""} />
+      </Stack>
       <Stack maxW="container.xl">
         <Stack>
           <Heading>Sign with fcl a wallet</Heading>
