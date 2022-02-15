@@ -1,6 +1,5 @@
 import { supabase } from "../../../utils/supabaseClient";
 import { decode } from "rlp";
-import { getSignatureRequestIdFromRLP } from "../../../utils/fclCLI";
 
 const unique = (value, index, self) => {
   return self.indexOf(value) === index;

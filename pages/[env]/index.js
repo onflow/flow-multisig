@@ -62,14 +62,16 @@ function reducer(state, action) {
     case "in-flight":
       return {
         ...state,
-        inFlight: action.data.inFlight
+        inFlight: action.data.inFlight,
       };
     case "update-composite-key":
       if (!state.inFlightRequests[action.data.address]) {
-        state.inFlightRequests[action.data.address] = {}
+        state.inFlightRequests[action.data.address] = {};
       }
       const relevantRequest =
-        state.inFlightRequests[action.data.address][action.data.signatureRequestId] || [];
+        state.inFlightRequests[action.data.address][
+        action.data.signatureRequestId
+        ] || [];
 
       return {
         ...state,
@@ -81,7 +83,7 @@ function reducer(state, action) {
               relevantRequest,
               action.data
             ),
-          }
+          },
         },
       };
 
@@ -95,6 +97,7 @@ export default function MainPage() {
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
   });
+
   const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
@@ -122,6 +125,7 @@ export default function MainPage() {
     });
   }
 
+
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
@@ -135,6 +139,7 @@ export default function MainPage() {
       }).catch(() => {
         setError("Account not valid");
       });
+
     }
   };
 
@@ -192,6 +197,7 @@ export default function MainPage() {
                 <Select isDisabled onChange={setCadencePayload}>
                   {Object.keys(CadencePayloadTypes).map(payloadType => {
                     return (<option key={payloadType} value={payloadType} size='lg'>{CadencePayloadTypes[payloadType]}</option>)
+
                   })}
                 </Select>
               </FormControl>
@@ -200,6 +206,7 @@ export default function MainPage() {
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
                 <HStack spacing={4}>
+
                   <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
                   <Input
                     size="lg"
@@ -278,11 +285,12 @@ export default function MainPage() {
                     </Stack>
                   </>
                 )
+
               })}
             </Stack>
           </Stack>
         </Stack>
       </Stack>
     </Stack>
-  );
+  )
 }

@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
+import QRCode from "react-qr-code";
 
 import * as fcl from "@onflow/fcl";
 
@@ -153,6 +154,9 @@ export default function SignatureRequestPage() {
 
   return (
     <Stack margin="4" alignContent="left">
+      <Stack>
+        <QRCode value={window.location.href || ""} />
+      </Stack>
       <Stack maxW="container.xl" align="start">
         <Stack>
           <Heading>Sign with FCL wallet</Heading>
