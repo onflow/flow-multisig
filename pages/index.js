@@ -201,14 +201,14 @@ export default function MainPage() {
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
                 <HStack spacing={4}>
+                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
                   <Input
                     size="lg"
                     id="account"
-                    placeholder="Enter Cadence payload here"
+                    placeholder="Enter Authorized Account"
                     onChange={(e) => validateAccount(e.target.value)}
                     value={authAccountAddress}
                   />
-                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
                 </HStack>
                 <FormErrorMessage>
                   {error}
