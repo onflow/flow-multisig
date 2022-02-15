@@ -6,7 +6,6 @@ import {
   Flex,
   FormControl,
   FormErrorMessage,
-  FormHelperText,
   HStack,
   FormLabel,
   Heading,
@@ -19,9 +18,9 @@ import {
   CircularProgress,
   useClipboard
 } from "@chakra-ui/react";
-import { AccountsTable } from "../components/AccountsTable";
-import { buildAuthz } from "../utils/authz";
-import { CadencePayloadTypes, CadencePayloads } from "../utils/payloads";
+import { AccountsTable } from "../../components/AccountsTable";
+import { buildAuthz } from "../../utils/authz";
+import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 
 const iconFn = (color) =>

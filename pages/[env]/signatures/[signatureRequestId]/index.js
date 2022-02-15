@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { encodeVoucherToEnvelope } from "../../../utils/fclCLI";
+import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 
