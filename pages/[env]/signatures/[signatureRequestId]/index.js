@@ -11,6 +11,7 @@ import {
   Button,
   VStack,
   HStack,
+  useClipboard,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -42,6 +43,9 @@ export default function SignatureRequestPage() {
   const [rlpStatusMessage, setRLPStatusMessage] = useState("");
   const router = useRouter();
   const { signatureRequestId } = router.query;
+  const [cliData, setCliData] = useState("");
+  const { hasCopied, onCopy } = useClipboard(cliData);
+
 
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
@@ -191,7 +195,13 @@ export default function SignatureRequestPage() {
         })}
       </Stack>
       <Stack>
-        <Heading>CLI Entry</Heading>
+        <HStack>
+          <Heading>CLI Entry</Heading>
+          <Button onClick={() => {
+            setCliData(cliRLP);
+            onCopy();
+          }}>{hasCopied ? 'Copied!' : 'Copy'}</Button>
+        </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
       <Stack>
