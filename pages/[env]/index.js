@@ -16,6 +16,7 @@ import {
   Text,
   Select,
   CircularProgress,
+  useClipboard
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
 import { buildAuthz } from "../../utils/authz";
@@ -69,7 +70,7 @@ function reducer(state, action) {
       }
       const relevantRequest =
         state.inFlightRequests[action.data.address][
-          action.data.signatureRequestId
+        action.data.signatureRequestId
         ] || [];
 
       return {
@@ -96,35 +97,34 @@ export default function MainPage() {
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
   });
-  const [cadencePayload, setCadencePayload] = useState(
-    CadencePayloadTypes.TransferEscrow
-  );
+
+  const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
+  const [link, setLink] = useState("");
+  const { hasCopied, onCopy } = useClipboard(link);
 
   const selectAccountKeys = (account, keys) => {
-    accounts[account].enabledKeys = keys;
-  };
+    accounts[account].enabledKeys = keys
+  }
   const addAuthAccountAddress = () => {
-    fcl
-      .account(authAccountAddress)
-      .then(({ keys }) => {
-        setAccounts({
-          ...accounts,
-          [authAccountAddress]: {
-            keys,
-            enabledKeys: [],
-            link: null,
-            flowScanUrl: null,
-          },
-        });
-        setAuthAccountAddress("");
+    fcl.account(authAccountAddress).then(({ keys }) => {
+      setAccounts({
+        ...accounts,
+        [authAccountAddress]: {
+          keys,
+          enabledKeys: [],
+          link: null,
+          flowScanUrl: null,
+        }
       })
-      .catch((err) => {
-        console.log("unexpected error occured", err);
-      });
-  };
+      setAuthAccountAddress("");
+    }).catch((err) => {
+      console.log("unexpected error occured", err)
+    });
+  }
+
 
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
@@ -134,14 +134,12 @@ export default function MainPage() {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
     if (authAccountAddress !== "") {
-      fcl
-        .account(authAccountAddress)
-        .then(({ keys }) => {
-          // used to test account validity
-        })
-        .catch(() => {
-          setError("Account not valid");
-        });
+      fcl.account(authAccountAddress).then(({ keys }) => {
+        // used to test account validity
+      }).catch(() => {
+        setError("Account not valid");
+      });
+
     }
   };
 
@@ -149,7 +147,7 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
-    const payload = CadencePayloads[cadencePayload];
+    const payload = CadencePayloads[cadencePayload]
     const flowScanUrl = await fcl.mutate({
       cadence: payload,
       authorizations: keys.map(({ index }) =>
@@ -159,8 +157,8 @@ export default function MainPage() {
     account.flowScanUrl = `${flowscan}/${flowScanUrl}`;
     setAccounts({
       ...accounts,
-      [accountKey]: account,
-    });
+      [accountKey]: account
+    })
   };
 
   const AuthedState = () => {
@@ -197,12 +195,9 @@ export default function MainPage() {
               <FormControl>
                 <FormLabel>Cadence Payload Type</FormLabel>
                 <Select isDisabled onChange={setCadencePayload}>
-                  {Object.keys(CadencePayloadTypes).map((payloadType) => {
-                    return (
-                      <option key={payloadType} value={payloadType} size="lg">
-                        {CadencePayloadTypes[payloadType]}
-                      </option>
-                    );
+                  {Object.keys(CadencePayloadTypes).map(payloadType => {
+                    return (<option key={payloadType} value={payloadType} size='lg'>{CadencePayloadTypes[payloadType]}</option>)
+
                   })}
                 </Select>
               </FormControl>
@@ -211,92 +206,91 @@ export default function MainPage() {
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
                 <HStack spacing={4}>
+
+                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
                   <Input
                     size="lg"
                     id="account"
-                    placeholder="Enter Cadence payload here"
+                    placeholder="Enter Authorized Account"
                     onChange={(e) => validateAccount(e.target.value)}
                     value={authAccountAddress}
                   />
-                  <Button
-                    isDisabled={error || !authAccountAddress}
-                    onClick={addAuthAccountAddress}
-                  >
-                    Add Account
-                  </Button>
                 </HStack>
-                <FormErrorMessage>{error}</FormErrorMessage>
+                <FormErrorMessage>
+                  {error}
+                </FormErrorMessage>
               </FormControl>
             </Stack>
             <Stack>
-              {Object.keys(accounts).map((account) => {
+              {Object.keys(accounts).map(account => {
                 return (
                   <>
                     <FormControl>
-                      <HStack align="baseline">
-                        <FormLabel>Select Signing Keys</FormLabel>
-                        <Text>{account}</Text>
-                      </HStack>
+                      <HStack align="baseline"><FormLabel>Select Signing Keys</FormLabel><Text>{account}</Text></HStack>
                       <AccountsTable
                         accountKeys={accounts[account].keys}
-                        setSelectedKeys={(keys) =>
-                          selectAccountKeys(account, keys)
-                        }
+                        setSelectedKeys={(keys) => selectAccountKeys(account, keys)}
                       />
                     </FormControl>
 
-                    <Stack direction="row" spacing={4} align="center">
-                      <Button onClick={() => onSubmit(account)}>Submit</Button>
-                      {!state.inFlightRequests?.[cleanAddress(account)] &&
-                        state.inFlight && (
-                          <CircularProgress isIndeterminate color="green.300" />
-                        )}
-                      {Object.entries(
-                        state.inFlightRequests?.[cleanAddress(account)] || {}
-                      ).map(([signatureRequestId, compositeKeys]) => (
-                        <Stack
-                          key={signatureRequestId}
-                          flex="1"
-                          borderWidth="1px"
-                          borderRadius="lg"
-                          overflow="hidden"
-                          padding="4"
-                        >
-                          <Link
-                            isExternal
-                            href={
-                              window.location.origin +
-                              "/signatures/" +
-                              signatureRequestId
-                            }
+                    <Stack direction="row" spacing={4} align="start">
+                      <Button onClick={() => onSubmit(account)}>
+                        Sign and Generate Link
+                      </Button>
+                      {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
+                        <CircularProgress isIndeterminate color='green.300' />
+                      }
+                      {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(
+                        ([signatureRequestId, compositeKeys]) => (
+                          <Stack
+                            key={signatureRequestId}
+                            flex="1"
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            padding="4"
                           >
-                            Share this Link
-                          </Link>
-                          {compositeKeys.map(({ address, sig, keyId }) => {
-                            return (
-                              <Flex key={address + keyId}>
-                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                <Text>{fcl.withPrefix(address)}</Text>-
-                                <Text>{keyId}</Text>
-                              </Flex>
-                            );
-                          })}
-                        </Stack>
-                      ))}
-
-                      {accounts[account].flowScanUrl && (
-                        <Link isExternal href={accounts[account].flowScanUrl}>
-                          Transaction
-                        </Link>
+                            <HStack>
+                              <Button onClick={() => {
+                                setLink(window.location.origin + "/signatures/" + signatureRequestId);
+                                onCopy()
+                              }}>{hasCopied ? 'Copied!' : 'Copy Link'}</Button>
+                              <Link
+                                isExternal
+                                href={
+                                  window.location.origin + "/signatures/" + signatureRequestId
+                                }
+                              >
+                                {window.location.origin + "/signatures/" + signatureRequestId}
+                              </Link>
+                            </HStack>
+                            {compositeKeys.map(({ address, sig, keyId }) => {
+                              return (
+                                <Flex key={address + keyId}>
+                                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
+                                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                                </Flex>
+                              );
+                            })}
+                          </Stack>
+                        )
                       )}
+
+                      {accounts[account].flowScanUrl &&
+                        (
+                          <Link isExternal href={
+                            accounts[account].flowScanUrl
+                          }>Transaction</Link>
+                        )}
                     </Stack>
                   </>
-                );
+                )
+
               })}
             </Stack>
           </Stack>
         </Stack>
       </Stack>
     </Stack>
-  );
+  )
 }
