@@ -1,0 +1,1 @@
+flow transactions send-signed --network testnet ./flow-multisig/scripts/create-account-signed.rlp --yes
