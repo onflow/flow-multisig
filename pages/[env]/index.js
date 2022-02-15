@@ -179,6 +179,13 @@ export default function MainPage() {
     );
   };
 
+  const getLink = (signatureRequestId) => {
+    let network = "mainnet";
+    if (window.location.href.indexOf("testnet"))
+      network = "testnet";
+    return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
+  }
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -252,16 +259,16 @@ export default function MainPage() {
                           >
                             <HStack>
                               <Button onClick={() => {
-                                setLink(window.location.origin + "/signatures/" + signatureRequestId);
+                                setLink(getLink(signatureRequestId));
                                 onCopy()
                               }}>{hasCopied ? 'Copied!' : 'Copy Link'}</Button>
                               <Link
                                 isExternal
                                 href={
-                                  window.location.origin + "/signatures/" + signatureRequestId
+                                  getLink(signatureRequestId)
                                 }
                               >
-                                {window.location.origin + "/signatures/" + signatureRequestId}
+                                {getLink(signatureRequestId)}
                               </Link>
                             </HStack>
                             {compositeKeys.map(({ address, sig, keyId }) => {
