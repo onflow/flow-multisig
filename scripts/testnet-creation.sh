@@ -1,10 +1,10 @@
 flow transactions build ./flow-multisig/scripts/testnet-acct-creation.cdc \
   --network testnet \
   --args-json "$(cat "./flow-multisig/scripts/args.json")" \
-  --proposer 0xebb1fb89f7aa475d \
+  --proposer authorizer \
   --proposer-key-index 0 \
-  --authorizer 0xebb1fb89f7aa475d \
-  --payer 0xebb1fb89f7aa475d \
+  --authorizer authorizer \
+  --payer authorizer \
   --gas-limit 1000 \
   --yes \
   -x payload \
