@@ -24,7 +24,7 @@ const envSettings = {
 export const setupConfig = (env, isLedger) => {
   if (envSettings[env]) {
     let withLedger = {};
-    if (isLedger) withLedger = envSettings[`{env}Ledger`]
+    if (isLedger) withLedger = envSettings[`${env}Ledger`]
     const settings = { ...envSettings[env], ...withLedger }
     config(settings);
   }
