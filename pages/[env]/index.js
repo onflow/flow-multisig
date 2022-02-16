@@ -189,6 +189,7 @@ export default function MainPage() {
       network = "testnet";
     return network;
   }
+
   const getLink = (signatureRequestId) => {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;

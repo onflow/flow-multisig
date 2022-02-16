@@ -12,6 +12,7 @@ import {
   VStack,
   HStack,
   useClipboard,
+  Link
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -145,12 +146,25 @@ export default function SignatureRequestPage() {
     );
   };
 
+  const getNetwork = () => {
+    let network = "mainnet";
+    if (window.location.href.indexOf("testnet"))
+      network = "testnet";
+    return network;
+  }
+
+  const LedgerRedirectUrl = (signatureRequestId) => {
+    const network = getNetwork();
+    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+  }
+
   const UnauthenticatedState = () => {
     return (
       <VStack>
         <Stack direction="row" spacing={4} align="center">
           <Button onClick={fcl.logIn}>Log In</Button>
           <Button onClick={fcl.signUp}>Sign Up</Button>
+          <Link href={LedgerRedirectUrl(signatureRequestId)}>Sign with Ledger</Link>
         </Stack>
       </VStack>
     );
