@@ -16,12 +16,12 @@ import {
   Text,
   Select,
   CircularProgress,
-  useClipboard
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
 import { buildAuthz } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
+import { useCopyToClipboard } from 'react-use';
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -106,8 +106,8 @@ export default function MainPage() {
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
-  const [link, setLink] = useState("");
-  const { hasCopied, onCopy } = useClipboard(link);
+  const [hasCopied, setHasCopied] = useState("");
+  const [copyState, copyToClipboard] = useCopyToClipboard();
 
   const selectAccountKeys = (account, keys) => {
     accounts[account].enabledKeys = keys
@@ -189,6 +189,7 @@ export default function MainPage() {
       network = "testnet";
     return network;
   }
+
   const getLink = (signatureRequestId) => {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
@@ -280,9 +281,10 @@ export default function MainPage() {
                           >
                             <HStack>
                               <Button onClick={() => {
-                                setLink(getLink(signatureRequestId));
-                                onCopy()
-                              }}>{hasCopied ? 'Copied!' : 'Copy Link'}</Button>
+                                setHasCopied(signatureRequestId)
+                                copyToClipboard(getLink(signatureRequestId))
+                                setTimeout(() => setHasCopied(""),[500])
+                              }}>{hasCopied === signatureRequestId ? 'Copied!' : 'Copy Link'}</Button>
                               <Link
                                 isExternal
                                 href={
@@ -295,8 +297,8 @@ export default function MainPage() {
                             {compositeKeys.map(({ address, sig, keyId }) => {
                               return (
                                 <Flex key={address + keyId}>
-                                  <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                  <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                                  <Box p={1}>{sig ? <GreenDot /> : <RedDot />} </Box>
+                                  <Text p={1}>{`${fcl.withPrefix(address)}-${keyId}`}</Text>
                                 </Flex>
                               );
                             })}
