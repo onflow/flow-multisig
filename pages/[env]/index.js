@@ -38,6 +38,10 @@ const iconFn = (color) =>
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
 const flowscan = "https://flowscan.org/transaction/";
+const flowscanUrls = {
+  'mainnet': "https://flowscan.org/transaction/",
+  'testnet': "https://testnet.flowscan.org/transaction/"
+}
 const cleanAddress = (address) => address.replace("0x", "");
 
 function upsert(array, element) {
@@ -148,13 +152,13 @@ export default function MainPage() {
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
     const payload = CadencePayloads[cadencePayload]
-    const flowScanUrl = await fcl.mutate({
+    const tx = await fcl.mutate({
       cadence: payload,
       authorizations: keys.map(({ index }) =>
         buildAuthz({ address: accountKey, index }, dispatch)
       ),
     });
-    account.flowScanUrl = `${flowscan}/${flowScanUrl}`;
+    account.transaction = tx;
     setAccounts({
       ...accounts,
       [accountKey]: account
@@ -179,17 +183,26 @@ export default function MainPage() {
     );
   };
 
-  const getLink = (signatureRequestId) => {
+  const getNetwork = () => {
     let network = "mainnet";
     if (window.location.href.indexOf("testnet"))
       network = "testnet";
+    return network;
+  }
+  const getLink = (signatureRequestId) => {
+    const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   }
 
+  const getFlowscanLink = (tx) => {
+    const network = getNetwork();
+    return `${flowscanUrls[network]}/${tx}`;
+
+  }
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
-        <Stack>
+        <Stack spacing='24px'>
           <Stack>
             <Heading>Flow App</Heading>
           </Stack>
@@ -197,7 +210,7 @@ export default function MainPage() {
             Proposer/Payer Address:
             {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
           </Stack>
-          <Stack>
+          <Stack spacing='24px'>
             <Stack>
               <FormControl>
                 <FormLabel>Cadence Payload Type</FormLabel>
@@ -241,9 +254,17 @@ export default function MainPage() {
                     </FormControl>
 
                     <Stack direction="row" spacing={4} align="start">
-                      <Button onClick={() => onSubmit(account)}>
-                        Sign and Generate Link
-                      </Button>
+                      <Stack>
+                        <Button onClick={() => onSubmit(account)}>
+                          Sign and Generate Link
+                        </Button>
+                        {accounts[account].transaction &&
+                          (
+                            <Link isExternal href={
+                              getFlowscanLink(accounts[account].transaction)
+                            }>Transaction</Link>
+                          )}
+                      </Stack>
                       {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
                         <CircularProgress isIndeterminate color='green.300' />
                       }
@@ -282,13 +303,6 @@ export default function MainPage() {
                           </Stack>
                         )
                       )}
-
-                      {accounts[account].flowScanUrl &&
-                        (
-                          <Link isExternal href={
-                            accounts[account].flowScanUrl
-                          }>Transaction</Link>
-                        )}
                     </Stack>
                   </>
                 )
