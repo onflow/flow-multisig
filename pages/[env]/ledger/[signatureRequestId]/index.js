@@ -184,11 +184,7 @@ import {
         </Stack>
         <Stack>
           <HStack>
-            <Heading>CLI Entry</Heading>
-            <Button onClick={() => {
-              setCliData(cliRLP);
-              onCopy();
-            }}>{hasCopied ? 'Copied!' : 'Copy'}</Button>
+            <Heading>Payload</Heading>
           </HStack>
           <Text>{cliRLP}</Text>
         </Stack>

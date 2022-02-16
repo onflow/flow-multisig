@@ -44,9 +44,6 @@ export default function SignatureRequestPage() {
   const [rlpStatusMessage, setRLPStatusMessage] = useState("");
   const router = useRouter();
   const { signatureRequestId } = router.query;
-  const [cliData, setCliData] = useState("");
-  const { hasCopied, onCopy } = useClipboard(cliData);
-
 
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
@@ -71,32 +68,14 @@ export default function SignatureRequestPage() {
     [currentUser, signatures]
   );
 
-  // Deal with dat flash and/or bad sig request id.
-  if (signatures.length === 0) {
-    return (
-      <Stack margin={"50"}>
-        <Flex
-          flex="1"
-          borderWidth="1px"
-          borderRadius="lg"
-          overflow="hidden"
-          padding="4"
-        >
-          <Text>
-            There does not appear to be an active signature request id
-            {signatureRequestId}
-          </Text>
-        </Flex>
-      </Stack>
-    );
-  }
-
   // The voucher is the same for all these. Doesn't matter which we pick here.
-  const cliRLP = encodeVoucherToEnvelope({
+  const cliRLP = signatures.length ? encodeVoucherToEnvelope({
     ...signatures[0].signable.voucher,
     envelopeSigs: [],
     payloadSigs: [],
-  });
+  }) : "";
+
+  const { hasCopied, onCopy } = useClipboard(cliRLP);
 
   const onRLPChange = async (e) => {
     setRLPStatusMessage("");
@@ -170,6 +149,26 @@ export default function SignatureRequestPage() {
     );
   };
 
+  // Deal with dat flash and/or bad sig request id.
+  if (!cliRLP) {
+    return (
+      <Stack margin={"50"}>
+        <Flex
+          flex="1"
+          borderWidth="1px"
+          borderRadius="lg"
+          overflow="hidden"
+          padding="4"
+        >
+          <Text>
+            There does not appear to be an active signature request id
+            {signatureRequestId}
+          </Text>
+        </Flex>
+      </Stack>
+    );
+  }
+
   return (
     <Stack margin="4" alignContent="left">
       <Stack>
@@ -211,10 +210,7 @@ export default function SignatureRequestPage() {
       <Stack>
         <HStack>
           <Heading>CLI Entry</Heading>
-          <Button onClick={() => {
-            setCliData(cliRLP);
-            onCopy();
-          }}>{hasCopied ? 'Copied!' : 'Copy'}</Button>
+          <Button onClick={onCopy}>{hasCopied ? 'Copied!' : 'Copy'}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
