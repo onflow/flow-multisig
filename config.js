@@ -14,10 +14,10 @@ const envSettings = {
     "sdk.transport": httpSent,
   },
   testnetLedger: {
-    "challenge.handshake": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/testnet/authn"
+    "discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/testnet/authn"
   },
   mainnetLedger: {
-    "challenge.handshake": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/mainnet/authn"
+    "discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/mainnet/authn"
   }
 };
 

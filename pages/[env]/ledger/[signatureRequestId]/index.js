@@ -121,8 +121,18 @@ export default function SignatureRequestPage() {
     };
 
     const signTheMessage = (signable) => async () => {
+        const result = await fcl.authz();
+        const resolveResult = await result.resolve({}, signable);
+        const signedResult = await resolveResult[0].signingFunction(signable);
+        console.log("Ledger signing message", signedResult);
 
-        console.log("Ledger signing message")
+        await fetch(`/api/${signatureRequestId}`, {
+            method: "post",
+            body: JSON.stringify(signedResult),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((r) => r.json());
     };
 
     const AuthedState = () => {
@@ -151,21 +161,13 @@ export default function SignatureRequestPage() {
         <Stack margin="4" alignContent="left">
             <Stack maxW="container.xl" align="start">
                 <Stack>
-                    <Heading>Sign with FCL wallet</Heading>
+                    <Heading>Sign with Ledger</Heading>
                 </Stack>
                 <Stack maxW="container.xl">
                     User Address:
                     {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
                 </Stack>
-            </Stack>
-            <Stack maxW="container.xl" align="start">
-                <Stack>
-                    <Heading>Sign with Ledger wallet</Heading>
-                </Stack>
-                <Stack maxW="container.xl">
-                    User Address:
-                    {/* show user address here */}
-                </Stack>
+
             </Stack>
             <Stack>
                 <Heading>Key status</Heading>
