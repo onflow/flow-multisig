@@ -162,11 +162,11 @@ export default function MainPage() {
 
     const tx = await fcl.send([
       transferTokens({
-        proposer: fcl.authz(),
+        proposer: fcl.authz,
         authorization: keys.map(({ index }) =>
           buildAuthz({ address: accountKey, index }, dispatch)
         ),
-        payer: fcl.currentUser().authorization,
+        payer: fcl.authz,
         amount: "0.0", // Amount as a String representing a Cadence UFix64
         to: "0xae3a99ae03b3cbbd", // The Address of the Account to transfer tokens to.
       }),
