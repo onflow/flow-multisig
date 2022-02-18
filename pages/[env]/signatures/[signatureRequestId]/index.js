@@ -12,7 +12,7 @@ import {
   VStack,
   HStack,
   useClipboard,
-  Link
+  Link,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -69,11 +69,13 @@ export default function SignatureRequestPage() {
   );
 
   // The voucher is the same for all these. Doesn't matter which we pick here.
-  const cliRLP = signatures.length ? encodeVoucherToEnvelope({
-    ...signatures[0].signable.voucher,
-    envelopeSigs: [],
-    payloadSigs: [],
-  }) : "";
+  const cliRLP = signatures.length
+    ? encodeVoucherToEnvelope({
+        ...signatures[0].signable.voucher,
+        envelopeSigs: [],
+        payloadSigs: [],
+      })
+    : "";
 
   const { hasCopied, onCopy } = useClipboard(cliRLP);
 
@@ -100,17 +102,38 @@ export default function SignatureRequestPage() {
   };
 
   const signTheMessage = (signable) => async () => {
-    const result = await fcl.authz();
-    const resolveResult = await result.resolve({}, signable);
-    const signedResult = await resolveResult[0].signingFunction(signable);
+    console.log("signable", signable);
 
-    await fetch(`/api/${signatureRequestId}`, {
-      method: "post",
-      body: JSON.stringify(signedResult),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then((r) => r.json());
+    const result = await fcl.authz();
+    const resolveResults = await result
+      .resolve({}, signable)
+      .then((result) => (Array.isArray(result) ? result : [result]))
+      // Filter down to the addr/keyId pair the user clicked.
+      .then((result) =>
+        result.filter(
+          (item) => item.addr === signable.addr && item.keyId === signable.keyId
+        )
+      );
+
+    for (const resolveKey in resolveResults) {
+      const { addr, keyId, signingFunction } = resolveResults[resolveKey];
+
+      console.log(
+        `Attempting to get signature for addr ${addr} with keyId ${keyId}`
+      );
+      const signedResult = await signingFunction(signable);
+      await fetch(`/api/${signatureRequestId}`, {
+        method: "post",
+        body: JSON.stringify({
+          addr,
+          keyId,
+          ...signedResult,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then((r) => r.json());
+    }
   };
 
   const AuthedState = () => {
@@ -127,15 +150,14 @@ export default function SignatureRequestPage() {
 
   const getNetwork = () => {
     let network = "mainnet";
-    if (window.location.href.indexOf("testnet"))
-      network = "testnet";
+    if (window.location.href.indexOf("testnet")) network = "testnet";
     return network;
-  }
+  };
 
   const LedgerRedirectUrl = (signatureRequestId) => {
     const network = getNetwork();
     return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
-  }
+  };
 
   const UnauthenticatedState = () => {
     return (
@@ -143,7 +165,9 @@ export default function SignatureRequestPage() {
         <Stack direction="row" spacing={4} align="center">
           <Button onClick={fcl.logIn}>Log In</Button>
           <Button onClick={fcl.signUp}>Sign Up</Button>
-          <Link href={LedgerRedirectUrl(signatureRequestId)}>Sign with Ledger</Link>
+          <Link href={LedgerRedirectUrl(signatureRequestId)}>
+            Sign with Ledger
+          </Link>
         </Stack>
       </VStack>
     );
@@ -210,7 +234,7 @@ export default function SignatureRequestPage() {
       <Stack>
         <HStack>
           <Heading>CLI Entry</Heading>
-          <Button onClick={onCopy}>{hasCopied ? 'Copied!' : 'Copy'}</Button>
+          <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
