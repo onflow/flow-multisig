@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import * as fcl from "@onflow/fcl";
 import {
   Box,
@@ -37,7 +37,6 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
-const flowscan = "https://flowscan.org/transaction/";
 const flowscanUrls = {
   'mainnet': "https://flowscan.org/transaction/",
   'testnet': "https://testnet.flowscan.org/transaction/"
@@ -245,7 +244,7 @@ export default function MainPage() {
             <Stack>
               {Object.keys(accounts).map(account => {
                 return (
-                  <>
+                  <React.Fragment key={account}>
                     <FormControl>
                       <HStack align="baseline"><FormLabel>Select Signing Keys</FormLabel><Text>{account}</Text></HStack>
                       <AccountsTable
@@ -306,7 +305,7 @@ export default function MainPage() {
                         )
                       )}
                     </Stack>
-                  </>
+                  </React.Fragment>
                 )
 
               })}

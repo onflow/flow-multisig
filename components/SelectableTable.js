@@ -44,16 +44,16 @@ export function SelectableTable({ columns, data, setSelectedRows }) {
           // The header can use the table's getToggleAllRowsSelectedProps method
           // to render a checkbox
           Header: ({ getToggleAllRowsSelectedProps }) => (
-            <Td>
+            <span>
               <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
-            </Td>
+            </span>
           ),
           // The cell can use the individual row's getToggleRowSelectedProps method
           // to the render a checkbox
           Cell: ({ row }) => (
-            <Td>
+            <span>
               <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
-            </Td>
+            </span>
           ),
         },
         ...columns,
@@ -100,7 +100,7 @@ export function SelectableTable({ columns, data, setSelectedRows }) {
           {footerGroups.map((group, index) => (
             <Tr key={index} {...group.getFooterGroupProps()}>
               <Td colSpan={2}>
-                <Tr>Total Weights Selected:</Tr>
+                Total Weights Selected:
               </Td>
               <Td>
                 {selectedFlatRows.reduce(
