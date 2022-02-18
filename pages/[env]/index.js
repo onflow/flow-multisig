@@ -20,8 +20,10 @@ import {
 import { AccountsTable } from "../../components/AccountsTable";
 import { buildAuthz } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
+import { useCopyToClipboard } from "react-use";
+import { template as transferTokens } from "@onflow/six-transfer-tokens";
+
 if (typeof window !== "undefined") window.fcl = fcl;
-import { useCopyToClipboard } from 'react-use';
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -39,9 +41,9 @@ const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
 const flowscan = "https://flowscan.org/transaction/";
 const flowscanUrls = {
-  'mainnet': "https://flowscan.org/transaction/",
-  'testnet': "https://testnet.flowscan.org/transaction/"
-}
+  mainnet: "https://flowscan.org/transaction/",
+  testnet: "https://testnet.flowscan.org/transaction/",
+};
 const cleanAddress = (address) => address.replace("0x", "");
 
 function upsert(array, element) {
@@ -74,7 +76,7 @@ function reducer(state, action) {
       }
       const relevantRequest =
         state.inFlightRequests[action.data.address][
-        action.data.signatureRequestId
+          action.data.signatureRequestId
         ] || [];
 
       return {
@@ -102,7 +104,9 @@ export default function MainPage() {
     loggedIn: false,
   });
 
-  const [cadencePayload, setCadencePayload] = useState(CadencePayloadTypes.TransferEscrow);
+  const [cadencePayload, setCadencePayload] = useState(
+    CadencePayloadTypes.TransferEscrow
+  );
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
@@ -110,25 +114,27 @@ export default function MainPage() {
   const [copyState, copyToClipboard] = useCopyToClipboard();
 
   const selectAccountKeys = (account, keys) => {
-    accounts[account].enabledKeys = keys
-  }
+    accounts[account].enabledKeys = keys;
+  };
   const addAuthAccountAddress = () => {
-    fcl.account(authAccountAddress).then(({ keys }) => {
-      setAccounts({
-        ...accounts,
-        [authAccountAddress]: {
-          keys,
-          enabledKeys: [],
-          link: null,
-          flowScanUrl: null,
-        }
+    fcl
+      .account(authAccountAddress)
+      .then(({ keys }) => {
+        setAccounts({
+          ...accounts,
+          [authAccountAddress]: {
+            keys,
+            enabledKeys: [],
+            link: null,
+            flowScanUrl: null,
+          },
+        });
+        setAuthAccountAddress("");
       })
-      setAuthAccountAddress("");
-    }).catch((err) => {
-      console.log("unexpected error occured", err)
-    });
-  }
-
+      .catch((err) => {
+        console.log("unexpected error occured", err);
+      });
+  };
 
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
@@ -138,12 +144,14 @@ export default function MainPage() {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
     if (authAccountAddress !== "") {
-      fcl.account(authAccountAddress).then(({ keys }) => {
-        // used to test account validity
-      }).catch(() => {
-        setError("Account not valid");
-      });
-
+      fcl
+        .account(authAccountAddress)
+        .then(({ keys }) => {
+          // used to test account validity
+        })
+        .catch(() => {
+          setError("Account not valid");
+        });
     }
   };
 
@@ -151,18 +159,24 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
-    const payload = CadencePayloads[cadencePayload]
-    const tx = await fcl.mutate({
-      cadence: payload,
-      authorizations: keys.map(({ index }) =>
-        buildAuthz({ address: accountKey, index }, dispatch)
-      ),
-    });
+
+    const tx = await fcl.send([
+      transferTokens({
+        proposer: fcl.authz(),
+        authorization: keys.map(({ index }) =>
+          buildAuthz({ address: accountKey, index }, dispatch)
+        ),
+        payer: fcl.currentUser().authorization,
+        amount: "0.0", // Amount as a String representing a Cadence UFix64
+        to: "0xae3a99ae03b3cbbd", // The Address of the Account to transfer tokens to.
+      }),
+    ]);
+
     account.transaction = tx;
     setAccounts({
       ...accounts,
-      [accountKey]: account
-    })
+      [accountKey]: account,
+    });
   };
 
   const AuthedState = () => {
@@ -185,25 +199,23 @@ export default function MainPage() {
 
   const getNetwork = () => {
     let network = "mainnet";
-    if (window.location.href.indexOf("testnet"))
-      network = "testnet";
+    if (window.location.href.indexOf("testnet")) network = "testnet";
     return network;
-  }
+  };
 
   const getLink = (signatureRequestId) => {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
-  }
+  };
 
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
-
-  }
+  };
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
-        <Stack spacing='24px'>
+        <Stack spacing="24px">
           <Stack>
             <Heading>Flow App</Heading>
           </Stack>
@@ -211,14 +223,17 @@ export default function MainPage() {
             Proposer/Payer Address:
             {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
           </Stack>
-          <Stack spacing='24px'>
+          <Stack spacing="24px">
             <Stack>
               <FormControl>
                 <FormLabel>Cadence Payload Type</FormLabel>
                 <Select isDisabled onChange={setCadencePayload}>
-                  {Object.keys(CadencePayloadTypes).map(payloadType => {
-                    return (<option key={payloadType} value={payloadType} size='lg'>{CadencePayloadTypes[payloadType]}</option>)
-
+                  {Object.keys(CadencePayloadTypes).map((payloadType) => {
+                    return (
+                      <option key={payloadType} value={payloadType} size="lg">
+                        {CadencePayloadTypes[payloadType]}
+                      </option>
+                    );
                   })}
                 </Select>
               </FormControl>
@@ -227,8 +242,12 @@ export default function MainPage() {
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
                 <HStack spacing={4}>
-
-                  <Button isDisabled={error || !authAccountAddress} onClick={addAuthAccountAddress}>Add Account</Button>
+                  <Button
+                    isDisabled={error || !authAccountAddress}
+                    onClick={addAuthAccountAddress}
+                  >
+                    Add Account
+                  </Button>
                   <Input
                     size="lg"
                     id="account"
@@ -237,20 +256,23 @@ export default function MainPage() {
                     value={authAccountAddress}
                   />
                 </HStack>
-                <FormErrorMessage>
-                  {error}
-                </FormErrorMessage>
+                <FormErrorMessage>{error}</FormErrorMessage>
               </FormControl>
             </Stack>
             <Stack>
-              {Object.keys(accounts).map(account => {
+              {Object.keys(accounts).map((account) => {
                 return (
                   <>
                     <FormControl>
-                      <HStack align="baseline"><FormLabel>Select Signing Keys</FormLabel><Text>{account}</Text></HStack>
+                      <HStack align="baseline">
+                        <FormLabel>Select Signing Keys</FormLabel>
+                        <Text>{account}</Text>
+                      </HStack>
                       <AccountsTable
                         accountKeys={accounts[account].keys}
-                        setSelectedKeys={(keys) => selectAccountKeys(account, keys)}
+                        setSelectedKeys={(keys) =>
+                          selectAccountKeys(account, keys)
+                        }
                       />
                     </FormControl>
 
@@ -259,61 +281,70 @@ export default function MainPage() {
                         <Button onClick={() => onSubmit(account)}>
                           Sign and Generate Link
                         </Button>
-                        {accounts[account].transaction &&
-                          (
-                            <Link isExternal href={
-                              getFlowscanLink(accounts[account].transaction)
-                            }>Transaction</Link>
-                          )}
-                      </Stack>
-                      {!state.inFlightRequests?.[cleanAddress(account)] && state.inFlight &&
-                        <CircularProgress isIndeterminate color='green.300' />
-                      }
-                      {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(
-                        ([signatureRequestId, compositeKeys]) => (
-                          <Stack
-                            key={signatureRequestId}
-                            flex="1"
-                            borderWidth="1px"
-                            borderRadius="lg"
-                            overflow="hidden"
-                            padding="4"
+                        {accounts[account].transaction && (
+                          <Link
+                            isExternal
+                            href={getFlowscanLink(
+                              accounts[account].transaction
+                            )}
                           >
-                            <HStack>
-                              <Button onClick={() => {
-                                setHasCopied(signatureRequestId)
-                                copyToClipboard(getLink(signatureRequestId))
-                                setTimeout(() => setHasCopied(""),[500])
-                              }}>{hasCopied === signatureRequestId ? 'Copied!' : 'Copy Link'}</Button>
-                              <Link
-                                isExternal
-                                href={
-                                  getLink(signatureRequestId)
-                                }
-                              >
-                                {getLink(signatureRequestId)}
-                              </Link>
-                            </HStack>
-                            {compositeKeys.map(({ address, sig, keyId }) => {
-                              return (
-                                <Flex key={address + keyId}>
-                                  <Box p={1}>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                  <Text p={1}>{`${fcl.withPrefix(address)}-${keyId}`}</Text>
-                                </Flex>
-                              );
-                            })}
-                          </Stack>
-                        )
-                      )}
+                            Transaction
+                          </Link>
+                        )}
+                      </Stack>
+                      {!state.inFlightRequests?.[cleanAddress(account)] &&
+                        state.inFlight && (
+                          <CircularProgress isIndeterminate color="green.300" />
+                        )}
+                      {Object.entries(
+                        state.inFlightRequests?.[cleanAddress(account)] || {}
+                      ).map(([signatureRequestId, compositeKeys]) => (
+                        <Stack
+                          key={signatureRequestId}
+                          flex="1"
+                          borderWidth="1px"
+                          borderRadius="lg"
+                          overflow="hidden"
+                          padding="4"
+                        >
+                          <HStack>
+                            <Button
+                              onClick={() => {
+                                setHasCopied(signatureRequestId);
+                                copyToClipboard(getLink(signatureRequestId));
+                                setTimeout(() => setHasCopied(""), [500]);
+                              }}
+                            >
+                              {hasCopied === signatureRequestId
+                                ? "Copied!"
+                                : "Copy Link"}
+                            </Button>
+                            <Link isExternal href={getLink(signatureRequestId)}>
+                              {getLink(signatureRequestId)}
+                            </Link>
+                          </HStack>
+                          {compositeKeys.map(({ address, sig, keyId }) => {
+                            return (
+                              <Flex key={address + keyId}>
+                                <Box p={1}>
+                                  {sig ? <GreenDot /> : <RedDot />}{" "}
+                                </Box>
+                                <Text p={1}>{`${fcl.withPrefix(
+                                  address
+                                )}-${keyId}`}</Text>
+                              </Flex>
+                            );
+                          })}
+                        </Stack>
+                      ))}
                     </Stack>
                   </>
-                )
-
+                );
               })}
             </Stack>
           </Stack>
         </Stack>
       </Stack>
     </Stack>
-  )
+  );
 }
