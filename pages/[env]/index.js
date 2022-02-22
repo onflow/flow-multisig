@@ -22,7 +22,6 @@ import { buildAuthz } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from 'react-use';
-import * as t from "@onflow/types"
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -150,13 +149,10 @@ export default function MainPage() {
   const onSubmit = async (accountKey) => {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
-    const to = "0xf8d6e0586b0a20c7"; // testnet address
     if (keys.length === 0) return;
     const payload = CadencePayloads[cadencePayload]
-
     const tx = await fcl.mutate({
       cadence: payload,
-      args: [fcl.arg("0.0", t.UFix64), fcl.arg(to, t.ADDRESS)],
       authorizations: keys.map(({ index }) =>
         buildAuthz({ address: accountKey, index }, dispatch)
       ),
@@ -286,7 +282,7 @@ export default function MainPage() {
                               <Button onClick={() => {
                                 setHasCopied(signatureRequestId)
                                 copyToClipboard(getLink(signatureRequestId))
-                                setTimeout(() => setHasCopied(""), [500])
+                                setTimeout(() => setHasCopied(""),[500])
                               }}>{hasCopied === signatureRequestId ? 'Copied!' : 'Copy Link'}</Button>
                               <Link
                                 isExternal
