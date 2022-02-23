@@ -85,8 +85,9 @@ export default function SignatureRequestPage() {
         const result2 = await result.resolve();
 
         //const resolveResult = await result.resolve({}, signable);
+        console.log('signable', signable)
         const signedResult = await result2.signingFunction(signable);
-        console.log("Ledger signing message", signedResult);
+        console.log("Ledger signing message", signable, signedResult);
 
         await fetch(`/api/${signatureRequestId}`, {
             method: "post",
