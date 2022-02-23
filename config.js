@@ -16,8 +16,7 @@ const envSettings = {
     "0xFUNGIBLETOKENADDRESS": "0x9a0766d93b6608b7"
   },
   testnetLedger: {
-    //"discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/testnet/authn"
-    "discovery.wallet": "http://localhost:3001/testnet/authn",
+    "discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/testnet/authn"
   },
   mainnetLedger: {
     "discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/mainnet/authn"
@@ -29,7 +28,6 @@ export const setupConfig = (env, isLedger) => {
     let withLedger = {};
     if (isLedger) withLedger = envSettings[`${env}Ledger`]
     const settings = { ...envSettings[env], ...withLedger }
-    console.log('settings', settings)
     config(settings);
   }
 };
