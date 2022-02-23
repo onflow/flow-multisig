@@ -161,14 +161,15 @@ export default function MainPage() {
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
-    const tx = await fcl.send([
+    const { transactionId } = await fcl.send([
       fcl.transaction(payload),
       fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(authorizations[0]),
     ]);
-    account.transaction = tx;
+
+    account.transaction = transactionId;
     setAccounts({
       ...accounts,
       [accountKey]: account,
