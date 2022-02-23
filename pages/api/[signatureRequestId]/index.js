@@ -1,3 +1,4 @@
+import * as fcl from "@onflow/fcl";
 import { supabase } from "../../../utils/supabaseClient";
 
 export default async function handler({ body, method, query }, res) {
@@ -29,7 +30,7 @@ export default async function handler({ body, method, query }, res) {
           sig,
         })
         .match({
-          address,
+          address: fcl.sansPrefix(address),
           keyId,
         });
 
