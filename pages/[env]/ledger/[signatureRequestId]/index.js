@@ -81,12 +81,10 @@ export default function SignatureRequestPage() {
 
     const signTheMessage = (signable) => async () => {
         const result = await fcl.authz();
-
         const result2 = await result.resolve();
-
         //const resolveResult = await result.resolve({}, signable);
         const signedResult = await result2.signingFunction(signable);
-        console.log("Ledger signing message", signedResult);
+        console.log("Ledger signing message", signable, signedResult);
 
         await fetch(`/api/${signatureRequestId}`, {
             method: "post",

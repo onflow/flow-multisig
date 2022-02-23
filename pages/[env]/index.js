@@ -22,6 +22,7 @@ import { buildAuthz } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from 'react-use';
+import * as t from "@onflow/types"
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -153,6 +154,7 @@ export default function MainPage() {
     const payload = CadencePayloads[cadencePayload]
     const tx = await fcl.mutate({
       cadence: payload,
+      arguments: fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
       authorizations: keys.map(({ index }) =>
         buildAuthz({ address: accountKey, index }, dispatch)
       ),
