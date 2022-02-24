@@ -1,4 +1,5 @@
 module.exports = {
   reactStrictMode: true,
-  minimizer: []
+  minimizer: [],
+  swcMinify: false
 };
