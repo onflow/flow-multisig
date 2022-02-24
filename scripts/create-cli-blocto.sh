@@ -23,6 +23,6 @@ flow transactions sign ./flow-multisig/scripts/create-account.rlp \
 sleep 1
 echo "sending tx ..."
 ./flow-multisig/scripts/testnet-send.sh
-echo "look in tx-output.json for created account"
-echo "if you have jq use `cat tx-output.json | jq '.events[5].values'`"
+echo "looking in tx-output.json for created account"
+echo "using jq to process tx-output.json and get account created"
 cat tx-output.json | jq '.events[5].values'
