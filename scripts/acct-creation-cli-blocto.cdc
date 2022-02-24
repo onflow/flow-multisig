@@ -26,18 +26,18 @@ transaction(
 
         let UserKey = PublicKey(
             publicKey: partialUserPublicKey.decodeHex(),
-            signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
+            signatureAlgorithm: SignatureAlgorithm.ECDSA_secp256k1
         )
 
-        signer.keys.add(
+        bonusAccount.keys.add(
             publicKey: AdminKey,
             hashAlgorithm: HashAlgorithm.SHA3_256,
             weight: 500.0
         )
 
-        signer.keys.add(
+        bonusAccount.keys.add(
             publicKey: UserKey,
-            hashAlgorithm: HashAlgorithm.SHA3_256,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
             weight: 500.0
         )
 
