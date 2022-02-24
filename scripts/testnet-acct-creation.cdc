@@ -49,7 +49,7 @@ transaction(
         self.sentVault <- vaultRef.withdraw(amount: amount)
 
         // Get a reference to the recipients Receiver
-        self.bonusReceiver = signer
+        self.bonusReceiver = bonusAccount
           .getCapability(/public/flowTokenReceiver)!
           .borrow<&{FungibleToken.Receiver}>()
           ?? panic("Unable to borrow receiver reference to the recipient's Vault")
