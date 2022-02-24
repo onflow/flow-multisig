@@ -29,13 +29,13 @@ transaction(
             signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
         )
 
-        signer.keys.add(
+        bonusAccount.keys.add(
             publicKey: AdminKey,
             hashAlgorithm: HashAlgorithm.SHA3_256,
             weight: 500.0
         )
 
-        signer.keys.add(
+        bonusAccount.keys.add(
             publicKey: UserKey,
             hashAlgorithm: HashAlgorithm.SHA3_256,
             weight: 500.0
@@ -49,7 +49,7 @@ transaction(
         self.sentVault <- vaultRef.withdraw(amount: amount)
 
         // Get a reference to the recipients Receiver
-        self.bonusReceiver = bonusAccount
+        self.bonusReceiver = signer
           .getCapability(/public/flowTokenReceiver)!
           .borrow<&{FungibleToken.Receiver}>()
           ?? panic("Unable to borrow receiver reference to the recipient's Vault")

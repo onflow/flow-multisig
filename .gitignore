@@ -34,4 +34,4 @@ yarn-error.log*
 .vercel
 
 flow.json
-*.rlp
+/scripts/*.rlp

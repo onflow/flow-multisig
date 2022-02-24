@@ -1,11 +1,12 @@
 flow transactions build ./flow-multisig/scripts/testnet-acct-creation.cdc \
   --network testnet \
   --args-json "$(cat "./flow-multisig/scripts/args.json")" \
-  --proposer authorizer \
+  --proposer $ACCT \
   --proposer-key-index 0 \
-  --authorizer authorizer \
-  --payer authorizer \
+  --authorizer $ACCT \
+  --payer $ACCT \
   --gas-limit 1000 \
   --yes \
+  --output json \
   -x payload \
   --save ./flow-multisig/scripts/create-account.rlp
