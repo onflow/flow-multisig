@@ -1,7 +1,7 @@
 ACCT=authorizer
 echo "Creating account with cli and blocto keys"
 echo "Creating tx using authorizer account in flow.json"
-flow transactions build ./flow-multisig/scripts/testnet-acct-creation.cdc \
+flow transactions build ./flow-multisig/scripts/acct-creation-cli-blocto.cdc \
   --network testnet \
   --args-json "$(cat "./flow-multisig/scripts/args-cli-blocto.json")" \
   --proposer $ACCT \
