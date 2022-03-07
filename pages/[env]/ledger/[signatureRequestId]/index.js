@@ -88,6 +88,7 @@ export default function SignatureRequestPage() {
         const signedResult = await result2.signingFunction(signable);
         // ledger defaulting the keyId to 0, needs to be set correctly
         signedResult.keyId = signable.keyId;
+        signedResult.addr = signable.addr;
         console.log("Ledger signing message", signable, signedResult);
         await fetch(`/api/${signatureRequestId}`, {
             method: "post",
