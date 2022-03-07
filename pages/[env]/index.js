@@ -18,7 +18,7 @@ import {
   CircularProgress,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
-import { buildAuthz } from "../../utils/authz";
+import { authzResolver, buildAuthz } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -161,12 +161,22 @@ export default function MainPage() {
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
+    console.log('keys', keys)
+    const resolver = authzResolver({address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
       fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
-      fcl.payer(authorizations[0]),
+      ix => {
+        console.log('pre:', ix)
+        return ix
+      },
+      fcl.payer(resolver),
+      ix => {
+        console.log('post:', ix)
+        return ix
+      }
     ]);
 
     account.transaction = transactionId;
@@ -189,7 +199,6 @@ export default function MainPage() {
     return (
       <Stack direction="row" spacing={4} align="center">
         <Button onClick={fcl.logIn}>Log In</Button>
-        <Button onClick={fcl.signUp}>Sign Up</Button>
       </Stack>
     );
   };
@@ -214,7 +223,7 @@ export default function MainPage() {
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Flow App</Heading>
+            <Heading>Ledger Flow App</Heading>
           </Stack>
           <Stack maxW="container.xl">
             Proposer/Payer Address:

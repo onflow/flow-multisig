@@ -60,7 +60,7 @@ export default function SignatureRequestPage() {
     );
 
     // Deal with dat flash and/or bad sig request id.
-    if (signatures.length === 0) {
+    if (!signatures || signatures.length === 0) {
         return (
             <Stack margin={"50"}>
                 <Flex
@@ -82,7 +82,9 @@ export default function SignatureRequestPage() {
     const signTheMessage = (signable) => async () => {
         const result = await fcl.authz();
         const result2 = await result.resolve();
-        //const resolveResult = await result.resolve({}, signable);
+        // remove payload sigs for ledger signing
+        signable.voucher.payloadSigs = [];
+        console.log(JSON.stringify(signable))
         const signedResult = await result2.signingFunction(signable);
         console.log("Ledger signing message", signable, signedResult);
 
