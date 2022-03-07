@@ -112,7 +112,10 @@ export default function MainPage() {
   const [copyState, copyToClipboard] = useCopyToClipboard();
 
   const selectAccountKeys = (account, keys) => {
-    accounts[account].enabledKeys = keys;
+    if (accounts[account].enabledKeys.length !== keys.length){
+      accounts[account].enabledKeys = keys;
+      setAccounts({...accounts})
+    }
   };
   const addAuthAccountAddress = () => {
     fcl
@@ -257,8 +260,8 @@ export default function MainPage() {
 
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button onClick={() => onSubmit(account)}>
-                          Sign and Generate Link
+                        <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
+                          Generate Link
                         </Button>
                         {accounts[account].transaction && (
                           <Link
