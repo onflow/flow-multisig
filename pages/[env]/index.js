@@ -161,22 +161,13 @@ export default function MainPage() {
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
-    console.log('keys', keys)
     const resolver = authzResolver({address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
       fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
-      ix => {
-        console.log('pre:', ix)
-        return ix
-      },
       fcl.payer(resolver),
-      ix => {
-        console.log('post:', ix)
-        return ix
-      }
     ]);
 
     account.transaction = transactionId;
@@ -225,25 +216,7 @@ export default function MainPage() {
           <Stack>
             <Heading>Ledger Flow App</Heading>
           </Stack>
-          <Stack maxW="container.xl">
-            Proposer/Payer Address:
-            {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-          </Stack>
           <Stack spacing="24px">
-            <Stack>
-              <FormControl>
-                <FormLabel>Cadence Payload Type</FormLabel>
-                <Select isDisabled onChange={setCadencePayload}>
-                  {Object.keys(CadencePayloadTypes).map((payloadType) => {
-                    return (
-                      <option key={payloadType} value={payloadType} size="lg">
-                        {CadencePayloadTypes[payloadType]}
-                      </option>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-            </Stack>
             <Stack>
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
