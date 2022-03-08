@@ -15,8 +15,8 @@ export const decodedEnvelopeSignature = (envelopeRLP) => {
     decoded[0][7].toString("hex"),
     ...decoded[0][8].map((r) => r.toString("hex")),
   ].filter(unique);
-  return decoded[1].map((r) => {
-    const signerIndex = r[0][0];
+  return [...decoded[1], ...decoded[2]].map((r) => {
+    const signerIndex = r[0][0] || 0;
     const address = signerIndexedAddresses[signerIndex].toString("hex");
 
     return {
