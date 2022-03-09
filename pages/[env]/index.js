@@ -180,23 +180,6 @@ export default function MainPage() {
     });
   };
 
-  const AuthedState = () => {
-    return (
-      <Stack direction="row" spacing={4} align="center">
-        <div>Address: {currentUser?.addr ?? "No Address"}</div>
-        <Button onClick={fcl.unauthenticate}>Log Out</Button>
-      </Stack>
-    );
-  };
-
-  const UnauthenticatedState = () => {
-    return (
-      <Stack direction="row" spacing={4} align="center">
-        <Button onClick={fcl.logIn}>Log In</Button>
-      </Stack>
-    );
-  };
-
   const getNetwork = () => {
     let network = "mainnet";
     if (window.location.href.indexOf("testnet")) network = "testnet";

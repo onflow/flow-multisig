@@ -86,6 +86,7 @@ export default function SignatureRequestPage() {
         signable.voucher.payloadSigs = [];
         console.log(JSON.stringify(signable))
         const signedResult = await result2.signingFunction(signable);
+        console.log('signable', JSON.stringify(signable))
         // ledger defaulting the keyId to 0, needs to be set correctly
         signedResult.keyId = signable.keyId;
         signedResult.addr = signable.addr;
