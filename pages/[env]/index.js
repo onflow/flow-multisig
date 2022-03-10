@@ -172,6 +172,7 @@ export default function MainPage() {
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
+      fcl.limit(9999),
       ix => {
         console.log(ix)
         return ix
