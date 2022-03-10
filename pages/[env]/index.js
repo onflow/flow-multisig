@@ -16,6 +16,7 @@ import {
   Text,
   Select,
   CircularProgress,
+  VStack,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
 import { authzResolver, buildAuthz } from "../../utils/authz";
@@ -171,6 +172,10 @@ export default function MainPage() {
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
+      ix => {
+        console.log(ix)
+        return ix
+      }
     ]);
 
     account.transaction = transactionId;
@@ -189,6 +194,11 @@ export default function MainPage() {
   const getLink = (signatureRequestId) => {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
+  };
+
+  const getLedgerLink = (signatureRequestId) => {
+    const network = getNetwork();
+    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
   };
 
   const getFlowscanLink = (tx) => {
@@ -272,22 +282,14 @@ export default function MainPage() {
                           overflow="hidden"
                           padding="4"
                         >
-                          <HStack>
-                            <Button
-                              onClick={() => {
-                                setHasCopied(signatureRequestId);
-                                copyToClipboard(getLink(signatureRequestId));
-                                setTimeout(() => setHasCopied(""), [500]);
-                              }}
-                            >
-                              {hasCopied === signatureRequestId
-                                ? "Copied!"
-                                : "Copy Link"}
-                            </Button>
-                            <Link isExternal href={getLink(signatureRequestId)}>
-                              {getLink(signatureRequestId)}
+                          <VStack align="start">
+                            <Text fontSize='15px' color='purple'>Ledger:</Text> <Link isExternal href={getLedgerLink(signatureRequestId)}>
+                               {getLedgerLink(signatureRequestId)}
                             </Link>
-                          </HStack>
+                            <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
+                               {getLink(signatureRequestId)}
+                            </Link>                            
+                          </VStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (
                               <Flex key={address + keyId}>

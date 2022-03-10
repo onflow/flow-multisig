@@ -3,13 +3,6 @@ import * as fcl from "@onflow/fcl";
 const wait = async (period = 3000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
-/**
- * 
- * @param {*} account 
- * @param {*} keys | {index: number}
- * @param {*} dispatch 
- * @returns 
- */
 export const authzResolver = (account, keys, dispatch) => {
 return {
   ...account,

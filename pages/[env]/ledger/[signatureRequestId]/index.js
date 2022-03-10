@@ -87,8 +87,9 @@ export default function SignatureRequestPage() {
         console.log(JSON.stringify(signable))
         const signedResult = await result2.signingFunction(signable);
         console.log('signable', JSON.stringify(signable))
+        console.log('signable Result', JSON.stringify(signedResult))
         // ledger defaulting the keyId to 0, needs to be set correctly
-        signedResult.keyId = signable.keyId;
+        //signedResult.keyId = signable.keyId;
         signedResult.addr = signable.addr;
         console.log("Ledger signing message", signable, signedResult);
         await fetch(`/api/${signatureRequestId}`, {
@@ -151,7 +152,7 @@ export default function SignatureRequestPage() {
 
                             <HStack>
                                 <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                                <Text>{fcl.withPrefix(address)}</Text> <Text>keyId: {keyId}</Text>
                             </HStack>
                         </HStack>
                     );

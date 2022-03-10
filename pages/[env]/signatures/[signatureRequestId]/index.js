@@ -196,18 +196,6 @@ export default function SignatureRequestPage() {
   return (
     <Stack margin="4" alignContent="left">
       <Stack>
-        <QRCode value={window.location.href || ""} />
-      </Stack>
-      <Stack maxW="container.xl" align="start">
-        <Stack>
-          <Heading>Sign with FCL wallet</Heading>
-        </Stack>
-        <Stack maxW="container.xl">
-          User Address:
-          {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-        </Stack>
-      </Stack>
-      <Stack>
         <Heading>Key status</Heading>
         {signatures.map(({ address, sig, keyId, signable }) => {
           return (
@@ -225,7 +213,7 @@ export default function SignatureRequestPage() {
 
               <HStack>
                 <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                <Text>{fcl.withPrefix(address)}</Text> keyId:<Text>{keyId}</Text>
               </HStack>
             </HStack>
           );
