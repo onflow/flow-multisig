@@ -4,8 +4,8 @@ import FlowToken from 0x7e60df042a9c0868
 
 // Transaction for the token admin to send bonus tokens to a new bonus account
 transaction(
-    partialLedgerPublicKey: String,
     partialCLIPublicKey: String,
+    partialLedgerPublicKey: String,
     amount: UFix64, // bonus amount
 )  {
 
@@ -30,15 +30,15 @@ transaction(
         )
 
         bonusAccount.keys.add(
-            publicKey: LedgerKey,
-            hashAlgorithm: HashAlgorithm.SHA2_256,
-            weight: 600.0
-        )
-
-        bonusAccount.keys.add(
             publicKey: CLIKey,
             hashAlgorithm: HashAlgorithm.SHA3_256,
             weight: 400.0
+        )
+
+        bonusAccount.keys.add(
+            publicKey: LedgerKey,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
+            weight: 600.0
         )
 
         // Get a reference to the signers stored vault
