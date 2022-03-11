@@ -169,7 +169,7 @@ export default function MainPage() {
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
       fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
-      fcl.proposer(authorizations[1]),
+      fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
       fcl.limit(9999),
@@ -258,14 +258,15 @@ export default function MainPage() {
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
-                          <Link
-                            isExternal
-                            href={getFlowscanLink(
-                              accounts[account].transaction
-                            )}
-                          >
-                            Transaction
-                          </Link>
+                            <Link
+                              isExternal
+                              href={getFlowscanLink(
+                                accounts[account].transaction
+                              )}
+                            >
+                              <Button colorScheme='pink'>Transaction</Button>                              
+                            </Link>
+
                         )}
                       </Stack>
                       {!state.inFlightRequests?.[cleanAddress(account)] &&
