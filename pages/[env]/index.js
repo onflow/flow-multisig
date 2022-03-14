@@ -18,7 +18,7 @@ import {
   CircularProgress,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
-import { buildAuthz } from "../../utils/authz";
+import { buildAuthz, authzResolver } from "../../utils/authz";
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -158,15 +158,23 @@ export default function MainPage() {
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
     const payload = CadencePayloads[cadencePayload];
+    console.log('keys', keys)
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
+    const resolver = authzResolver({address: accountKey }, keys, dispatch);
+
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
       fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
-      fcl.payer(authorizations[0]),
+      fcl.limit(9999),
+      fcl.payer(resolver),
+      ix => {
+        console.log('ix', ix)
+        return ix;
+      }
     ]);
 
     account.transaction = transactionId;
@@ -216,25 +224,11 @@ export default function MainPage() {
           <Stack>
             <Heading>Flow App</Heading>
           </Stack>
-          <Stack maxW="container.xl">
+          {/*<Stack maxW="container.xl">
             Proposer/Payer Address:
             {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-          </Stack>
-          <Stack spacing="24px">
-            <Stack>
-              <FormControl>
-                <FormLabel>Cadence Payload Type</FormLabel>
-                <Select isDisabled onChange={setCadencePayload}>
-                  {Object.keys(CadencePayloadTypes).map((payloadType) => {
-                    return (
-                      <option key={payloadType} value={payloadType} size="lg">
-                        {CadencePayloadTypes[payloadType]}
-                      </option>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-            </Stack>
+          </Stack>*/}
+          <Stack spacing="24px">            
             <Stack>
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
@@ -276,7 +270,7 @@ export default function MainPage() {
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
                         <Button onClick={() => onSubmit(account)}>
-                          Sign and Generate Link
+                          Generate Link
                         </Button>
                         {accounts[account].transaction && (
                           <Link

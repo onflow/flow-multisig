@@ -82,6 +82,9 @@ export default function SignatureRequestPage() {
   const onRLPChange = async (e) => {
     setRLPStatusMessage("");
     try {
+      if (!e.target.value || e.target.value.length === 0) {
+        return setRLPStatusMessage("");
+      }
       // This just confirms it is a valid encoding.
       decode("0x" + e.target.value);
 
@@ -198,14 +201,15 @@ export default function SignatureRequestPage() {
       <Stack>
         <QRCode value={window.location.href || ""} />
       </Stack>
-      <Stack maxW="container.xl" align="start">
+      
+      <Stack maxW="container.xl" align="start" paddingTop="4">
         <Stack>
           <Heading>Sign with FCL wallet</Heading>
         </Stack>
         <Stack maxW="container.xl">
           User Address:
           {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-        </Stack>
+      </Stack>
       </Stack>
       <Stack>
         <Heading>Key status</Heading>
@@ -225,20 +229,20 @@ export default function SignatureRequestPage() {
 
               <HStack>
                 <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                <Text>{fcl.withPrefix(address)}</Text>-<Text>{keyId}</Text>
+                <Text>{fcl.withPrefix(address)}</Text><Text>KeyId: {keyId}</Text>
               </HStack>
             </HStack>
           );
         })}
       </Stack>
-      <Stack>
+      <Stack paddingTop="4">
         <HStack>
           <Heading>CLI Entry</Heading>
           <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
-      <Stack>
+      <Stack paddingTop="4">
         <FormControl id="selected-account-payload">
           <Heading>Paste signed rlp here</Heading>
           <Input size="lg" onChange={onRLPChange} />
