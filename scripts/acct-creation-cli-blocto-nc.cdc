@@ -26,7 +26,7 @@ transaction(
 
         let UserKey = PublicKey(
             publicKey: partialUserPublicKey.decodeHex(),
-            signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
+            signatureAlgorithm: SignatureAlgorithm.ECDSA_secp256k1
         )
 
         bonusAccount.keys.add(
