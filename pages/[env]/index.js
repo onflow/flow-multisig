@@ -204,7 +204,7 @@ export default function MainPage() {
 
   const getNetwork = () => {
     let network = "mainnet";
-    if (window.location.href.indexOf("testnet")) network = "testnet";
+    if (window.location.href.indexOf("testnet") > -1) network = "testnet";
     return network;
   };
 
