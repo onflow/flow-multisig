@@ -20,6 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
 import { authzResolver, buildAuthz } from "../../utils/authz";
+
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -162,6 +163,7 @@ export default function MainPage() {
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
     const payload = CadencePayloads[cadencePayload];
+    console.log('keys', keys)
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );

@@ -60,6 +60,7 @@ return {
 }
 
 }
+
 export const buildAuthz = ({ address, index }, dispatch) => {
   return async function authz(account) {
     return {
@@ -73,6 +74,7 @@ export const buildAuthz = ({ address, index }, dispatch) => {
             inFlight: true
           },
         });
+        console.log('signable addr keyId', signable.addr, signable.keyId)
         const { id } = await fetch(
           `/api/signatures/${signable.addr}/${signable.keyId}`,
           {

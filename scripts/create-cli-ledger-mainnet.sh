@@ -1,9 +1,8 @@
-ACCT=authorizer
-echo "Creating account with cli and blocto keys"
+echo "Creating account with cli and ledger keys"
 echo "Creating tx using authorizer account in flow.json"
-flow transactions build ./flow-multisig/scripts/acct-creation-cli-blocto.cdc \
-  --network testnet \
-  --args-json "$(cat "./flow-multisig/scripts/args-cli-blocto.json")" \
+flow transactions build ./flow-multisig/scripts/acct-creation-cli-ledger-mainnet.cdc \
+  --network mainnet \
+  --args-json "$(cat "./flow-multisig/scripts/args-cli-ledger-mainnet.json")" \
   --proposer $ACCT \
   --proposer-key-index 0 \
   --authorizer $ACCT \
@@ -22,7 +21,7 @@ flow transactions sign ./flow-multisig/scripts/create-account.rlp \
   --save ./flow-multisig/scripts/create-account-signed.rlp
 sleep 1
 echo "sending tx ..."
-./flow-multisig/scripts/testnet-send.sh
+./flow-multisig/scripts/mainnet-send.sh
 echo "looking in tx-output.json for created account"
 echo "using jq to process tx-output.json and get account created"
 cat tx-output.json | jq '.events[5].values'

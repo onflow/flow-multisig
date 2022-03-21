@@ -82,6 +82,9 @@ export default function SignatureRequestPage() {
   const onRLPChange = async (e) => {
     setRLPStatusMessage("");
     try {
+      if (!e.target.value || e.target.value.length === 0) {
+        return setRLPStatusMessage("");
+      }
       // This just confirms it is a valid encoding.
       decode("0x" + e.target.value);
 
@@ -219,14 +222,14 @@ export default function SignatureRequestPage() {
           );
         })}
       </Stack>
-      <Stack>
+      <Stack paddingTop="4">
         <HStack>
           <Heading>CLI Entry</Heading>
           <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
-      <Stack>
+      <Stack paddingTop="4">
         <FormControl id="selected-account-payload">
           <Heading>Paste signed rlp here</Heading>
           <Input size="lg" onChange={onRLPChange} />
