@@ -223,6 +223,20 @@ export default function MainPage() {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
   };
+
+  useEffect(() => {
+    const getBalance = async () => fcl.account(authAccountAddress).then(account => {
+      console.log('account', account)
+      if (!transferAmount) {
+        const balance = parseInt(account.balance) / 10e7
+        setTransferAmount(balance)
+      }
+    });
+    if (authAccountAddress) {
+      getBalance();
+    }
+  }, [authAccountAddress, transferAmount])
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -271,21 +285,26 @@ export default function MainPage() {
 
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
+                        <HStack>
+                      <FormLabel htmlFor='amount'>Transfer Amount</FormLabel>
                       <Input
-                    size="lg"
+                    size="md"
                     id="amount"
                     placeholder="Enter Token Amount"
                     onChange={(e) => setTransferAmount(e.target.value)}
                     value={transferAmount}
                   />
+                  </HStack>
+                  <HStack>
+                  <FormLabel htmlFor='toAddress'>Transfer to Address</FormLabel>
                                         <Input
-                    size="lg"
+                    size="md"
                     id="toAddress"
                     placeholder="Enter To Address"
                     onChange={(e) => validateToAddress(e.target.value)}
                     value={toAddress}
                   />
-
+                    </HStack>
                       </Stack>
                       <Stack>
                         <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
