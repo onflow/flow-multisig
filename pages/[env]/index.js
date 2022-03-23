@@ -108,8 +108,10 @@ export default function MainPage() {
     CadencePayloadTypes.TransferEscrow
   );
   const [authAccountAddress, setAuthAccountAddress] = useState("");
+  const [toAddress, setToAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
+  const [transferAmount, setTransferAmount] = useState("")
   const [hasCopied, setHasCopied] = useState("");
   const [copyState, copyToClipboard] = useCopyToClipboard();
 
@@ -143,6 +145,19 @@ export default function MainPage() {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
+  const validateToAddress = (toAddress) => {
+    setToAddress(toAddress)
+    if (toAddress !== "") {
+      fcl
+        .account(toAddress)
+        .then(({ keys }) => {
+          // used to test account validity
+        })
+        .catch(() => {
+          setError("To Address not valid");
+        });
+    }    
+  }
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
@@ -170,7 +185,7 @@ export default function MainPage() {
     const resolver = authzResolver({address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
-      fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
+      fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
@@ -255,6 +270,23 @@ export default function MainPage() {
                     </FormControl>
 
                     <Stack direction="row" spacing={4} align="start">
+                      <Stack>
+                      <Input
+                    size="lg"
+                    id="amount"
+                    placeholder="Enter Token Amount"
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                    value={transferAmount}
+                  />
+                                        <Input
+                    size="lg"
+                    id="toAddress"
+                    placeholder="Enter To Address"
+                    onChange={(e) => validateToAddress(e.target.value)}
+                    value={toAddress}
+                  />
+
+                      </Stack>
                       <Stack>
                         <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
                           Generate Link
