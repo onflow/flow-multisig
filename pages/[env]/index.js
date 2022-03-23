@@ -108,7 +108,7 @@ export default function MainPage() {
     CadencePayloadTypes.TransferEscrow
   );
   const [authAccountAddress, setAuthAccountAddress] = useState("");
-  const [toAddress, setToAddress] = useState("");
+  const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("")
@@ -228,8 +228,8 @@ export default function MainPage() {
     const getBalance = async () => fcl.account(authAccountAddress).then(account => {
       console.log('account', account)
       if (!transferAmount) {
-        const balance = parseInt(account.balance) / 10e7
-        setTransferAmount(balance)
+        const balance = (parseInt(account.balance) / 10e7) - 0.01
+        setTransferAmount(balance.toFixed(8))
       }
     });
     if (authAccountAddress) {
