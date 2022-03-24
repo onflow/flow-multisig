@@ -22,6 +22,7 @@ import { AccountsTable } from "../../components/AccountsTable";
 import { authzResolver, buildAuthz } from "../../utils/authz";
 
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
+import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import * as t from "@onflow/types";
@@ -351,9 +352,7 @@ export default function MainPage() {
                                 <Box p={1}>
                                   {sig ? <GreenDot /> : <RedDot />}{" "}
                                 </Box>
-                                <Text p={1}>{`${fcl.withPrefix(
-                                  address
-                                )}-${keyId}`}</Text>
+                                <AddressKeyView address={address} keyId={keyId} />
                               </Flex>
                             );
                           })}

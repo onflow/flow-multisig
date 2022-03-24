@@ -20,6 +20,7 @@ import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 import QRCode from "react-qr-code";
+import { AddressKeyView } from "../../../../components/AddressKeyView";
 
 import * as fcl from "@onflow/fcl";
 
@@ -210,13 +211,9 @@ export default function SignatureRequestPage() {
               padding="4"
               key={address + keyId}
             >
-              <Button width="200px" onClick={signTheMessage(signable)}>
-                Sign the message!
-              </Button>
-
               <HStack>
                 <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                <Text>{fcl.withPrefix(address)}</Text> keyId:<Text>{keyId}</Text>
+                <AddressKeyView address={address} keyId={keyId} />
               </HStack>
             </HStack>
           );
@@ -229,7 +226,21 @@ export default function SignatureRequestPage() {
         </HStack>
         <Text>{cliRLP}</Text>
       </Stack>
-      <Stack paddingTop="4">
+      <Stack paddingTop={"20px"}>
+                <Heading>CLI Command for signing</Heading>   
+                <Stack>
+                  <Text>1. Paste the above rlp in file sign-cli.rlp in the same directory as flow.json </Text>
+                  <Text>2. replace ####### with the account entry in your flow.json that will be signing</Text>
+                  <Stack>
+                    <Text>3. Cli command: </Text>
+                    <pre>
+                    flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp
+                    </pre>
+                    <Text>4. paste the contents in sign-cli-signed.rlp to the text field below</Text>
+                    </Stack>
+                </Stack>
+            </Stack>
+            <Stack paddingTop="4">
         <FormControl id="selected-account-payload">
           <Heading>Paste signed rlp here</Heading>
           <Input size="lg" onChange={onRLPChange} />
@@ -241,6 +252,7 @@ export default function SignatureRequestPage() {
           )}
         </FormControl>
       </Stack>
+
     </Stack>
   );
 }

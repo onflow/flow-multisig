@@ -8,11 +8,12 @@ import {
     Stack,
     Text,
     VStack,
+    FormLabel,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-
+import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
@@ -35,7 +36,8 @@ const RedDot = iconFn("red.500");
 export default function SignatureRequestPage() {
     const router = useRouter();
     const { signatureRequestId } = router.query;
-
+    const [transferAmount, setTransferAmount] = useState("")
+    const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
     const [currentUser, setCurrentUser] = useState({
         loggedIn: false,
     });
@@ -52,11 +54,19 @@ export default function SignatureRequestPage() {
     // Get the keys
     useEffect(
         () => async () => {
+            const getBalance = async (accountAddress) => fcl.account(accountAddress).then(account => {
+                if (!transferAmount) {
+                  const balance = (parseInt(account.balance) / 10e7) - 0.01
+                  setTransferAmount(balance.toFixed(8))
+                }
+              });
+      
             if (currentUser && signatures?.length > 0) {
                 console.log("currentUser", currentUser, signatures?.length);
+                getBalance(signatures[0]?.address);
             }
         },
-        [currentUser, signatures]
+        [currentUser, signatures, transferAmount]
     );
 
     // Deal with dat flash and/or bad sig request id.
@@ -133,6 +143,15 @@ export default function SignatureRequestPage() {
                     User Address:
                     {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
                 </Stack>
+            <Stack paddingTop={"10px"}>
+                <FormLabel>Description: This UI is meant for a Ledger account to sign a transfer Bonus FLOW Tokens transaction for a key in a Multisig Account</FormLabel>
+            </Stack>
+            </Stack>
+            <Stack>
+                <Heading>Transfer</Heading>   
+                <HStack>
+                    <Text>Transfer </Text><Text fontSize="18px">{transferAmount}</Text><Text>FLOW tokens to </Text><Text fontSize="18px">{toAddress}</Text>
+                </HStack>
             </Stack>
             <Stack>
                 <Heading>Key status</Heading>
@@ -146,13 +165,13 @@ export default function SignatureRequestPage() {
                             padding="4"
                             key={address + keyId}
                         >
-                            <Button width="200px" onClick={signTheMessage(signable)}>
+                            <Button width="200px" onClick={signTheMessage(signable)} disabled={keyId === 0}>
                                 Sign the message!
                             </Button>
 
                             <HStack>
-                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                <Text>{fcl.withPrefix(address)}</Text> <Text>keyId: {keyId}</Text>
+                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>                                
+                                <AddressKeyView address={address} keyId={keyId} />
                             </HStack>
                         </HStack>
                     );
