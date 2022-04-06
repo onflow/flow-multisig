@@ -221,7 +221,7 @@ export default function SignatureRequestPage() {
       </Stack>
       <Stack paddingTop="4">
         <HStack>
-          <Heading>CLI Entry</Heading>
+          <Heading>Blocto CLI Entry</Heading>
           <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
