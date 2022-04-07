@@ -137,7 +137,7 @@ export default function SignatureRequestPage() {
         <Stack margin="4" alignContent="left">
             <Stack maxW="container.xl" align="start">
                 <Stack>
-                    <Heading>Sign with Ledger</Heading>
+                    <Heading>Sign with Ledger (v0.9.12)</Heading>
                 </Stack>
                 <Stack maxW="container.xl">
                     User Address:

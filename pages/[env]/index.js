@@ -243,7 +243,7 @@ export default function MainPage() {
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Ledger Flow App</Heading>
+            <Heading>Ledger Flow App (v0.9.12)</Heading>
           </Stack>
           <Stack spacing="24px">
             <Stack>
