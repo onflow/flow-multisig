@@ -37,7 +37,6 @@ export default function SignatureRequestPage() {
     const router = useRouter();
     const { signatureRequestId } = router.query;
     const [transferAmount, setTransferAmount] = useState("")
-    const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
     const [currentUser, setCurrentUser] = useState({
         loggedIn: false,
     });
@@ -148,9 +147,9 @@ export default function SignatureRequestPage() {
             </Stack>
             </Stack>
             <Stack>
-                <Heading>Transfer</Heading>   
+                <Heading>Burn Amount</Heading>   
                 <HStack>
-                    <Text>Transfer </Text><Text fontSize="18px">{transferAmount}</Text><Text>FLOW tokens to </Text><Text fontSize="18px">{toAddress}</Text>
+                    <Text>Burn Amount</Text><Text fontSize="18px">{transferAmount}</Text>
                 </HStack>
             </Stack>
             <Stack>

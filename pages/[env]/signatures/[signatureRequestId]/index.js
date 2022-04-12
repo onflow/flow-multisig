@@ -170,7 +170,7 @@ export default function SignatureRequestPage() {
           <Button onClick={fcl.logIn}>Log In</Button>
           <Button onClick={fcl.signUp}>Sign Up</Button>
           <Link href={BloctoRedirectUrl(signatureRequestId)}>
-            Sign with Blocto
+            Sign
           </Link>
         </Stack>
       </VStack>

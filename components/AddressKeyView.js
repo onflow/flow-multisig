@@ -11,7 +11,7 @@ export const AddressKeyView = ({ address, keyId }) => {
         address
       )}`}</Text>
       <Text fontSize="18px" paddingLeft={"10px"} paddingRight={"2px"}>KeyId:</Text>
-      <Text>{`${keyId} `}{keyId === 1 ? `(Blocto)` : null}</Text>
+      <Text>{`${keyId} `}{keyId === 1 ? `(Finoa)` : null}</Text>
     </HStack>
   );
 }

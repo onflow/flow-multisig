@@ -158,25 +158,6 @@ export default function SignatureRequestPage() {
     return network;
   };
 
-  const BloctoRedirectUrl = (signatureRequestId) => {
-    const network = getNetwork();
-    return `${window.location.origin}/${network}/blocto/${signatureRequestId}`;
-  };
-
-  const UnauthenticatedState = () => {
-    return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <Button onClick={fcl.logIn}>Log In</Button>
-          <Button onClick={fcl.signUp}>Sign Up</Button>
-          <Link href={BloctoRedirectUrl(signatureRequestId)}>
-            Sign with Blocto
-          </Link>
-        </Stack>
-      </VStack>
-    );
-  };
-
   // Deal with dat flash and/or bad sig request id.
   if (!cliRLP) {
     return (
@@ -221,7 +202,7 @@ export default function SignatureRequestPage() {
       </Stack>
       <Stack paddingTop="4">
         <HStack>
-          <Heading>Blocto CLI Entry</Heading>
+          <Heading>Finoa CLI Entry</Heading>
           <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
         </HStack>
         <Text>{cliRLP}</Text>
