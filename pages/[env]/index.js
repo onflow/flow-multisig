@@ -41,6 +41,7 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
+
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction/",
   testnet: "https://testnet.flowscan.org/transaction/",
@@ -101,20 +102,13 @@ function reducer(state, action) {
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [currentUser, setCurrentUser] = useState({
-    loggedIn: false,
-  });
 
-  const [cadencePayload, setCadencePayload] = useState(
-    CadencePayloadTypes.TransferEscrow
-  );
+  const cadencePayload = CadencePayloadTypes.TransferEscrow;
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("")
-  const [hasCopied, setHasCopied] = useState("");
-  const [copyState, copyToClipboard] = useCopyToClipboard();
 
   const selectAccountKeys = (account, keys) => {
     if (accounts[account].enabledKeys.length !== keys.length){
@@ -141,10 +135,6 @@ export default function MainPage() {
         console.log("unexpected error occured", err);
       });
   };
-
-  useEffect(() => {
-    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
-  }, []);
 
   const validateToAddress = (toAddress) => {
     setToAddress(toAddress)
