@@ -211,7 +211,7 @@ export default function SignatureRequestPage() {
                 <Heading>CLI Command for signing</Heading>   
                 <Stack>
                   <Text>1. Paste the above rlp in file sign-cli.rlp in the same directory as flow.json </Text>
-                  <Text>2. replace ####### with the account entry in your flow.json that will be signing</Text>
+                  <Text>{`2. replace ####### with the account entry in your flow.json that will be signing. The account address needs to be ${signatures[0].address}.`} </Text>
                   <Stack>
                     <Text>3. Cli command: </Text>
                     <pre>
