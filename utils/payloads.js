@@ -6,25 +6,16 @@ export const CadencePayloadTypes = {
 export const CadencePayloads = {
     [CadencePayloadTypes.TransferEscrow]: CODE,
     [CadencePayloadTypes.BurnTokens]: 
-`
-import FungibleToken from 0xFUNGIBLETOKENADDRESS
-import FlowToken from 0xTOKENADDRESS
-
+`import FungibleToken from 0xFUNGIBLETOKENADDRESS
 transaction(amount: UFix64) {
-
-    prepare(signer: AuthAccount) {
-
-        let tokenVault = signer
-            .borrow<&FlowToken.Vault{FungibleToken.Provider}>(from: /storage/flowTokenVault)
-            ?? panic("Could not get signer vault")
-
-        let burner <- tokenVault.withdraw(amount: amount)
-        destroy burner
-    }
-
-    execute {
-        log("tokens have been burned")
-    }
+let vault: @FungibleToken.Vault
+prepare(signer: AuthAccount) {
+self.vault <- signer
+.borrow<&{FungibleToken.Provider}>(from: /storage/flowTokenVault)!
+.withdraw(amount: amount)
 }
-`
+execute {
+destroy self.vault
+}
+}`
 }

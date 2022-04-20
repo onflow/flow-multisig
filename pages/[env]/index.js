@@ -180,7 +180,9 @@ export default function MainPage() {
         console.log(ix)
         return ix
       }
-    ]);
+    ]).catch(e => {
+      console.log('error', e)
+    });
 
     account.transaction = transactionId;
     setAccounts({
