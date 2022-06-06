@@ -78,7 +78,7 @@ function reducer(state, action) {
       }
       const relevantRequest =
         state.inFlightRequests[action.data.address][
-          action.data.signatureRequestId
+        action.data.signatureRequestId
         ] || [];
 
       return {
@@ -103,17 +103,16 @@ function reducer(state, action) {
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const cadencePayload = CadencePayloadTypes.TransferEscrow;
+  const cadencePayload = CadencePayloadTypes.BurnTokens;
   const [authAccountAddress, setAuthAccountAddress] = useState("");
-  const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("")
 
   const selectAccountKeys = (account, keys) => {
-    if (accounts[account].enabledKeys.length !== keys.length){
+    if (accounts[account].enabledKeys.length !== keys.length) {
       accounts[account].enabledKeys = keys;
-      setAccounts({...accounts})
+      setAccounts({ ...accounts })
     }
   };
   const addAuthAccountAddress = () => {
@@ -136,6 +135,13 @@ export default function MainPage() {
       });
   };
 
+
+  useEffect(() => {
+    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
+  }, []);
+
+
+
   const validateToAddress = (toAddress) => {
     setToAddress(toAddress)
     if (toAddress !== "") {
@@ -149,6 +155,7 @@ export default function MainPage() {
         });
     }    
   }
+
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
@@ -173,10 +180,10 @@ export default function MainPage() {
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
-    const resolver = authzResolver({address: accountKey }, keys, dispatch);
+    const resolver = authzResolver({ address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
-      fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
+      fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
@@ -185,7 +192,9 @@ export default function MainPage() {
         console.log(ix)
         return ix
       }
-    ]);
+    ]).catch(e => {
+      console.log('error', e)
+    });
 
     account.transaction = transactionId;
     setAccounts({
@@ -205,9 +214,9 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
-  const getLedgerLink = (signatureRequestId) => {
+  const getFinoaLink = (signatureRequestId) => {
     const network = getNetwork();
-    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+    return `${window.location.origin}/${network}/blocto/${signatureRequestId}`;
   };
 
   const getFlowscanLink = (tx) => {
@@ -233,7 +242,7 @@ export default function MainPage() {
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Ledger Flow App (v0.9.12)</Heading>
+            <Heading>Finoa Flow App</Heading>
           </Stack>
           <Stack spacing="24px">
             <Stack>
@@ -277,39 +286,29 @@ export default function MainPage() {
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
                         <HStack>
-                      <FormLabel htmlFor='amount'>Transfer Amount</FormLabel>
-                      <Input
-                    size="md"
-                    id="amount"
-                    placeholder="Enter Token Amount"
-                    onChange={(e) => setTransferAmount(e.target.value)}
-                    value={transferAmount}
-                  />
-                  </HStack>
-                  <HStack>
-                  <FormLabel htmlFor='toAddress'>Transfer to Address</FormLabel>
-                                        <Input
-                    size="md"
-                    id="toAddress"
-                    placeholder="Enter To Address"
-                    onChange={(e) => validateToAddress(e.target.value)}
-                    value={toAddress}
-                  />
-                    </HStack>
+                          <FormLabel htmlFor='amount'>Transfer Amount</FormLabel>
+                          <Input
+                            size="md"
+                            id="amount"
+                            placeholder="Enter Token Amount"
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            value={transferAmount}
+                          />
+                        </HStack>
                       </Stack>
                       <Stack>
                         <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
-                            <Link
-                              isExternal
-                              href={getFlowscanLink(
-                                accounts[account].transaction
-                              )}
-                            >
-                              <Button colorScheme='pink'>Transaction</Button>                              
-                            </Link>
+                          <Link
+                            isExternal
+                            href={getFlowscanLink(
+                              accounts[account].transaction
+                            )}
+                          >
+                            <Button colorScheme='pink'>Transaction</Button>
+                          </Link>
 
                         )}
                       </Stack>
@@ -329,12 +328,12 @@ export default function MainPage() {
                           padding="4"
                         >
                           <VStack align="start">
-                            <Text fontSize='15px' color='purple'>Ledger:</Text> <Link isExternal href={getLedgerLink(signatureRequestId)}>
-                               {getLedgerLink(signatureRequestId)}
+                            <Text fontSize='15px' color='purple'>Blocto:</Text> <Link isExternal href={getFinoaLink(signatureRequestId)}>
+                              {getFinoaLink(signatureRequestId)}
                             </Link>
                             <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
-                               {getLink(signatureRequestId)}
-                            </Link>                            
+                              {getLink(signatureRequestId)}
+                            </Link>
                           </VStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (
