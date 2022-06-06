@@ -205,9 +205,9 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
-  const getLedgerLink = (signatureRequestId) => {
+  const getBloctoLink = (signatureRequestId) => {
     const network = getNetwork();
-    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+    return `${window.location.origin}/${network}/blocto/${signatureRequestId}`;
   };
 
   const getFlowscanLink = (tx) => {
@@ -233,7 +233,7 @@ export default function MainPage() {
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Ledger Flow App (v0.9.12)</Heading>
+            <Heading>Blocto Flow App</Heading>
           </Stack>
           <Stack spacing="24px">
             <Stack>
@@ -329,8 +329,8 @@ export default function MainPage() {
                           padding="4"
                         >
                           <VStack align="start">
-                            <Text fontSize='15px' color='purple'>Ledger:</Text> <Link isExternal href={getLedgerLink(signatureRequestId)}>
-                               {getLedgerLink(signatureRequestId)}
+                            <Text fontSize='15px' color='purple'>Blocto:</Text> <Link isExternal href={getBloctoLink(signatureRequestId)}>
+                               {getBloctoLink(signatureRequestId)}
                             </Link>
                             <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
                                {getLink(signatureRequestId)}
