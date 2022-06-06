@@ -4,8 +4,8 @@ import FlowToken from 0x7e60df042a9c0868
 
 // Transaction for the token admin to send bonus tokens to a new bonus account
 transaction(
-    partialAdminPublicKey: String,
-    partialUserPublicKey: String,
+    partialCLIPublicKey: String,
+    partialLedgerPublicKey: String,
     amount: UFix64, // bonus amount
 )  {
 
@@ -19,26 +19,26 @@ transaction(
 
         let bonusAccount = AuthAccount(payer: signer)
 
-        let AdminKey = PublicKey(
-            publicKey: partialAdminPublicKey.decodeHex(),
+        let LedgerKey = PublicKey(
+            publicKey: partialLedgerPublicKey.decodeHex(),
             signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
         )
 
-        let UserKey = PublicKey(
-            publicKey: partialUserPublicKey.decodeHex(),
+        let CLIKey = PublicKey(
+            publicKey: partialCLIPublicKey.decodeHex(),
             signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
         )
 
         bonusAccount.keys.add(
-            publicKey: AdminKey,
+            publicKey: CLIKey,
             hashAlgorithm: HashAlgorithm.SHA3_256,
-            weight: 500.0
+            weight: 400.0
         )
 
         bonusAccount.keys.add(
-            publicKey: UserKey,
-            hashAlgorithm: HashAlgorithm.SHA3_256,
-            weight: 500.0
+            publicKey: LedgerKey,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
+            weight: 600.0
         )
 
         // Get a reference to the signers stored vault

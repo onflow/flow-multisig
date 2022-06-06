@@ -16,10 +16,13 @@ import {
   Text,
   Select,
   CircularProgress,
+  VStack,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
-import { buildAuthz, authzResolver } from "../../utils/authz";
+import { authzResolver, buildAuthz } from "../../utils/authz";
+
 import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
+import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import * as t from "@onflow/types";
@@ -38,6 +41,7 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
+
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction/",
   testnet: "https://testnet.flowscan.org/transaction/",
@@ -98,21 +102,19 @@ function reducer(state, action) {
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [currentUser, setCurrentUser] = useState({
-    loggedIn: false,
-  });
 
-  const [cadencePayload, setCadencePayload] = useState(
-    CadencePayloadTypes.TransferEscrow
-  );
+  const cadencePayload = CadencePayloadTypes.TransferEscrow;
   const [authAccountAddress, setAuthAccountAddress] = useState("");
+  const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
-  const [hasCopied, setHasCopied] = useState("");
-  const [copyState, copyToClipboard] = useCopyToClipboard();
+  const [transferAmount, setTransferAmount] = useState("")
 
   const selectAccountKeys = (account, keys) => {
-    accounts[account].enabledKeys = keys;
+    if (accounts[account].enabledKeys.length !== keys.length){
+      accounts[account].enabledKeys = keys;
+      setAccounts({...accounts})
+    }
   };
   const addAuthAccountAddress = () => {
     fcl
@@ -134,10 +136,19 @@ export default function MainPage() {
       });
   };
 
-  useEffect(() => {
-    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
-  }, []);
-
+  const validateToAddress = (toAddress) => {
+    setToAddress(toAddress)
+    if (toAddress !== "") {
+      fcl
+        .account(toAddress)
+        .then(({ keys }) => {
+          // used to test account validity
+        })
+        .catch(() => {
+          setError("To Address not valid");
+        });
+    }    
+  }
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
@@ -163,17 +174,16 @@ export default function MainPage() {
       buildAuthz({ address: accountKey, index }, dispatch)
     );
     const resolver = authzResolver({address: accountKey }, keys, dispatch);
-
     const { transactionId } = await fcl.send([
       fcl.transaction(payload),
-      fcl.args([fcl.arg("0.0", t.UFix64), fcl.arg(accountKey, t.Address)]),
+      fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
-      fcl.limit(9999),
       fcl.payer(resolver),
+      fcl.limit(9999),
       ix => {
-        console.log('ix', ix)
-        return ix;
+        console.log(ix)
+        return ix
       }
     ]);
 
@@ -182,24 +192,6 @@ export default function MainPage() {
       ...accounts,
       [accountKey]: account,
     });
-  };
-
-  const AuthedState = () => {
-    return (
-      <Stack direction="row" spacing={4} align="center">
-        <div>Address: {currentUser?.addr ?? "No Address"}</div>
-        <Button onClick={fcl.unauthenticate}>Log Out</Button>
-      </Stack>
-    );
-  };
-
-  const UnauthenticatedState = () => {
-    return (
-      <Stack direction="row" spacing={4} align="center">
-        <Button onClick={fcl.logIn}>Log In</Button>
-        <Button onClick={fcl.signUp}>Sign Up</Button>
-      </Stack>
-    );
   };
 
   const getNetwork = () => {
@@ -213,22 +205,37 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
+  const getLedgerLink = (signatureRequestId) => {
+    const network = getNetwork();
+    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+  };
+
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
   };
+
+  useEffect(() => {
+    const getBalance = async () => fcl.account(authAccountAddress).then(account => {
+      console.log('account', account)
+      if (!transferAmount) {
+        const balance = (parseInt(account.balance) / 10e7) - 0.01
+        setTransferAmount(balance.toFixed(8))
+      }
+    });
+    if (authAccountAddress) {
+      getBalance();
+    }
+  }, [authAccountAddress, transferAmount])
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Flow App</Heading>
+            <Heading>Ledger Flow App (v0.9.12)</Heading>
           </Stack>
-          {/*<Stack maxW="container.xl">
-            Proposer/Payer Address:
-            {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-          </Stack>*/}
-          <Stack spacing="24px">            
+          <Stack spacing="24px">
             <Stack>
               <FormControl isInvalid={error}>
                 <FormLabel>Authorizer Account Address</FormLabel>
@@ -269,18 +276,41 @@ export default function MainPage() {
 
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button onClick={() => onSubmit(account)}>
+                        <HStack>
+                      <FormLabel htmlFor='amount'>Transfer Amount</FormLabel>
+                      <Input
+                    size="md"
+                    id="amount"
+                    placeholder="Enter Token Amount"
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                    value={transferAmount}
+                  />
+                  </HStack>
+                  <HStack>
+                  <FormLabel htmlFor='toAddress'>Transfer to Address</FormLabel>
+                                        <Input
+                    size="md"
+                    id="toAddress"
+                    placeholder="Enter To Address"
+                    onChange={(e) => validateToAddress(e.target.value)}
+                    value={toAddress}
+                  />
+                    </HStack>
+                      </Stack>
+                      <Stack>
+                        <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
-                          <Link
-                            isExternal
-                            href={getFlowscanLink(
-                              accounts[account].transaction
-                            )}
-                          >
-                            Transaction
-                          </Link>
+                            <Link
+                              isExternal
+                              href={getFlowscanLink(
+                                accounts[account].transaction
+                              )}
+                            >
+                              <Button colorScheme='pink'>Transaction</Button>                              
+                            </Link>
+
                         )}
                       </Stack>
                       {!state.inFlightRequests?.[cleanAddress(account)] &&
@@ -298,31 +328,21 @@ export default function MainPage() {
                           overflow="hidden"
                           padding="4"
                         >
-                          <HStack>
-                            <Button
-                              onClick={() => {
-                                setHasCopied(signatureRequestId);
-                                copyToClipboard(getLink(signatureRequestId));
-                                setTimeout(() => setHasCopied(""), [500]);
-                              }}
-                            >
-                              {hasCopied === signatureRequestId
-                                ? "Copied!"
-                                : "Copy Link"}
-                            </Button>
-                            <Link isExternal href={getLink(signatureRequestId)}>
-                              {getLink(signatureRequestId)}
+                          <VStack align="start">
+                            <Text fontSize='15px' color='purple'>Ledger:</Text> <Link isExternal href={getLedgerLink(signatureRequestId)}>
+                               {getLedgerLink(signatureRequestId)}
                             </Link>
-                          </HStack>
+                            <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
+                               {getLink(signatureRequestId)}
+                            </Link>                            
+                          </VStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (
                               <Flex key={address + keyId}>
                                 <Box p={1}>
                                   {sig ? <GreenDot /> : <RedDot />}{" "}
                                 </Box>
-                                <Text p={1}>{`${fcl.withPrefix(
-                                  address
-                                )}-${keyId}`}</Text>
+                                <AddressKeyView address={address} keyId={keyId} />
                               </Flex>
                             );
                           })}
