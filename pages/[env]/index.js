@@ -41,6 +41,7 @@ const iconFn = (color) =>
 
 const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
+
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction/",
   testnet: "https://testnet.flowscan.org/transaction/",
@@ -101,17 +102,12 @@ function reducer(state, action) {
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [currentUser, setCurrentUser] = useState({
-    loggedIn: false,
-  });
 
   const cadencePayload = CadencePayloadTypes.BurnTokens;
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("")
-  const [hasCopied, setHasCopied] = useState("");
-  const [copyState, copyToClipboard] = useCopyToClipboard();
 
   const selectAccountKeys = (account, keys) => {
     if (accounts[account].enabledKeys.length !== keys.length) {
@@ -139,10 +135,26 @@ export default function MainPage() {
       });
   };
 
+
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
+
+
+  const validateToAddress = (toAddress) => {
+    setToAddress(toAddress)
+    if (toAddress !== "") {
+      fcl
+        .account(toAddress)
+        .then(({ keys }) => {
+          // used to test account validity
+        })
+        .catch(() => {
+          setError("To Address not valid");
+        });
+    }    
+  }
 
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
