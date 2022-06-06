@@ -1,0 +1,1 @@
+flow transactions send-signed --network mainnet ./flow-multisig/scripts/create-account-signed.rlp --yes --output json --save ./tx-output.json
