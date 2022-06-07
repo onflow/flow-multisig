@@ -114,6 +114,7 @@ export default function MainPage() {
   const [filenames, setFilenames] = useState([]);
   const [args, setArgs] = useState("");
   const [fileContents, setFileContents] = useState("");
+  const [jsonError, setJsonError]  = useState("")
 
   useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
 
@@ -226,9 +227,19 @@ export default function MainPage() {
     setFileContents("loading ...")
     getCadenceFilename(filename)
       .then(contents => setFileContents(contents));
-
   }
 
+  const setArgumentsValue = (value) => {
+    // test if value json
+    setArgs(value);
+    let errorString = "";
+    try {  
+      JSON.parse(value);  
+    } catch (e) {  
+      errorString = e.toString();  
+    }
+    setJsonError(errorString)
+  }
   useEffect(() => {
     const getBalance = async () => fcl.account(authAccountAddress).then(account => {
       console.log('account', account)
@@ -268,14 +279,15 @@ export default function MainPage() {
               size="lg"
               id="arguments"
               placeholder="Enter json arguments"
-              onChange={(e) => setArguments(e.target.value)}
+              onChange={(e) => setArgumentsValue(e.target.value)}
               value={args}
             />
+            <Text color='tomato'>{jsonError}</Text>
           </Stack>
           <Stack spacing="24px">
             <Stack>
               <FormControl isInvalid={error}>
-                <FormLabel>Authorizer Account Address</FormLabel>
+                <FormLabel>Service Account Address</FormLabel>
                 <HStack spacing={4}>
                   <Button
                     isDisabled={error || !authAccountAddress}
