@@ -9,7 +9,7 @@ export default async function handler({ body, method, query }, res) {
     case "GET":
       const { data, error, status } = await supabase
         .from("payloadSigs")
-        .select("sig, keyId, address")
+        .select("signatureRequestId, keyId, address")
         .match(query);
 
       // Could not find row.
@@ -37,7 +37,16 @@ export default async function handler({ body, method, query }, res) {
         keyId: query.keyId,
         address: query.address,
         signable: body,
+        rlp: cliRLP
       });
+
+      console.log('upsert', {
+        signatureRequestId,
+        keyId: query.keyId,
+        address: query.address,
+        signable: body,
+        rlp: cliRLP
+      })
 
       return res.status(200).json({
         id: signatureRequestId,

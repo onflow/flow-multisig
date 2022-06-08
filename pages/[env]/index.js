@@ -22,7 +22,6 @@ import {
 import { AccountsTable } from "../../components/AccountsTable";
 import { authzResolver, buildAuthz } from "../../utils/authz";
 
-import { CadencePayloadTypes, CadencePayloads } from "../../utils/payloads";
 import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -105,16 +104,14 @@ function reducer(state, action) {
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const cadencePayload = CadencePayloadTypes.TransferEscrow;
   const [authAccountAddress, setAuthAccountAddress] = useState("");
-  const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("");
   const [filenames, setFilenames] = useState([]);
-  const [args, setArgs] = useState("");
-  const [fileContents, setFileContents] = useState("");
-  const [jsonError, setJsonError]  = useState("")
+  const [jsonArgs, setJsonArgs] = useState("");
+  const [cadencePayload, setCadencePayload] = useState("");
+  const [jsonError, setJsonError] = useState("")
 
   useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
 
@@ -144,19 +141,6 @@ export default function MainPage() {
       });
   };
 
-  const validateToAddress = (toAddress) => {
-    setToAddress(toAddress)
-    if (toAddress !== "") {
-      fcl
-        .account(toAddress)
-        .then(({ keys }) => {
-          // used to test account validity
-        })
-        .catch(() => {
-          setError("To Address not valid");
-        });
-    }
-  }
   const validateAccount = (authAccountAddress) => {
     setAuthAccountAddress(authAccountAddress);
     setError(null);
@@ -176,15 +160,15 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
-    const payload = CadencePayloads[cadencePayload];
-    console.log('keys', keys)
+    const userDefinedArgs = JSON.parse(jsonArgs);
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
+    userDefinedArgs.map(a => console.log(a))
     const resolver = authzResolver({ address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
-      fcl.transaction(payload),
-      fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
+      fcl.transaction(cadencePayload),
+      fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
@@ -213,30 +197,25 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
-  const getBloctoLink = (signatureRequestId) => {
-    const network = getNetwork();
-    return `${window.location.origin}/${network}/blocto/${signatureRequestId}`;
-  };
-
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
   };
 
   const fetchFilename = (filename) => {
-    setFileContents("loading ...")
+    setCadencePayload("loading ...")
     getCadenceFilename(filename)
-      .then(contents => setFileContents(contents));
+      .then(contents => setCadencePayload(contents));
   }
 
   const setArgumentsValue = (value) => {
     // test if value json
-    setArgs(value);
+    setJsonArgs(value);
     let errorString = "";
-    try {  
-      JSON.parse(value);  
-    } catch (e) {  
-      errorString = e.toString();  
+    try {
+      JSON.parse(value);
+    } catch (e) {
+      errorString = e.toString();
     }
     setJsonError(errorString)
   }
@@ -271,8 +250,8 @@ export default function MainPage() {
             <Textarea size="lg"
               placeholder='Cadence Script'
               resize={'vertical'}
-              value={fileContents}
-              onChange={(e) => setFileContents(e.target.value)} />
+              value={cadencePayload}
+              onChange={(e) => setCadencePayload(e.target.value)} />
           </Stack>
           <Stack>
             <Input
@@ -280,7 +259,7 @@ export default function MainPage() {
               id="arguments"
               placeholder="Enter json arguments"
               onChange={(e) => setArgumentsValue(e.target.value)}
-              value={args}
+              value={jsonArgs}
             />
             <Text color='tomato'>{jsonError}</Text>
           </Stack>
@@ -325,28 +304,6 @@ export default function MainPage() {
 
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <HStack>
-                          <FormLabel htmlFor='amount'>Transfer Amount</FormLabel>
-                          <Input
-                            size="md"
-                            id="amount"
-                            placeholder="Enter Token Amount"
-                            onChange={(e) => setTransferAmount(e.target.value)}
-                            value={transferAmount}
-                          />
-                        </HStack>
-                        <HStack>
-                          <FormLabel htmlFor='toAddress'>Transfer to Address</FormLabel>
-                          <Input
-                            size="md"
-                            id="toAddress"
-                            placeholder="Enter To Address"
-                            onChange={(e) => validateToAddress(e.target.value)}
-                            value={toAddress}
-                          />
-                        </HStack>
-                      </Stack>
-                      <Stack>
                         <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
@@ -377,14 +334,15 @@ export default function MainPage() {
                           overflow="hidden"
                           padding="4"
                         >
-                          <VStack align="start">
-                            <Text fontSize='15px' color='purple'>Blocto:</Text> <Link isExternal href={getBloctoLink(signatureRequestId)}>
-                              {getBloctoLink(signatureRequestId)}
-                            </Link>
+                          <HStack align="start">
+                            <Text fontSize='20px' color='black'>Signature Request Id:</Text>
+                            <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
+                          </HStack>
+                          <HStack>
                             <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
                               {getLink(signatureRequestId)}
                             </Link>
-                          </VStack>
+                          </HStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (
                               <Flex key={address + keyId}>
