@@ -31,6 +31,16 @@ Sign the RLP using flow cli and save the output signature RLP to `sign-cli-signe
 Send the signed RLP raw text to the server
  - `curl -H "Content-Type: application/text" -d @sign-cli-signed.rlp  http://localhost:3000/api/pending/sig/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e`
 
+### Bash Script Helper
+location of helper script [multisig.sh](./client/multisig.sh)
+            
+    Usage:
+    -c: (required) 'get' to retreive RLP or 'post' to send signed RLP to server
+    -i: (required) Signature Request Id of pending transaction
+ - **get** makes a GET request to get transaction RLP
+ - **post** makes a POST request to post signed RLP
+ - **Signature Request Id** is the hash identifier of the pending transaction that needs to be signed
+
 
 ## Learn More about Next.js
 
