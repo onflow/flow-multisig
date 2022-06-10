@@ -20,7 +20,19 @@ You can start editing the page by modifying `pages/index.js`. The page auto-upda
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-## Learn More
+## Signing Pending transaction via CLI
+After the transaction has been generated via webpage a `signature request id` is generated, this id is used to retrieve the transaction RLP, which is used for maunual signing with flow cli. "localhost" is used only for examples. This service is hosted in vercel.
+ - `curl -l http://localhost:3000/api/pending/rlp/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e > sign-cli.rlp`
+ - save the RLP to a local file for signing, in this example `sign-cli.rlp` is used
+
+Sign the RLP using flow cli and save the output signature RLP to `sign-cli-signed.rlp`
+ - `flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp`
+
+Send the signed RLP raw text to the server
+ - `curl -H "Content-Type: application/text" -d @sign-cli-signed.rlp  http://localhost:3000/api/pending/sig/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e`
+
+
+## Learn More about Next.js
 
 To learn more about Next.js, take a look at the following resources:
 

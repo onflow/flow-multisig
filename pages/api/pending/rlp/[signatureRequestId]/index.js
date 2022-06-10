@@ -1,8 +1,6 @@
 import { supabase } from "../../../../../utils/supabaseClient";
 
 export default async function handler({ body, method, query }, res) {
-
-  console.log('signature request id')
   switch (method) {
     case "GET":
       const { data, error, status } = await supabase
