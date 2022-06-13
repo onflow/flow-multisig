@@ -112,8 +112,13 @@ export default function MainPage() {
   const [jsonArgs, setJsonArgs] = useState("");
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
-
+  const [currentUser, setCurrentUser] = useState({
+    loggedIn: false,
+  });
   useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
+  useEffect(() => {
+    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
+  }, []);
 
   const selectAccountKeys = (account, keys) => {
     if (accounts[account].enabledKeys.length !== keys.length) {
@@ -160,7 +165,7 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.enabledKeys;
     if (keys.length === 0) return;
-    const userDefinedArgs = JSON.parse(jsonArgs);
+    const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
     const authorizations = keys.map(({ index }) =>
       buildAuthz({ address: accountKey, index }, dispatch)
     );
@@ -169,6 +174,8 @@ export default function MainPage() {
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
       fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
+      //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
+      //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
@@ -219,6 +226,7 @@ export default function MainPage() {
     }
     setJsonError(errorString)
   }
+
   useEffect(() => {
     const getBalance = async () => fcl.account(authAccountAddress).then(account => {
       console.log('account', account)
@@ -232,12 +240,40 @@ export default function MainPage() {
     }
   }, [authAccountAddress, transferAmount])
 
+  const AuthedState = () => {
+    return (
+      <VStack>
+        <Stack direction="row" spacing={4} align="center">
+          <div>Address: {currentUser?.addr ?? "No Address"}</div>
+          <Button onClick={fcl.unauthenticate}>Log Out</Button>
+        </Stack>
+      </VStack>
+    );
+  };
+
+  const UnauthenticatedState = () => {
+    return (
+      <VStack>
+        <Stack direction="row" spacing={4} align="center">
+          <Button onClick={fcl.authenticate}>Log In</Button>
+        </Stack>
+      </VStack>
+    );
+  };
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
         <Stack spacing="24px">
           <Stack>
-            <Heading>Service Account</Heading>
+            <VStack align="start">
+              <Heading>Service Account</Heading>
+              <Stack maxW="container.xl">
+                User Address:
+                {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
+              </Stack>
+
+            </VStack>
           </Stack>
           <Stack>
             <Select placeholder='Select Cadence' onChange={(e) => fetchFilename(e.target.value)}>
@@ -353,6 +389,9 @@ export default function MainPage() {
                               </Flex>
                             );
                           })}
+                          {accounts[account] && accounts[account].transaction && (
+                            <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
+                          )}
                         </Stack>
                       ))}
                     </Stack>

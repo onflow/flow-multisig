@@ -29,7 +29,7 @@ if [ $cmd = "get" ]; then
         echo "Saved RLP to sign-cli.rlp"
 else
         if [ -s sign-cli-signed.rlp ]; then
-                curl -H "Content-Type: application/text" -d @sign-cli-signed.rlp $SERVER/api/pending/sig/$id
+                curl -H "Content-Type: application/text" -s -d @sign-cli-signed.rlp $SERVER/api/pending/sig/$id > /dev/null
                 echo "Signed RLP sent to server"
         else
                 echo "sign-cli-signed.rlp is empty"

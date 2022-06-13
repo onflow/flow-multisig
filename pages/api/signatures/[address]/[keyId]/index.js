@@ -4,6 +4,8 @@ import {
   getSignatureRequestIdFromRLP,
 } from "../../../../../utils/fclCLI";
 
+const WHITELIST = process.env.WHITELIST_ADDRESSES
+
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "GET":
@@ -24,6 +26,7 @@ export default async function handler({ body, method, query }, res) {
       });
 
     case "POST":
+
       const cliRLP = encodeVoucherToEnvelope({
         ...body.voucher,
         envelopeSigs: [],
@@ -39,14 +42,6 @@ export default async function handler({ body, method, query }, res) {
         signable: body,
         rlp: cliRLP
       });
-
-      console.log('upsert', {
-        signatureRequestId,
-        keyId: query.keyId,
-        address: query.address,
-        signable: body,
-        rlp: cliRLP
-      })
 
       return res.status(200).json({
         id: signatureRequestId,

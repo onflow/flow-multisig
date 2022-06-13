@@ -47,7 +47,7 @@ export default async function handler({ body, method, query }, res) {
 
       const { data, error, status } = await supabase
         .from("payloadSigs")
-        .select("sig, keyId, address, signable")
+        .select("sig")
         .match(query);
 
       // Could not find row.
