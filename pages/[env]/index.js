@@ -155,8 +155,9 @@ export default function MainPage() {
         .then(({ keys }) => {
           // used to test account validity
         })
-        .catch(() => {
-          setError("Account not valid");
+        .catch((e) => {
+          // only log out error
+          console.log(e);
         });
     }
   };
