@@ -43,6 +43,13 @@ location of helper script [multisig.sh](./client/multisig.sh)
 - Identifier (-i)
     - **Signature Request Id** is the hash identifier of the pending transaction that needs to be signed
 
+### Example using shell script
+ - `./multisig.sh -c get -i b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e`
+
+ - `flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp`
+ 
+ - `./multisig.sh -c post -i b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e`
+
 
 ## Learn More about Next.js
 
