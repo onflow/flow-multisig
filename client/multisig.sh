@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly SERVER=http://localhost:3000
+readonly SERVER=https://flow-multisig-f1xws1u1j-onflow.vercel.app/
 while getopts c:i: flag; do
         case "${flag}" in
         c) cmd=${OPTARG} ;;
@@ -25,11 +25,11 @@ if [ -z $id ]; then
 fi
 
 if [ $cmd = "get" ]; then
-        curl -l $SERVER/api/pending/rlp/$id >sign-cli.rlp
+        curl -L $SERVER/api/pending/rlp/$id >sign-cli.rlp
         echo "Saved RLP to sign-cli.rlp"
 else
         if [ -s sign-cli-signed.rlp ]; then
-                curl -H "Content-Type: application/text" -s -d @sign-cli-signed.rlp $SERVER/api/pending/sig/$id > /dev/null
+                curl -L -H "Content-Type: application/text" -s -d @sign-cli-signed.rlp $SERVER/api/pending/sig/$id > /dev/null
                 echo "Signed RLP sent to server"
         else
                 echo "sign-cli-signed.rlp is empty"
