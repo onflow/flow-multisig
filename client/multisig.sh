@@ -1,6 +1,6 @@
 #!/bin/bash
 readonly SERVER=https://flow-multisig-8zw6exh8m-onflow.vercel.app
-readonly MIN_FLOW_VERSION=0.37
+readonly REQ_FLOW_VER="0.37.0"
 menu() {
         echo -e "\n\nChoose Option"
         echo "1. View Unsigned RLP"
@@ -31,7 +31,7 @@ UNSIGNED_FILE=$1.rlp
 SIGNED_FILE=$1-signed.rlp
 IS_VALID=$(curl -s -o /dev/null -w "%{http_code}" $URL)
 FLOW_VERSION=$(flow version | cut -d" " -f2 | cut -dv -f2)
-REQ_FLOW_VER="0.37.0"
+
 
 # require Flow version
 echo -e "\nflow version: $FLOW_VERSION"
