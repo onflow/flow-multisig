@@ -69,7 +69,11 @@ if [ "$IS_VALID" == "200" ]; then
                         ;;
                 3)
                         echo "Viewing $1"
-                        flow transactions decode --include code ./$SIGNED_FILE | less
+                        if [ -f "$SIGNED_FILE" ]; then
+                                flow transactions decode --include code ./$SIGNED_FILE | less
+                        else
+                                echo -e "\nNeed to sign first\n"
+                        fi
                         ;;
                 4)
                         echo "Sending Signature"
