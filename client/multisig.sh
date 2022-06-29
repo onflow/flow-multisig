@@ -1,6 +1,7 @@
 #!/bin/bash
 readonly SERVER=https://flow-multisig-8zw6exh8m-onflow.vercel.app
 readonly REQ_FLOW_VER="0.37.0"
+
 menu() {
         echo -e "\n\nChoose Option"
         echo "1. View Unsigned RLP"

@@ -269,10 +269,10 @@ export default function MainPage() {
           <Stack>
             <VStack align="start">
               <Heading>Service Account</Heading>
-              <Stack maxW="container.xl">
+              {/*<Stack maxW="container.xl">
                 User Address:
                 {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-              </Stack>
+              </Stack>*/}
 
             </VStack>
           </Stack>
