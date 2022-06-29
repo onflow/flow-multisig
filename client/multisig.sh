@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly SERVER=https://flow-multisig-8zw6exh8m-onflow.vercel.app
+readonly SERVER=https://flow-multisig-cbchom504-onflow.vercel.app
 readonly REQ_FLOW_VER="0.37.0"
 
 menu() {
