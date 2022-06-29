@@ -1,6 +1,16 @@
 #!/bin/bash
 readonly SERVER=https://flow-multisig-git-service-account-onflow.vercel.app
 readonly REQ_FLOW_VER="0.37.0"
+config=flow.json
+id=$1
+while getopts c: flag; do
+        case "${flag}" in
+        c) 
+        config=${OPTARG} 
+        id=$3
+        ;;
+        esac
+done
 
 menu() {
         echo -e "\n\nChoose Option"
@@ -16,20 +26,20 @@ menu() {
 usage() {
         echo ""
         echo "Usage:"
-        echo "    ./multisig <identifier> // (required) Signature Request Id of pending transaction"
+        echo "    ./multisig [-c flow-config] <identifier> // (required) Signature Request Id of pending transaction"
         echo ""
         exit 0
 }
 
-if [ -z $1 ]; then
+if [ -z $id ]; then
         usage
 fi
 
 function version_lte() { test "$(echo "$2" | tr " " "\n" | sort -V | head -n 1)" == "$1"; }
 
-URL=$SERVER/api/pending/rlp/$1
-UNSIGNED_FILE=$1.rlp
-SIGNED_FILE=$1-signed.rlp
+URL=$SERVER/api/pending/rlp/$id
+UNSIGNED_FILE=$id.rlp
+SIGNED_FILE=$id-signed.rlp
 IS_VALID=$(curl -s -o /dev/null -w "%{http_code}" $URL)
 FLOW_VERSION=$(flow version | cut -d" " -f2 | cut -dv -f2)
 
@@ -58,7 +68,7 @@ if [ "$IS_VALID" == "200" ]; then
                 case $choice in
 
                 1)
-                        echo "Viewing $1"
+                        echo "Viewing $id"
                         flow transactions decode --include code ./$UNSIGNED_FILE | less
                         ;;
                 2)
@@ -66,10 +76,10 @@ if [ "$IS_VALID" == "200" ]; then
                         read signer
 
                         echo "Signing with $signer ..."
-                        flow transactions sign --network testnet --signer $signer ./$UNSIGNED_FILE --save ./$SIGNED_FILE --filter payload --yes
+                        flow transactions sign -f $config --network testnet --signer $signer ./$UNSIGNED_FILE --save ./$SIGNED_FILE --filter payload --yes
                         ;;
                 3)
-                        echo "Viewing $1"
+                        echo "Viewing $id"
                         if [ -f "$SIGNED_FILE" ]; then
                                 flow transactions decode --include code ./$SIGNED_FILE | less
                         else
@@ -78,14 +88,14 @@ if [ "$IS_VALID" == "200" ]; then
                         ;;
                 4)
                         echo "Sending Signature"
-                        curl -L -H "Content-Type: application/text" -s -d @$SIGNED_FILE $SERVER/api/pending/sig/$1 >/dev/null
+                        curl -L -H "Content-Type: application/text" -s -d @$SIGNED_FILE $SERVER/api/pending/sig/$id >/dev/null
                         echo -e "\nSigned RLP sent to server\n"
                         ;;
                 5)
                         # remove temp files
                         rm -f ./$SIGNED_FILE
                         rm -f ./$UNSIGNED_FILE
-                        echo -e "\n$1"
+                        echo -e "\n$id"
                         echo -e "files removed\n "
                         exit 0
                         ;;
@@ -109,15 +119,3 @@ else
         exit 1
 fi
 
-if [ $cmd = "get" ]; then
-        curl -L $SERVER/api/pending/rlp/$id >$1.rlp
-        echo "Saved RLP to sign-cli.rlp"
-else
-        if [ -s sign-cli-signed.rlp ]; then
-                curl -L -H "Content-Type: application/text" -s -d @sign-cli-signed.rlp $SERVER/api/pending/sig/$id >/dev/null
-                echo "Signed RLP sent to server"
-        else
-                echo "sign-cli-signed.rlp is empty"
-                exit 0
-        fi
-fi
