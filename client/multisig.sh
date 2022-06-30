@@ -3,12 +3,12 @@ readonly SERVER=https://flow-multisig-git-service-account-onflow.vercel.app
 readonly REQ_FLOW_VER="0.37.0"
 config=flow.json
 id=$1
-while getopts c: flag; do
+while getopts f: flag; do
         case "${flag}" in
-        c) 
-        config=${OPTARG} 
-        id=$3
-        ;;
+        f)
+                config=${OPTARG}
+                id=$3
+                ;;
         esac
 done
 
@@ -26,7 +26,7 @@ menu() {
 usage() {
         echo ""
         echo "Usage:"
-        echo "    ./multisig [-c flow-config] <identifier> // (required) Signature Request Id of pending transaction"
+        echo "    ./multisig [-f flow-config] <identifier> // (required) Signature Request Id of pending transaction"
         echo ""
         exit 0
 }
@@ -35,7 +35,7 @@ if [ -z $id ]; then
         usage
 fi
 
-function version_lte() { test "$(echo "$2" | tr " " "\n" | sort -V | head -n 1)" == "$1"; }
+function version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" != "$1"; }
 
 URL=$SERVER/api/pending/rlp/$id
 UNSIGNED_FILE=$id.rlp
@@ -43,13 +43,12 @@ SIGNED_FILE=$id-signed.rlp
 IS_VALID=$(curl -s -o /dev/null -w "%{http_code}" $URL)
 FLOW_VERSION=$(flow version | cut -d" " -f2 | cut -dv -f2)
 
-
 # require Flow version
 echo -e "\nflow version: $FLOW_VERSION"
-version_lte $FLOW_VERSION $REQ_FLOW_VER || {
+if version_lt $FLOW_VERSION $REQ_FLOW_VER; then
         echo -e "\nError: need flow version $REQ_FLOW_VER or above\n"
         exit 1
-}
+fi
 
 # save RLP locally
 echo -e "\nRetrieving RLP ..."
@@ -118,4 +117,3 @@ else
         echo "Identifier is invalid"
         exit 1
 fi
-
