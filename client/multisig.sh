@@ -114,6 +114,7 @@ if [ "$IS_VALID" == "200" ]; then
 
 else
         # page not found error
-        echo "Identifier is invalid"
+        echo -e "\nIdentifier is invalid\n"
+        rm -f ./$UNSIGNED_FILE
         exit 1
 fi
