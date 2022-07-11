@@ -1,6 +1,6 @@
 #!/bin/bash
 readonly SERVER=https://flow-multisig-git-service-account-onflow.vercel.app
-readonly REQ_FLOW_VER="0.37.0"
+#readonly REQ_FLOW_VER="0.37.0"
 config=flow.json
 id=$1
 while getopts f: flag; do
@@ -44,11 +44,11 @@ IS_VALID=$(curl -s -o /dev/null -w "%{http_code}" $URL)
 FLOW_VERSION=$(flow version | cut -d" " -f2 | cut -dv -f2)
 
 # require Flow version
-echo -e "\nflow version: $FLOW_VERSION"
-if version_lt $FLOW_VERSION $REQ_FLOW_VER; then
-        echo -e "\nError: need flow version $REQ_FLOW_VER or above\n"
-        exit 1
-fi
+#echo -e "\nflow version: $FLOW_VERSION"
+#if version_lt $FLOW_VERSION $REQ_FLOW_VER; then
+#        echo -e "\nError: need flow version $REQ_FLOW_VER or above\n"
+#        exit 1
+#fi
 
 # save RLP locally
 echo -e "\nRetrieving RLP ..."
