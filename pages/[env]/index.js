@@ -133,7 +133,7 @@ export default function MainPage() {
         setAccounts({
           ...accounts,
           [authAccountAddress]: {
-            keys,
+            keys: keys.filter(k => !k.revoked),
             enabledKeys: [],
             link: null,
             flowScanUrl: null,
