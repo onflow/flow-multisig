@@ -17,7 +17,7 @@ menu() {
         echo "1. View Unsigned RLP"
         echo "2. Sign"
         echo "3. View Signed RLP"
-        echo "4. Send"
+        echo "4. Post"
         echo "5. Clean Files and Exit"
         echo "6. Exit"
         echo -n "Enter your menu choice [1-6]: "
