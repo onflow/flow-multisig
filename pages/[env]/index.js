@@ -206,6 +206,12 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
+  const getCliLink = (signatureRequestId) => {
+    const network = getNetwork();
+    return `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
+  };
+
+
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
@@ -340,16 +346,16 @@ export default function MainPage() {
                       />
                     </FormControl>
                     <Stack>
-                    <HStack>
-                      <FormControl>
-                        <FormLabel htmlFor="executeLimit">Execution Limit:</FormLabel>
-                        <Input
-                          size="sm"
-                          id="executeLimit"
-                          placeholder="Enter Execute Limit"
-                          onChange={((e) => setExeEffort(e.target.value))}
-                          value={exeEffort}
-                        />
+                      <HStack>
+                        <FormControl>
+                          <FormLabel htmlFor="executeLimit">Execution Limit:</FormLabel>
+                          <Input
+                            size="sm"
+                            id="executeLimit"
+                            placeholder="Enter Execute Limit"
+                            onChange={((e) => setExeEffort(e.target.value))}
+                            value={exeEffort}
+                          />
                         </FormControl>
                       </HStack>
                     </Stack>
@@ -392,6 +398,11 @@ export default function MainPage() {
                           <HStack>
                             <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
                               {getLink(signatureRequestId)}
+                            </Link>
+                          </HStack>
+                          <HStack>
+                            <Text fontSize='15px' color='purple'>FLOW CLI:</Text> <Link isExternal href={getCliLink(signatureRequestId)}>
+                              {getCliLink(signatureRequestId)}
                             </Link>
                           </HStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
