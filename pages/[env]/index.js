@@ -115,6 +115,7 @@ export default function MainPage() {
   const [currentUser, setCurrentUser] = useState({
     loggedIn: false,
   });
+  const [exeEffort, setExeEffort] = useState(9999)
   useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
@@ -180,7 +181,7 @@ export default function MainPage() {
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
-      fcl.limit(9999),
+      fcl.limit(exeEffort),
       ix => {
         console.log(ix)
         return ix
@@ -338,7 +339,20 @@ export default function MainPage() {
                         }
                       />
                     </FormControl>
-
+                    <Stack>
+                    <HStack>
+                      <FormControl>
+                        <FormLabel htmlFor="executeLimit">Execution Limit:</FormLabel>
+                        <Input
+                          size="sm"
+                          id="executeLimit"
+                          placeholder="Enter Execute Limit"
+                          onChange={((e) => setExeEffort(e.target.value))}
+                          value={exeEffort}
+                        />
+                        </FormControl>
+                      </HStack>
+                    </Stack>
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
                         <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
