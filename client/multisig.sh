@@ -75,7 +75,7 @@ if [ "$IS_VALID" == "200" ]; then
                         read signer
 
                         echo "Signing with $signer ..."
-                        flow transactions sign -f $config --network testnet --signer $signer ./$UNSIGNED_FILE --save ./$SIGNED_FILE --filter payload --yes
+                        flow transactions sign -f $config --signer $signer ./$UNSIGNED_FILE --save ./$SIGNED_FILE --filter payload --yes
                         ;;
                 3)
                         echo "Viewing $id"
