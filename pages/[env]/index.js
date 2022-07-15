@@ -116,6 +116,9 @@ export default function MainPage() {
     loggedIn: false,
   });
   const [exeEffort, setExeEffort] = useState(9999)
+  const [myState, copyToClipboard] = useCopyToClipboard();
+  const [copyText, setCopyText] = useState("Copy");
+
   useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
@@ -221,6 +224,12 @@ export default function MainPage() {
     setCadencePayload("loading ...")
     getCadenceFilename(filename)
       .then(contents => setCadencePayload(contents));
+  }
+
+  const copyTextToClipboard = (text) => {
+    setCopyText("Copied!")
+    copyToClipboard(text);
+    setTimeout(() => setCopyText("Copy"), 500)    
   }
 
   const setArgumentsValue = (value) => {
@@ -401,9 +410,8 @@ export default function MainPage() {
                             </Link>
                           </HStack>
                           <HStack>
-                            <Text fontSize='15px' color='purple'>FLOW CLI:</Text> <Link isExternal href={getCliLink(signatureRequestId)}>
-                              {getCliLink(signatureRequestId)}
-                            </Link>
+                            <Text fontSize='15px'>FLOW CLI: {getCliLink(signatureRequestId)}</Text>
+                            <Button size="sm" onClick={() => copyTextToClipboard(getCliLink(signatureRequestId))}>{copyText}</Button>
                           </HStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (
