@@ -26,7 +26,7 @@ import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import * as t from "@onflow/types";
-import { getCadenceFilesnames, getCadenceFilename } from "../../utils/cadenceLoader";
+import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
 
 const iconFn = (color) =>
   function CustomIcon() {
@@ -108,7 +108,8 @@ export default function MainPage() {
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [transferAmount, setTransferAmount] = useState("");
-  const [filenames, setFilenames] = useState([]);
+  const [serviceAccountFilenames, setServiceAccountFilenames] = useState([]);
+  const [foundationFilenames, setFoundationFilenames] = useState([]);
   const [jsonArgs, setJsonArgs] = useState("");
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
@@ -119,7 +120,8 @@ export default function MainPage() {
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText, setCopyText] = useState("Copy");
 
-  useEffect(() => getCadenceFilesnames().then(result => setFilenames(result)), [])
+  useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
+  useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
   useEffect(() => {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
@@ -220,16 +222,22 @@ export default function MainPage() {
     return `${flowscanUrls[network]}/${tx}`;
   };
 
-  const fetchFilename = (filename) => {
+  const fetchServiceAccountFilename = (filename) => {
     setCadencePayload("loading ...")
-    getCadenceFilename(filename)
+    getServiceAccountFilename(filename)
+      .then(contents => setCadencePayload(contents));
+  }
+
+  const fetchFoundationFilename = (filename) => {
+    setCadencePayload("loading ...")
+    getFoundationFilename(filename)
       .then(contents => setCadencePayload(contents));
   }
 
   const copyTextToClipboard = (text) => {
     setCopyText("Copied!")
     copyToClipboard(text);
-    setTimeout(() => setCopyText("Copy"), 500)    
+    setTimeout(() => setCopyText("Copy"), 500)
   }
 
   const setArgumentsValue = (value) => {
@@ -292,13 +300,24 @@ export default function MainPage() {
 
             </VStack>
           </Stack>
-          <Stack>
-            <Select placeholder='Select Cadence' onChange={(e) => fetchFilename(e.target.value)}>
-              {filenames.map(filename => {
+          <HStack>
+            <FormLabel width="20%" size="sm" htmlFor="serviceAccount">From Service Account</FormLabel>
+            <Select id="serviceAccount" placeholder='Select Cadence' onChange={(e) => fetchServiceAccountFilename(e.target.value)}>
+              {serviceAccountFilenames.map(filename => {
                 return (<option key={filename} value={filename}>{filename}</option>)
               })}
             </Select>
-          </Stack>
+
+          </HStack>
+          <HStack>
+            <FormLabel width="20%" size="sm" htmlFor="foundation">From Foundation</FormLabel>
+            <Select id="foundation" placeholder='Select Cadence' onChange={(e) => fetchFoundationFilename(e.target.value)}>
+              {foundationFilenames.map(filename => {
+                return (<option key={filename} value={filename}>{filename}</option>)
+              })}
+            </Select>
+
+          </HStack>
           <Stack>
             <Textarea size="lg"
               placeholder='Cadence Script'
