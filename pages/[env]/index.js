@@ -186,7 +186,7 @@ export default function MainPage() {
       fcl.proposer(authorizations[0]),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
-      fcl.limit(exeEffort),
+      fcl.limit(parseInt(exeEffort)),
       ix => {
         console.log(ix)
         return ix
