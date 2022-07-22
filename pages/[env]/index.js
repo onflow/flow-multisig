@@ -120,6 +120,7 @@ export default function MainPage() {
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText, setCopyText] = useState("Copy");
+  const [copyText2, setCopyText2] = useState("Copy");
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -131,7 +132,6 @@ export default function MainPage() {
   const qp = new URLSearchParams(query)
 
   useEffect(() => {
-    console.log('query', query);
 
     const fromScript = qp.get("type");
     const nameScript = qp.get("name");
@@ -148,13 +148,13 @@ export default function MainPage() {
             fetchServiceAccountFilename(nameScript)
           }
         }
-      if (jsonParam) {
-        setJsonArgs(jsonParam)
-      }
-      if (userAccount) {
-        validateAccount(userAccount);
-        addAuthAccountAddress();
-      }
+    }
+    if (jsonParam) {
+      setJsonArgs(jsonParam)
+    }
+    if (userAccount) {
+      validateAccount(userAccount);
+      addAuthAccountAddress();
     }
   }, [query])
 
@@ -274,10 +274,13 @@ export default function MainPage() {
       .then(contents => setCadencePayload(contents));
   }
 
-  const copyTextToClipboard = (text) => {
-    setCopyText("Copied!")
+  const copyTextToClipboard = (text, second) => {
+    second ? setCopyText2("Copied!") : setCopyText("Copied!")
     copyToClipboard(text);
-    setTimeout(() => setCopyText("Copy"), 500)
+    setTimeout(() => {
+      setCopyText("Copy")
+      setCopyText2("Copy")
+    }, 500)
   }
 
   const setArgumentsValue = (value) => {
@@ -459,18 +462,27 @@ export default function MainPage() {
                           overflow="hidden"
                           padding="4"
                         >
-                          <HStack align="start">
+                          <HStack align="center">
                             <Text fontSize='20px' color='black'>Signature Request Id:</Text>
                             <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
                           </HStack>
-                          <HStack>
-                            <Text fontSize='15px' color='purple'>CLI:</Text> <Link isExternal href={getLink(signatureRequestId)}>
-                              {getLink(signatureRequestId)}
-                            </Link>
-                          </HStack>
-                          <HStack>
+                          <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
-                              <HStack><Text fontSize='15px'>FLOW CLI:</Text>                            <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId))}>{copyText}</Button></HStack>
+                              <HStack>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId))}>{copyText}</Button>
+                                <Text fontSize='15px'>Manual CLI:</Text>
+                                </HStack>
+                              <Link isExternal href={getLink(signatureRequestId)}>
+                                {getLink(signatureRequestId)}
+                              </Link>
+                            </VStack>
+                          </HStack>
+                          <HStack backgroundColor="lightgray" padding="0.5rem">
+                            <VStack align="flex-start">
+                              <HStack>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), true)}>{copyText2}</Button>
+                                <Text fontSize='15px'>FLOW CLI:</Text>
+                                </HStack>
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
