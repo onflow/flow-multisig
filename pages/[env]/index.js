@@ -1,5 +1,6 @@
 import React, { useEffect, useReducer, useState } from "react";
 import * as fcl from "@onflow/fcl";
+import { useRouter } from 'next/router'
 import {
   Box,
   Button,
@@ -126,6 +127,38 @@ export default function MainPage() {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
+  const { query } = useRouter()
+  const qp = new URLSearchParams(query)
+
+  useEffect(() => {
+    console.log('query', query);
+
+    const fromScript = qp.get("type");
+    const nameScript = qp.get("name");
+    const jsonParam = qp.get("param");
+    const userAccount = qp.get("acct");
+
+    if (fromScript) {
+      if (fromScript.toLocaleLowerCase() === "foundation")
+        if (nameScript) {
+          fetchFoundationFilename(nameScript)
+        }
+        else {
+          if (nameScript) {
+            fetchServiceAccountFilename(nameScript)
+          }
+        }
+      if (jsonParam) {
+        setJsonArgs(jsonParam)
+      }
+      if (userAccount) {
+        validateAccount(userAccount);
+        addAuthAccountAddress();
+      }
+    }
+  }, [query])
+
+
   const selectAccountKeys = (account, keys) => {
     if (accounts[account].enabledKeys.length !== keys.length) {
       accounts[account].enabledKeys = keys;
@@ -210,6 +243,13 @@ export default function MainPage() {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
+
+
+  const getCliCommand = (signatureRequestId) => {
+    const url = getCliLink(signatureRequestId);
+    return `flow transactions sign --from-remote-url ${url} --signer <account>`
+
+  }
 
   const getCliLink = (signatureRequestId) => {
     const network = getNetwork();
@@ -429,8 +469,10 @@ export default function MainPage() {
                             </Link>
                           </HStack>
                           <HStack>
-                            <Text fontSize='15px'>FLOW CLI: {getCliLink(signatureRequestId)}</Text>
-                            <Button size="sm" onClick={() => copyTextToClipboard(getCliLink(signatureRequestId))}>{copyText}</Button>
+                            <VStack align="flex-start">
+                              <HStack><Text fontSize='15px'>FLOW CLI:</Text>                            <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId))}>{copyText}</Button></HStack>
+                              <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
+                            </VStack>
                           </HStack>
                           {compositeKeys.map(({ address, sig, keyId }) => {
                             return (

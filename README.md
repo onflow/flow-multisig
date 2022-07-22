@@ -21,7 +21,9 @@ You can start editing the page by modifying `pages/index.js`. The page auto-upda
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
 ## Signing Pending transaction via CLI
-After the transaction has been generated via webpage a `signature request id` is generated, this id is used to retrieve the transaction RLP, which is used for maunual signing with flow cli. "localhost" is used only for examples. This service is hosted in vercel.
+After the transaction has been generated via webpage a `signature request id` is generated, this id is used to retrieve the transaction RLP, which is used for signing with flow cli. "localhost" is used only for examples. This service is hosted in vercel.
+
+### curl to get RLP
  - `curl -l http://localhost:3000/api/pending/rlp/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e > sign-cli.rlp`
  - save the RLP to a local file for signing, in this example `sign-cli.rlp` is used
 
@@ -30,6 +32,22 @@ Sign the RLP using flow cli and save the output signature RLP to `sign-cli-signe
 
 Send the signed RLP raw text to the server
  - `curl -H "Content-Type: application/text" -d @sign-cli-signed.rlp  http://localhost:3000/api/pending/sig/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e`
+
+### flow cli to get RLP
+ - `flow transactions sign --from-remote-url http://localhost:3000/api/pending/rlp/b6d2aab4160c5ce2d26d752d4a312922970863e2ba324a2d8d31a6ce4b61661e --signer <account>`
+ - account in this example is an entry in flow.json file
+
+
+## Query parameters to webapp
+ - "type" is of value "foundation" or "service"
+    - "foundation" will pull scripts from foundation github
+    - "service" will pull scripts from service-account github
+- "name" is the name of the script to load, ie. "hello.cdc"
+- "param" is the json parameters to pass into the cadence script
+- "acct" is the multiple signature account
+
+Example:
+`http://localhost:3000/testnet?type=foundation&name=hello.cdc&param=[]&acct=0xc590d541b72f0ac1`
 
 ## Multisig Bash Script Helper
 location of helper script [multisig.sh](./client/multisig.sh)
