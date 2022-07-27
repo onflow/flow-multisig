@@ -203,12 +203,13 @@ export default function MainPage() {
 
   const onSubmit = async (accountKey) => {
     const account = accounts[accountKey];
-    const keys = account.enabledKeys;
+    const keys = account.keys;
     if (keys.length === 0) return;
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
     const authorizations = keys.map(({ index }) =>
-      buildAuthz({ address: accountKey, index }, dispatch)
+      buildAuthz({ address: accountKey, index }, keys, dispatch)
     );
+    console.log('authorizations', authorizations)
     userDefinedArgs.map(a => console.log(a))
     const resolver = authzResolver({ address: accountKey }, keys, dispatch);
     const { transactionId } = await fcl.send([
@@ -252,7 +253,6 @@ export default function MainPage() {
   }
 
   const getCliLink = (signatureRequestId) => {
-    const network = getNetwork();
     return `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
   };
 
@@ -308,27 +308,6 @@ export default function MainPage() {
     }
   }, [authAccountAddress, transferAmount])
 
-  const AuthedState = () => {
-    return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <div>Address: {currentUser?.addr ?? "No Address"}</div>
-          <Button onClick={fcl.unauthenticate}>Log Out</Button>
-        </Stack>
-      </VStack>
-    );
-  };
-
-  const UnauthenticatedState = () => {
-    return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <Button onClick={fcl.authenticate}>Log In</Button>
-        </Stack>
-      </VStack>
-    );
-  };
-
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -336,11 +315,6 @@ export default function MainPage() {
           <Stack>
             <VStack align="start">
               <Heading>Service Account</Heading>
-              {/*<Stack maxW="container.xl">
-                User Address:
-                {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-              </Stack>*/}
-
             </VStack>
           </Stack>
           <HStack>
@@ -432,7 +406,7 @@ export default function MainPage() {
                     </Stack>
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
+                        <Button onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
