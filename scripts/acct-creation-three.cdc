@@ -37,19 +37,19 @@ transaction(
         bonusAccount.keys.add(
             publicKey: AdminKey,
             hashAlgorithm: HashAlgorithm.SHA2_256,
-            weight: 400.0
+            weight: 500.0
         )
 
         bonusAccount.keys.add(
             publicKey: UserKey,
             hashAlgorithm: HashAlgorithm.SHA2_256,
-            weight: 400.0
+            weight: 500.0
         )
 
         bonusAccount.keys.add(
             publicKey: UserKey2,
             hashAlgorithm: HashAlgorithm.SHA2_256,
-            weight: 400.0
+            weight: 500.0
         )
 
         // Get a reference to the signers stored vault

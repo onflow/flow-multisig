@@ -50,6 +50,7 @@ export const authzResolver = (account, keys, dispatch) => {
                   address: signable.addr,
                   sig: d.sig,
                   keyId: d.keyId,
+                  weight: keysWeight[d.keyId],
                   signatureRequestId: id,
                 },
               });  
@@ -58,11 +59,13 @@ export const authzResolver = (account, keys, dispatch) => {
               const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
               console.log('have sig weight', weights);
               if (weights >= 1000) {
-                return data.map(d => ({
+                const sigs = data.map(d => ({
                   addr: fcl.withPrefix(d.address),
                   keyId: d.keyId,
                   signature: d.sig,
                 }))
+                console.log('more signatures ', sigs)
+                return sigs;
               }
             }
           }
@@ -75,6 +78,7 @@ export const authzResolver = (account, keys, dispatch) => {
 }
 
 export const buildAuthz = ({ address, index }, keys, dispatch) => {
+  console.log('return authz for:', address, index);
   return async function authz(account) {
     const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
     return {
@@ -116,6 +120,7 @@ export const buildAuthz = ({ address, index }, keys, dispatch) => {
                 sig: d.sig,
                 keyId: d.keyId,
                 signatureRequestId: id,
+                weight: keysWeight[d.keyId]
               },
             });  
           })
@@ -123,11 +128,13 @@ export const buildAuthz = ({ address, index }, keys, dispatch) => {
             const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
             console.log('have sig weight', weights);
             if (weights >= 1000) {
-              return data.map(d => ({
-                addr: fcl.withPrefix(d.address),
-                keyId: d.keyId,
-                signature: d.sig,
-              }))
+              console.log('use first signature')
+              const sigOne = data[0];
+              return ({
+                addr: fcl.withPrefix(sigOne.address),
+                keyId: sigOne.keyId,
+                signature: sigOne.sig,
+              })
             }
           }
         }

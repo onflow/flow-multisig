@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState, useMemo } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
 import {
@@ -102,6 +102,9 @@ function reducer(state, action) {
   }
 }
 
+const FOUNDATION = "foundation";
+const SERVICE_ACCOUNT = "serviceAccount";
+
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -114,19 +117,16 @@ export default function MainPage() {
   const [jsonArgs, setJsonArgs] = useState("");
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
-  const [currentUser, setCurrentUser] = useState({
-    loggedIn: false,
-  });
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText, setCopyText] = useState("Copy");
   const [copyText2, setCopyText2] = useState("Copy");
+  const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
+  const [scriptName, setScriptName] = useState("");
+  const [scriptType, setScriptType] = useState("");
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
-  useEffect(() => {
-    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
-  }, []);
 
   const { query } = useRouter()
   const qp = new URLSearchParams(query)
@@ -142,10 +142,14 @@ export default function MainPage() {
       if (fromScript.toLocaleLowerCase() === "foundation")
         if (nameScript) {
           fetchFoundationFilename(nameScript)
+          setScriptName(nameScript);
+          setScriptType(FOUNDATION);
         }
         else {
           if (nameScript) {
             fetchServiceAccountFilename(nameScript)
+            setScriptName(nameScript);
+            setScriptType(SERVICE_ACCOUNT);
           }
         }
     }
@@ -166,7 +170,8 @@ export default function MainPage() {
     }
   };
   const addAuthAccountAddress = () => {
-    fcl
+    if (authAccountAddress) {
+      fcl
       .account(authAccountAddress)
       .then(({ keys }) => {
         setAccounts({
@@ -178,11 +183,11 @@ export default function MainPage() {
             flowScanUrl: null,
           },
         });
-        setAuthAccountAddress("");
       })
       .catch((err) => {
         console.log("unexpected error occured", err);
       });
+    }
   };
 
   const validateAccount = (authAccountAddress) => {
@@ -197,6 +202,7 @@ export default function MainPage() {
         .catch((e) => {
           // only log out error
           console.log(e);
+          setError("Invalid Account Address");
         });
     }
   };
@@ -244,7 +250,11 @@ export default function MainPage() {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
-
+  
+  const getFormUrlLink = () => {
+    const network = getNetwork();
+    return `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
+  };
 
   const getCliCommand = (signatureRequestId) => {
     const url = getCliLink(signatureRequestId);
@@ -263,23 +273,26 @@ export default function MainPage() {
   };
 
   const fetchServiceAccountFilename = (filename) => {
+    setScriptName(filename);
+    setScriptType(FOUNDATION);
     setCadencePayload("loading ...")
     getServiceAccountFilename(filename)
       .then(contents => setCadencePayload(contents));
   }
 
   const fetchFoundationFilename = (filename) => {
+    setScriptName(filename);
+    setScriptType(SERVICE_ACCOUNT);
     setCadencePayload("loading ...")
     getFoundationFilename(filename)
       .then(contents => setCadencePayload(contents));
   }
 
-  const copyTextToClipboard = (text, second) => {
-    second ? setCopyText2("Copied!") : setCopyText("Copied!")
+  const copyTextToClipboard = (text, setTextMethod) => {
+    setTextMethod("Copied!")
     copyToClipboard(text);
     setTimeout(() => {
-      setCopyText("Copy")
-      setCopyText2("Copy")
+      setTextMethod("Copy")
     }, 500)
   }
 
@@ -294,19 +307,20 @@ export default function MainPage() {
     }
     setJsonError(errorString)
   }
-
-  useEffect(() => {
-    const getBalance = async () => fcl.account(authAccountAddress).then(account => {
-      console.log('account', account)
-      if (!transferAmount) {
-        const balance = (parseInt(account.balance) / 10e7) - 0.01
-        setTransferAmount(balance.toFixed(8))
-      }
-    });
+  
+  const totalWeight = useMemo(() => {
+    let weight = 0;
     if (authAccountAddress) {
-      getBalance();
+      const value = state.inFlightRequests?.[cleanAddress(authAccountAddress)] || {};
+      const keys = Object.keys(value);
+      if (keys.length > 0) {
+        const oneKey = keys[0]
+        weight = value[oneKey].reduce((p, r) => r.sig ? p + r.weight : p, 0)
+      }
     }
-  }, [authAccountAddress, transferAmount])
+    console.log('calc weight', weight)
+    return weight;
+  }, [state.inFlightRequests]); 
 
   return (
     <Stack minH={"100vh"} margin={"50"}>
@@ -443,7 +457,19 @@ export default function MainPage() {
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId))}>{copyText}</Button>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
+                                <Text fontSize='15px'>Page URL</Text>
+                                </HStack>
+                              <Link isExternal href={getFormUrlLink()}>
+                                {getFormUrlLink(signatureRequestId)}
+                              </Link>
+                            </VStack>
+                          </HStack>
+
+                          <HStack backgroundColor="lightgray" padding="0.5rem">
+                            <VStack align="flex-start">
+                              <HStack>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId), setCopyText)}>{copyText}</Button>
                                 <Text fontSize='15px'>Manual CLI:</Text>
                                 </HStack>
                               <Link isExternal href={getLink(signatureRequestId)}>
@@ -454,22 +480,30 @@ export default function MainPage() {
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), true)}>{copyText2}</Button>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
                                 <Text fontSize='15px'>FLOW CLI:</Text>
                                 </HStack>
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
-                          {compositeKeys.map(({ address, sig, keyId }) => {
+                          {compositeKeys.map(({ address, sig, keyId, weight }) => {
                             return (
                               <Flex key={address + keyId}>
                                 <Box p={1}>
                                   {sig ? <GreenDot /> : <RedDot />}{" "}
                                 </Box>
-                                <AddressKeyView address={address} keyId={keyId} />
+                                <AddressKeyView address={address} keyId={keyId} weight={weight} />
                               </Flex>
                             );
                           })}
+                          {compositeKeys.length > 0 &&
+                            (<Flex key={"weight-total"}>
+                              <Box p={1}>
+                                {totalWeight >= 1000 ? <GreenDot /> : <RedDot />}{" "}
+                              </Box>
+                              <Text fontSize='15px'>Signatures weight: {totalWeight}</Text>
+                            </Flex>)
+                          };
                           {accounts[account] && accounts[account].transaction && (
                             <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
