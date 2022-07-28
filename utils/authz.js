@@ -10,7 +10,6 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
     addr: fcl.sansPrefix(account.address),
     address: fcl.sansPrefix(account.address),
     resolve: (account) => {
-      console.log('trying to resolve ...', keys)
       return keys.map(({ index }) => ({
         ...account,
         addr: fcl.sansPrefix(account.address),
@@ -43,7 +42,6 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
               `/api/${id}`
             ).then((r) => r.json());
   
-            console.log('from server ', data)
             data.forEach(d => {
               dispatch({
                 type: "update-composite-key",
@@ -65,7 +63,6 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
                   keyId: d.keyId,
                   signature: d.sig,
                 }))
-                console.log('more signatures ', sigs)
                 return sigs;
               }
             }
