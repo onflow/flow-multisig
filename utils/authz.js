@@ -41,7 +41,8 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
             const { data } = await fetch(
               `/api/${id}`
             ).then((r) => r.json());
-
+            console.log('multi data', index, data)
+            
             data.forEach(d => {
               dispatch({
                 type: "update-composite-key",
@@ -59,13 +60,13 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
               if (weights >= 1000 && proposerSigned.sig) {
-                const sig = data.filter(d => d.keyId === index).map(d => ({
+                const sigs = data.map(d => ({
                   addr: fcl.withPrefix(d.address),
                   keyId: d.keyId,
                   signature: d.sig,
                 }));
-                console.log('sending sigs', sig);
-                return sig;
+                console.log('sending multi keys sigs', sigs);
+                return sigs;
               }
             }
           }
@@ -124,13 +125,14 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
             });
           })
           if (data?.length > 0) {
-            const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
+            const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : p), 0);
             if (weights >= 1000) {
               const sigKey = data.find(d => d.keyId === index);
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
 
               if (sigKey && proposerSigned.sig) {
+                console.log('send proposer sig', sigKey)
                 return ({
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,

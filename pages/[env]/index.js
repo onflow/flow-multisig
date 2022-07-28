@@ -172,21 +172,21 @@ export default function MainPage() {
   const addAuthAccountAddress = () => {
     if (authAccountAddress) {
       fcl
-      .account(authAccountAddress)
-      .then(({ keys }) => {
-        setAccounts({
-          ...accounts,
-          [authAccountAddress]: {
-            keys: keys.filter(k => !k.revoked),
-            enabledKeys: [],
-            link: null,
-            flowScanUrl: null,
-          },
+        .account(authAccountAddress)
+        .then(({ keys }) => {
+          setAccounts({
+            ...accounts,
+            [authAccountAddress]: {
+              keys: keys.filter(k => !k.revoked),
+              enabledKeys: [],
+              link: null,
+              flowScanUrl: null,
+            },
+          });
+        })
+        .catch((err) => {
+          console.log("unexpected error occured", err);
         });
-      })
-      .catch((err) => {
-        console.log("unexpected error occured", err);
-      });
     }
   };
 
@@ -258,7 +258,7 @@ export default function MainPage() {
     const network = getNetwork();
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
-  
+
   const getFormUrlLink = () => {
     const network = getNetwork();
     return `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
@@ -315,7 +315,7 @@ export default function MainPage() {
     }
     setJsonError(errorString)
   }
-  
+
   const totalWeight = useMemo(() => {
     let weight = 0;
     if (authAccountAddress) {
@@ -327,7 +327,7 @@ export default function MainPage() {
       }
     }
     return weight;
-  }, [state.inFlightRequests]); 
+  }, [state.inFlightRequests]);
 
   return (
     <Stack minH={"100vh"} margin={"50"}>
@@ -466,7 +466,7 @@ export default function MainPage() {
                               <HStack>
                                 <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
                                 <Text fontSize='15px'>Page URL</Text>
-                                </HStack>
+                              </HStack>
                               <Link isExternal href={getFormUrlLink()}>
                                 {getFormUrlLink(signatureRequestId)}
                               </Link>
@@ -478,7 +478,7 @@ export default function MainPage() {
                               <HStack>
                                 <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId), setCopyText)}>{copyText}</Button>
                                 <Text fontSize='15px'>Manual CLI:</Text>
-                                </HStack>
+                              </HStack>
                               <Link isExternal href={getLink(signatureRequestId)}>
                                 {getLink(signatureRequestId)}
                               </Link>
@@ -489,7 +489,7 @@ export default function MainPage() {
                               <HStack>
                                 <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
                                 <Text fontSize='15px'>FLOW CLI:</Text>
-                                </HStack>
+                              </HStack>
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
