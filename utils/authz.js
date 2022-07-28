@@ -42,7 +42,6 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               `/api/${id}`
             ).then((r) => r.json());
 
-            console.log('server data', data)
             data.forEach(d => {
               dispatch({
                 type: "update-composite-key",
@@ -59,15 +58,14 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               const weights = data.reduce((p, d) => d.sig ? p + parseInt(keysWeight[d.keyId]) : p, 0);
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-              console.log('weights', weights)
               if (weights >= 1000 && proposerSigned.sig) {
-                const sigs = data.map(d => ({
+                const sig = data.filter(d => d.keyId === index).map(d => ({
                   addr: fcl.withPrefix(d.address),
                   keyId: d.keyId,
                   signature: d.sig,
-                }))
-                console.log('sending sigs', sigs);
-                return sigs;
+                }));
+                console.log('sending sigs', sig);
+                return sig;
               }
             }
           }
