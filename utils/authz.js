@@ -3,7 +3,7 @@ import * as fcl from "@onflow/fcl";
 const wait = async (period = 3000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
-export const authzManyKeyResolver = (account, keys, dispatch) => {
+export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => {
   const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
   return {
     ...account,
@@ -34,14 +34,15 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
               },
             }
           ).then((r) => r.json());
-  
+
           // Check status and update UI with status here.
           while (true) {
             await wait();
             const { data } = await fetch(
               `/api/${id}`
             ).then((r) => r.json());
-  
+
+            console.log('server data', data)
             data.forEach(d => {
               dispatch({
                 type: "update-composite-key",
@@ -52,17 +53,20 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
                   weight: keysWeight[d.keyId],
                   signatureRequestId: id,
                 },
-              });  
+              });
             })
             if (data?.length > 0) {
-              const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
-              console.log('have sig weight', weights);
-              if (weights >= 1000) {
+              const weights = data.reduce((p, d) => d.sig ? p + parseInt(keysWeight[d.keyId]) : p, 0);
+              // has proposer signed
+              const proposerSigned = data.find(d => d.keyId === proposerKeyId);
+              console.log('weights', weights)
+              if (weights >= 1000 && proposerSigned.sig) {
                 const sigs = data.map(d => ({
                   addr: fcl.withPrefix(d.address),
                   keyId: d.keyId,
                   signature: d.sig,
                 }))
+                console.log('sending sigs', sigs);
                 return sigs;
               }
             }
@@ -75,7 +79,7 @@ export const authzManyKeyResolver = (account, keys, dispatch) => {
 
 }
 
-export const buildSinglaAuthz = ({ address, index }, keys, dispatch) => {
+export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispatch) => {
   console.log('return authz for:', address, index);
   return async function authz(account) {
     const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
@@ -119,13 +123,16 @@ export const buildSinglaAuthz = ({ address, index }, keys, dispatch) => {
                 signatureRequestId: id,
                 weight: keysWeight[d.keyId]
               },
-            });  
+            });
           })
           if (data?.length > 0) {
             const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
             if (weights >= 1000) {
               const sigKey = data.find(d => d.keyId === index);
-              if (sigKey) {
+              // has proposer signed
+              const proposerSigned = data.find(d => d.keyId === proposerKeyId);
+
+              if (sigKey && proposerSigned.sig) {
                 return ({
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,

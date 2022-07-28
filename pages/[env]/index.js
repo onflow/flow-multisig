@@ -219,12 +219,12 @@ export default function MainPage() {
     
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
     //const authorizations = keys.map(({ index }) =>
-    const authorizations = [authzManyKeyResolver({ address: accountKey}, keys, dispatch)];
+    const authorizations = [authzManyKeyResolver({ address: accountKey}, proposalKey.index, keys, dispatch)];
     //);
     console.log('authorizations', authorizations)
     userDefinedArgs.map(a => console.log(a))
-    const resolver = authzManyKeyResolver({ address: accountKey }, keys, dispatch);
-    const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, keys, dispatch);
+    const resolver = authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch);
+    const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
 
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
@@ -326,7 +326,6 @@ export default function MainPage() {
         weight = value[oneKey].reduce((p, r) => r.sig ? p + r.weight : p, 0)
       }
     }
-    console.log('calc weight', weight)
     return weight;
   }, [state.inFlightRequests]); 
 
