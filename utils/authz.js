@@ -3,7 +3,7 @@ import * as fcl from "@onflow/fcl";
 const wait = async (period = 3000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
-export const authzResolver = (account, keys, dispatch) => {
+export const authzManyKeyResolver = (account, keys, dispatch) => {
   const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
   return {
     ...account,
@@ -16,6 +16,7 @@ export const authzResolver = (account, keys, dispatch) => {
         addr: fcl.sansPrefix(account.address),
         address: fcl.sansPrefix(account.address),
         tempId: `${account.address}-${index}`,
+        keyId: index,
         signingFunction: async (signable) => {
           dispatch({
             type: "in-flight",
@@ -77,7 +78,7 @@ export const authzResolver = (account, keys, dispatch) => {
 
 }
 
-export const buildAuthz = ({ address, index }, keys, dispatch) => {
+export const buildSinglaAuthz = ({ address, index }, keys, dispatch) => {
   console.log('return authz for:', address, index);
   return async function authz(account) {
     const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
@@ -111,7 +112,6 @@ export const buildAuthz = ({ address, index }, keys, dispatch) => {
             `/api/${id}`
           ).then((r) => r.json());
 
-          console.log('from server ', data)
           data.forEach(d => {
             dispatch({
               type: "update-composite-key",
@@ -126,15 +126,15 @@ export const buildAuthz = ({ address, index }, keys, dispatch) => {
           })
           if (data?.length > 0) {
             const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : 0), 0);
-            console.log('have sig weight', weights);
             if (weights >= 1000) {
-              console.log('use first signature')
-              const sigOne = data[0];
-              return ({
-                addr: fcl.withPrefix(sigOne.address),
-                keyId: sigOne.keyId,
-                signature: sigOne.sig,
-              })
+              const sigKey = data.find(d => d.keyId === index);
+              if (sigKey) {
+                return ({
+                  addr: fcl.withPrefix(sigKey.address),
+                  keyId: sigKey.keyId,
+                  signature: sigKey.sig,
+                })
+              }
             }
           }
         }

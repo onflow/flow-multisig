@@ -21,7 +21,7 @@ import {
   Textarea,
 } from "@chakra-ui/react";
 import { AccountsTable } from "../../components/AccountsTable";
-import { authzResolver, buildAuthz } from "../../utils/authz";
+import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
 import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
@@ -210,20 +210,28 @@ export default function MainPage() {
   const onSubmit = async (accountKey) => {
     const account = accounts[accountKey];
     const keys = account.keys;
-    if (keys.length === 0) return;
+    console.log('keys', keys, account.enabledKeys)
+    if (account?.enabledKeys?.length !== 1) return;
+    console.log('account', account)
+    // selected key is proposer
+    const proposalKey = account.enabledKeys[0]; 
+    console.log(proposalKey)
+    
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
-    const authorizations = keys.map(({ index }) =>
-      buildAuthz({ address: accountKey, index }, keys, dispatch)
-    );
+    //const authorizations = keys.map(({ index }) =>
+    const authorizations = [authzManyKeyResolver({ address: accountKey}, keys, dispatch)];
+    //);
     console.log('authorizations', authorizations)
     userDefinedArgs.map(a => console.log(a))
-    const resolver = authzResolver({ address: accountKey }, keys, dispatch);
+    const resolver = authzManyKeyResolver({ address: accountKey }, keys, dispatch);
+    const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, keys, dispatch);
+
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
       fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
       //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
       //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
-      fcl.proposer(authorizations[0]),
+      fcl.proposer(resolveProposer),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
       fcl.limit(parseInt(exeEffort)),
@@ -394,7 +402,7 @@ export default function MainPage() {
                   <React.Fragment key={account}>
                     <FormControl>
                       <HStack align="baseline">
-                        <FormLabel>Select Signing Keys</FormLabel>
+                        <FormLabel>Select Proposal Key</FormLabel>
                         <Text>{account}</Text>
                       </HStack>
                       <AccountsTable
@@ -420,7 +428,7 @@ export default function MainPage() {
                     </Stack>
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button onClick={() => onSubmit(account)}>
+                        <Button disabled={accounts[account]?.enabledKeys?.length !== 1} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
