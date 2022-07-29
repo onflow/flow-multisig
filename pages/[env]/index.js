@@ -112,7 +112,6 @@ export default function MainPage() {
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
-  const [transferAmount, setTransferAmount] = useState("");
   const [serviceAccountFilenames, setServiceAccountFilenames] = useState([]);
   const [foundationFilenames, setFoundationFilenames] = useState([]);
   const [jsonArgs, setJsonArgs] = useState("");
@@ -164,13 +163,6 @@ export default function MainPage() {
     }
   }, [query])
 
-
-  const selectAccountKeys = (account, keys) => {
-    if (accounts[account].enabledKeys.length !== keys.length) {
-      accounts[account].enabledKeys = keys;
-      setAccounts({ ...accounts })
-    }
-  };
   const addAuthAccountAddress = () => {
     if (authAccountAddress) {
       fcl

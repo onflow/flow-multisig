@@ -1,5 +1,4 @@
-import { Table, Tbody, Td, Tfoot, Th, Tr, TableCaption } from "@chakra-ui/react";
-import { useMemo } from "react";
+import { Table, Tbody, Td, Tfoot, Th, Tr } from "@chakra-ui/react";
 
 export const KeysTableStatus = ({ keys }) => {
     console.log(keys)
