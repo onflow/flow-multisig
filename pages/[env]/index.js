@@ -1,16 +1,13 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState, useMemo } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
 import {
-  Box,
   Button,
-  Flex,
   FormControl,
   FormErrorMessage,
   HStack,
   FormLabel,
   Heading,
-  Icon,
   Input,
   Link,
   Stack,
@@ -20,29 +17,15 @@ import {
   VStack,
   Textarea,
 } from "@chakra-ui/react";
-import { AccountsTable } from "../../components/AccountsTable";
-import { authzResolver, buildAuthz } from "../../utils/authz";
+import { KeysTableSelector } from "../../components/KeysTableSelector";
+import { KeysTableStatus } from "../../components/KeysTableStatus";
+import { CountdownTimer } from "../../components/CountdownTimer";
+import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
-import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import * as t from "@onflow/types";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
-
-const iconFn = (color) =>
-  function CustomIcon() {
-    return (
-      <Icon viewBox="0 0 200 200" color={color}>
-        <path
-          fill="currentColor"
-          d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
-        />
-      </Icon>
-    );
-  };
-
-const GreenDot = iconFn("green.500");
-const RedDot = iconFn("red.500");
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -102,31 +85,34 @@ function reducer(state, action) {
   }
 }
 
+const FOUNDATION = "foundation";
+const SERVICE_ACCOUNT = "serviceAccount";
+const MAX_ALLOWED_BLOCKS = 600;
+const SECONDS_PER_BLOCK = 1;
+
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
-  const [transferAmount, setTransferAmount] = useState("");
   const [serviceAccountFilenames, setServiceAccountFilenames] = useState([]);
   const [foundationFilenames, setFoundationFilenames] = useState([]);
   const [jsonArgs, setJsonArgs] = useState("");
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
-  const [currentUser, setCurrentUser] = useState({
-    loggedIn: false,
-  });
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText, setCopyText] = useState("Copy");
   const [copyText2, setCopyText2] = useState("Copy");
+  const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
+  const [scriptName, setScriptName] = useState("");
+  const [scriptType, setScriptType] = useState("");
+  const [selectedProposalKey, setProposalKey] = useState(null);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
-  useEffect(() => {
-    fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
-  }, []);
 
   const { query } = useRouter()
   const qp = new URLSearchParams(query)
@@ -142,10 +128,14 @@ export default function MainPage() {
       if (fromScript.toLocaleLowerCase() === "foundation")
         if (nameScript) {
           fetchFoundationFilename(nameScript)
+          setScriptName(nameScript);
+          setScriptType(FOUNDATION);
         }
         else {
           if (nameScript) {
             fetchServiceAccountFilename(nameScript)
+            setScriptName(nameScript);
+            setScriptType(SERVICE_ACCOUNT);
           }
         }
     }
@@ -158,31 +148,25 @@ export default function MainPage() {
     }
   }, [query])
 
-
-  const selectAccountKeys = (account, keys) => {
-    if (accounts[account].enabledKeys.length !== keys.length) {
-      accounts[account].enabledKeys = keys;
-      setAccounts({ ...accounts })
-    }
-  };
   const addAuthAccountAddress = () => {
-    fcl
-      .account(authAccountAddress)
-      .then(({ keys }) => {
-        setAccounts({
-          ...accounts,
-          [authAccountAddress]: {
-            keys: keys.filter(k => !k.revoked),
-            enabledKeys: [],
-            link: null,
-            flowScanUrl: null,
-          },
+    if (authAccountAddress) {
+      fcl
+        .account(authAccountAddress)
+        .then(({ keys }) => {
+          setAccounts({
+            ...accounts,
+            [authAccountAddress]: {
+              keys: keys.filter(k => !k.revoked),
+              enabledKeys: [],
+              link: null,
+              flowScanUrl: null,
+            },
+          });
+        })
+        .catch((err) => {
+          console.log("unexpected error occured", err);
         });
-        setAuthAccountAddress("");
-      })
-      .catch((err) => {
-        console.log("unexpected error occured", err);
-      });
+    }
   };
 
   const validateAccount = (authAccountAddress) => {
@@ -197,26 +181,31 @@ export default function MainPage() {
         .catch((e) => {
           // only log out error
           console.log(e);
+          setError("Invalid Account Address");
         });
     }
   };
 
   const onSubmit = async (accountKey) => {
     const account = accounts[accountKey];
-    const keys = account.enabledKeys;
-    if (keys.length === 0) return;
+    const keys = account.keys;
+    if (selectedProposalKey === null) return;
+    // selected key is proposer
+    const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
+    if (!proposalKey) return;
+    
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
-    const authorizations = keys.map(({ index }) =>
-      buildAuthz({ address: accountKey, index }, dispatch)
-    );
-    userDefinedArgs.map(a => console.log(a))
-    const resolver = authzResolver({ address: accountKey }, keys, dispatch);
+    const authorizations = [authzManyKeyResolver({ address: accountKey}, proposalKey.index, keys, dispatch)];
+    const resolver = authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch);
+    const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
+
+    setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
       fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
       //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
       //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
-      fcl.proposer(authorizations[0]),
+      fcl.proposer(resolveProposer),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
       fcl.limit(parseInt(exeEffort)),
@@ -227,6 +216,7 @@ export default function MainPage() {
     ]);
 
     account.transaction = transactionId;
+    if (transactionId) setCountdown(0);
     setAccounts({
       ...accounts,
       [accountKey]: account,
@@ -244,6 +234,10 @@ export default function MainPage() {
     return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
   };
 
+  const getFormUrlLink = () => {
+    const network = getNetwork();
+    return `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
+  };
 
   const getCliCommand = (signatureRequestId) => {
     const url = getCliLink(signatureRequestId);
@@ -252,7 +246,6 @@ export default function MainPage() {
   }
 
   const getCliLink = (signatureRequestId) => {
-    const network = getNetwork();
     return `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
   };
 
@@ -263,23 +256,26 @@ export default function MainPage() {
   };
 
   const fetchServiceAccountFilename = (filename) => {
+    setScriptName(filename);
+    setScriptType(FOUNDATION);
     setCadencePayload("loading ...")
     getServiceAccountFilename(filename)
       .then(contents => setCadencePayload(contents));
   }
 
   const fetchFoundationFilename = (filename) => {
+    setScriptName(filename);
+    setScriptType(SERVICE_ACCOUNT);
     setCadencePayload("loading ...")
     getFoundationFilename(filename)
       .then(contents => setCadencePayload(contents));
   }
 
-  const copyTextToClipboard = (text, second) => {
-    second ? setCopyText2("Copied!") : setCopyText("Copied!")
+  const copyTextToClipboard = (text, setTextMethod) => {
+    setTextMethod("Copied!")
     copyToClipboard(text);
     setTimeout(() => {
-      setCopyText("Copy")
-      setCopyText2("Copy")
+      setTextMethod("Copy")
     }, 500)
   }
 
@@ -295,40 +291,6 @@ export default function MainPage() {
     setJsonError(errorString)
   }
 
-  useEffect(() => {
-    const getBalance = async () => fcl.account(authAccountAddress).then(account => {
-      console.log('account', account)
-      if (!transferAmount) {
-        const balance = (parseInt(account.balance) / 10e7) - 0.01
-        setTransferAmount(balance.toFixed(8))
-      }
-    });
-    if (authAccountAddress) {
-      getBalance();
-    }
-  }, [authAccountAddress, transferAmount])
-
-  const AuthedState = () => {
-    return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <div>Address: {currentUser?.addr ?? "No Address"}</div>
-          <Button onClick={fcl.unauthenticate}>Log Out</Button>
-        </Stack>
-      </VStack>
-    );
-  };
-
-  const UnauthenticatedState = () => {
-    return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <Button onClick={fcl.authenticate}>Log In</Button>
-        </Stack>
-      </VStack>
-    );
-  };
-
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -336,11 +298,6 @@ export default function MainPage() {
           <Stack>
             <VStack align="start">
               <Heading>Service Account</Heading>
-              {/*<Stack maxW="container.xl">
-                User Address:
-                {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-              </Stack>*/}
-
             </VStack>
           </Stack>
           <HStack>
@@ -406,15 +363,12 @@ export default function MainPage() {
                   <React.Fragment key={account}>
                     <FormControl>
                       <HStack align="baseline">
-                        <FormLabel>Select Signing Keys</FormLabel>
+                        <FormLabel>Select Proposal Key</FormLabel>
                         <Text>{account}</Text>
                       </HStack>
-                      <AccountsTable
-                        accountKeys={accounts[account].keys}
-                        setSelectedKeys={(keys) =>
-                          selectAccountKeys(account, keys)
-                        }
-                      />
+                      <Stack>
+                        <KeysTableSelector keys={accounts[account].keys} selectedKey={selectedProposalKey} setKey={setProposalKey} />
+                      </Stack>
                     </FormControl>
                     <Stack>
                       <HStack>
@@ -432,7 +386,7 @@ export default function MainPage() {
                     </Stack>
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button disabled={accounts[account]?.enabledKeys?.length === 0} onClick={() => onSubmit(account)}>
+                        <Button disabled={selectedProposalKey === null} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
@@ -469,9 +423,21 @@ export default function MainPage() {
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId))}>{copyText}</Button>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
+                                <Text fontSize='15px'>Page URL</Text>
+                              </HStack>
+                              <Link isExternal href={getFormUrlLink()}>
+                                {getFormUrlLink(signatureRequestId)}
+                              </Link>
+                            </VStack>
+                          </HStack>
+
+                          <HStack backgroundColor="lightgray" padding="0.5rem">
+                            <VStack align="flex-start">
+                              <HStack>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId), setCopyText)}>{copyText}</Button>
                                 <Text fontSize='15px'>Manual CLI:</Text>
-                                </HStack>
+                              </HStack>
                               <Link isExternal href={getLink(signatureRequestId)}>
                                 {getLink(signatureRequestId)}
                               </Link>
@@ -480,22 +446,15 @@ export default function MainPage() {
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), true)}>{copyText2}</Button>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
                                 <Text fontSize='15px'>FLOW CLI:</Text>
-                                </HStack>
+                              </HStack>
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
-                          {compositeKeys.map(({ address, sig, keyId }) => {
-                            return (
-                              <Flex key={address + keyId}>
-                                <Box p={1}>
-                                  {sig ? <GreenDot /> : <RedDot />}{" "}
-                                </Box>
-                                <AddressKeyView address={address} keyId={keyId} />
-                              </Flex>
-                            );
-                          })}
+                          <CountdownTimer endTime={countdown} />
+                          <Text fontSize='20px'>Incoming Signatures:</Text>
+                          <KeysTableStatus keys={compositeKeys} />                          
                           {accounts[account] && accounts[account].transaction && (
                             <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
