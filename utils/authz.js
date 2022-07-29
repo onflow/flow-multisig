@@ -23,7 +23,6 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               inFlight: true
             },
           });
-          console.log('multi signable addr keyId', signable.addr, signable.keyId)
           const { id } = await fetch(
             `/api/signatures/${signable.addr}/${signable.keyId}`,
             {
@@ -65,7 +64,6 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
                   keyId: sigKey.keyId,
                   signature: sigKey.sig,
                 };
-                console.log('sending multi keys sigs', index, sig);
                 return sig;
               }
             }
@@ -92,7 +90,6 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
             inFlight: true
           },
         });
-        console.log('single signable addr keyId', signable.addr, signable.keyId)
         const { id } = await fetch(
           `/api/signatures/${signable.addr}/${signable.keyId}`,
           {
@@ -131,7 +128,6 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
 
               if (sigKey && proposerSigned.sig) {
-                console.log('send proposer sig', sigKey)
                 return ({
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,

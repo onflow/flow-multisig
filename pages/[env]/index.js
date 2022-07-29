@@ -2,15 +2,12 @@ import React, { useEffect, useReducer, useState, useMemo } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
 import {
-  Box,
   Button,
-  Flex,
   FormControl,
   FormErrorMessage,
   HStack,
   FormLabel,
   Heading,
-  Icon,
   Input,
   Link,
   Stack,
@@ -22,28 +19,13 @@ import {
 } from "@chakra-ui/react";
 import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
+import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
-import { AddressKeyView } from "../../components/AddressKeyView"
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import * as t from "@onflow/types";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
-
-const iconFn = (color) =>
-  function CustomIcon() {
-    return (
-      <Icon viewBox="0 0 200 200" color={color}>
-        <path
-          fill="currentColor"
-          d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
-        />
-      </Icon>
-    );
-  };
-
-const GreenDot = iconFn("green.500");
-const RedDot = iconFn("red.500");
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -105,6 +87,8 @@ function reducer(state, action) {
 
 const FOUNDATION = "foundation";
 const SERVICE_ACCOUNT = "serviceAccount";
+const MAX_ALLOWED_BLOCKS = 600;
+const SECONDS_PER_BLOCK = 1;
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -125,6 +109,7 @@ export default function MainPage() {
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
   const [selectedProposalKey, setProposalKey] = useState(null);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -208,17 +193,13 @@ export default function MainPage() {
     // selected key is proposer
     const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
     if (!proposalKey) return;
-    console.log(proposalKey)
     
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
-    //const authorizations = keys.map(({ index }) =>
     const authorizations = [authzManyKeyResolver({ address: accountKey}, proposalKey.index, keys, dispatch)];
-    //);
-    console.log('authorizations', authorizations)
-    userDefinedArgs.map(a => console.log(a))
     const resolver = authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch);
     const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
 
+    setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
       fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
@@ -235,6 +216,7 @@ export default function MainPage() {
     ]);
 
     account.transaction = transactionId;
+    if (transactionId) setCountdown(0);
     setAccounts({
       ...accounts,
       [accountKey]: account,
@@ -308,19 +290,6 @@ export default function MainPage() {
     }
     setJsonError(errorString)
   }
-
-  const totalWeight = useMemo(() => {
-    let weight = 0;
-    if (authAccountAddress) {
-      const value = state.inFlightRequests?.[cleanAddress(authAccountAddress)] || {};
-      const keys = Object.keys(value);
-      if (keys.length > 0) {
-        const oneKey = keys[0]
-        weight = value[oneKey].reduce((p, r) => r.sig ? p + r.weight : p, 0)
-      }
-    }
-    return weight;
-  }, [state.inFlightRequests]);
 
   return (
     <Stack minH={"100vh"} margin={"50"}>
@@ -483,6 +452,7 @@ export default function MainPage() {
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
+                          <CountdownTimer endTime={countdown} />
                           <Text fontSize='20px'>Incoming Signatures:</Text>
                           <KeysTableStatus keys={compositeKeys} />                          
                           {accounts[account] && accounts[account].transaction && (
