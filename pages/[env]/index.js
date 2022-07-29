@@ -20,7 +20,8 @@ import {
   VStack,
   Textarea,
 } from "@chakra-ui/react";
-import { AccountsTable } from "../../components/AccountsTable";
+import { KeysTableSelector } from "../../components/KeysTableSelector";
+import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
 import { AddressKeyView } from "../../components/AddressKeyView"
@@ -124,6 +125,7 @@ export default function MainPage() {
   const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
+  const [selectedProposalKey, setProposalKey] = useState(null);
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -210,11 +212,10 @@ export default function MainPage() {
   const onSubmit = async (accountKey) => {
     const account = accounts[accountKey];
     const keys = account.keys;
-    console.log('keys', keys, account.enabledKeys)
-    if (account?.enabledKeys?.length !== 1) return;
-    console.log('account', account)
+    if (selectedProposalKey === null) return;
     // selected key is proposer
-    const proposalKey = account.enabledKeys[0]; 
+    const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
+    if (!proposalKey) return;
     console.log(proposalKey)
     
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
@@ -404,12 +405,9 @@ export default function MainPage() {
                         <FormLabel>Select Proposal Key</FormLabel>
                         <Text>{account}</Text>
                       </HStack>
-                      <AccountsTable
-                        accountKeys={accounts[account].keys}
-                        setSelectedKeys={(keys) =>
-                          selectAccountKeys(account, keys)
-                        }
-                      />
+                      <Stack>
+                        <KeysTableSelector keys={accounts[account].keys} selectedKey={selectedProposalKey} setKey={setProposalKey} />
+                      </Stack>
                     </FormControl>
                     <Stack>
                       <HStack>
@@ -427,7 +425,7 @@ export default function MainPage() {
                     </Stack>
                     <Stack direction="row" spacing={4} align="start">
                       <Stack>
-                        <Button disabled={accounts[account]?.enabledKeys?.length !== 1} onClick={() => onSubmit(account)}>
+                        <Button disabled={selectedProposalKey === null} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
@@ -493,24 +491,8 @@ export default function MainPage() {
                               <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
                             </VStack>
                           </HStack>
-                          {compositeKeys.map(({ address, sig, keyId, weight }) => {
-                            return (
-                              <Flex key={address + keyId}>
-                                <Box p={1}>
-                                  {sig ? <GreenDot /> : <RedDot />}{" "}
-                                </Box>
-                                <AddressKeyView address={address} keyId={keyId} weight={weight} />
-                              </Flex>
-                            );
-                          })}
-                          {compositeKeys.length > 0 &&
-                            (<Flex key={"weight-total"}>
-                              <Box p={1}>
-                                {totalWeight >= 1000 ? <GreenDot /> : <RedDot />}{" "}
-                              </Box>
-                              <Text fontSize='15px'>Signatures weight: {totalWeight}</Text>
-                            </Flex>)
-                          };
+                          <Text fontSize='20px'>Incoming Signatures:</Text>
+                          <KeysTableStatus keys={compositeKeys} />                          
                           {accounts[account] && accounts[account].transaction && (
                             <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
