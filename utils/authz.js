@@ -23,7 +23,7 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               inFlight: true
             },
           });
-          console.log('signable addr keyId', signable.addr, signable.keyId)
+          console.log('multi signable addr keyId', signable.addr, signable.keyId)
           const { id } = await fetch(
             `/api/signatures/${signable.addr}/${signable.keyId}`,
             {
@@ -41,8 +41,7 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
             const { data } = await fetch(
               `/api/${id}`
             ).then((r) => r.json());
-            console.log('multi data', index, data)
-            
+
             data.forEach(d => {
               dispatch({
                 type: "update-composite-key",
@@ -60,13 +59,14 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
               if (weights >= 1000 && proposerSigned.sig) {
-                const sigs = data.map(d => ({
-                  addr: fcl.withPrefix(d.address),
-                  keyId: d.keyId,
-                  signature: d.sig,
-                }));
-                console.log('sending multi keys sigs', sigs);
-                return sigs;
+                const sigKey = data.find(d => d.keyId === index);
+                const sig = {
+                  addr: fcl.withPrefix(sigKey.address),
+                  keyId: sigKey.keyId,
+                  signature: sigKey.sig,
+                };
+                console.log('sending multi keys sigs', index, sig);
+                return sig;
               }
             }
           }
@@ -79,7 +79,6 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
 }
 
 export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispatch) => {
-  console.log('return authz for:', address, index);
   return async function authz(account) {
     const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
     return {
@@ -93,7 +92,7 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
             inFlight: true
           },
         });
-        console.log('signable addr keyId', signable.addr, signable.keyId)
+        console.log('single signable addr keyId', signable.addr, signable.keyId)
         const { id } = await fetch(
           `/api/signatures/${signable.addr}/${signable.keyId}`,
           {
