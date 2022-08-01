@@ -24,7 +24,6 @@ import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
-import * as t from "@onflow/types";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
 
 const flowscanUrls = {
@@ -103,7 +102,6 @@ export default function MainPage() {
   const [jsonError, setJsonError] = useState("")
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
-  const [copyText, setCopyText] = useState("Copy");
   const [copyText2, setCopyText2] = useState("Copy");
   const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
   const [scriptName, setScriptName] = useState("");
@@ -120,24 +118,24 @@ export default function MainPage() {
   useEffect(() => {
 
     const fromScript = qp.get("type");
-    const nameScript = qp.get("name");
+    const namedScript = qp.get("name");
     const jsonParam = qp.get("param");
     const userAccount = qp.get("acct");
 
     if (fromScript) {
-      if (fromScript.toLocaleLowerCase() === "foundation")
-        if (nameScript) {
-          fetchFoundationFilename(nameScript)
-          setScriptName(nameScript);
+      if (fromScript.toLocaleLowerCase() === FOUNDATION) {        
+        if (namedScript) {
+          fetchFoundationFilename(namedScript)
+          setScriptName(namedScript);
           setScriptType(FOUNDATION);
         }
-        else {
-          if (nameScript) {
-            fetchServiceAccountFilename(nameScript)
-            setScriptName(nameScript);
-            setScriptType(SERVICE_ACCOUNT);
-          }
+      } else {
+        if (namedScript) {
+          fetchServiceAccountFilename(namedScript)
+          setScriptName(namedScript);
+          setScriptType(SERVICE_ACCOUNT);
         }
+      }
     }
     if (jsonParam) {
       setJsonArgs(jsonParam)
@@ -193,9 +191,9 @@ export default function MainPage() {
     // selected key is proposer
     const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
     if (!proposalKey) return;
-    
+
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
-    const authorizations = [authzManyKeyResolver({ address: accountKey}, proposalKey.index, keys, dispatch)];
+    const authorizations = [authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch)];
     const resolver = authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch);
     const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
 
@@ -229,14 +227,10 @@ export default function MainPage() {
     return network;
   };
 
-  const getLink = (signatureRequestId) => {
-    const network = getNetwork();
-    return `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
-  };
-
   const getFormUrlLink = () => {
     const network = getNetwork();
-    return `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
+    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
+    return encodeURI(url);
   };
 
   const getCliCommand = (signatureRequestId) => {
@@ -246,7 +240,8 @@ export default function MainPage() {
   }
 
   const getCliLink = (signatureRequestId) => {
-    return `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
+    const url = `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
+    return encodeURI(url);
   };
 
 
@@ -257,7 +252,7 @@ export default function MainPage() {
 
   const fetchServiceAccountFilename = (filename) => {
     setScriptName(filename);
-    setScriptType(FOUNDATION);
+    setScriptType(SERVICE_ACCOUNT);
     setCadencePayload("loading ...")
     getServiceAccountFilename(filename)
       .then(contents => setCadencePayload(contents));
@@ -265,7 +260,7 @@ export default function MainPage() {
 
   const fetchFoundationFilename = (filename) => {
     setScriptName(filename);
-    setScriptType(SERVICE_ACCOUNT);
+    setScriptType(FOUNDATION);
     setCadencePayload("loading ...")
     getFoundationFilename(filename)
       .then(contents => setCadencePayload(contents));
@@ -291,6 +286,17 @@ export default function MainPage() {
     setJsonError(errorString)
   }
 
+  const getDropdownOptions = (filenames, scriptName, isSelected) => {
+    return filenames.map(filename => {
+      const selected = filename === scriptName ? "selected" : ""
+      if (selected && isSelected)
+        return (<option key={filename} value={filename} selected>{filename}</option>)
+      else
+        return (<option key={filename} value={filename}>{filename}</option>)
+    })
+
+  }
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -303,18 +309,14 @@ export default function MainPage() {
           <HStack>
             <FormLabel width="20%" size="sm" htmlFor="serviceAccount">From Service Account</FormLabel>
             <Select id="serviceAccount" placeholder='Select Cadence' onChange={(e) => fetchServiceAccountFilename(e.target.value)}>
-              {serviceAccountFilenames.map(filename => {
-                return (<option key={filename} value={filename}>{filename}</option>)
-              })}
+              {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
             </Select>
 
           </HStack>
           <HStack>
             <FormLabel width="20%" size="sm" htmlFor="foundation">From Foundation</FormLabel>
             <Select id="foundation" placeholder='Select Cadence' onChange={(e) => fetchFoundationFilename(e.target.value)}>
-              {foundationFilenames.map(filename => {
-                return (<option key={filename} value={filename}>{filename}</option>)
-              })}
+              {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
             </Select>
 
           </HStack>
@@ -431,7 +433,7 @@ export default function MainPage() {
                               </Link>
                             </VStack>
                           </HStack>
-                          
+
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
@@ -443,7 +445,7 @@ export default function MainPage() {
                           </HStack>
                           <CountdownTimer endTime={countdown} />
                           <Text fontSize='20px'>Incoming Signatures:</Text>
-                          <KeysTableStatus keys={compositeKeys} />                          
+                          <KeysTableStatus keys={compositeKeys} />
                           {accounts[account] && accounts[account].transaction && (
                             <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
