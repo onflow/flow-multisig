@@ -431,18 +431,7 @@ export default function MainPage() {
                               </Link>
                             </VStack>
                           </HStack>
-
-                          <HStack backgroundColor="lightgray" padding="0.5rem">
-                            <VStack align="flex-start">
-                              <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getLink(signatureRequestId), setCopyText)}>{copyText}</Button>
-                                <Text fontSize='15px'>Manual CLI:</Text>
-                              </HStack>
-                              <Link isExternal href={getLink(signatureRequestId)}>
-                                {getLink(signatureRequestId)}
-                              </Link>
-                            </VStack>
-                          </HStack>
+                          
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
