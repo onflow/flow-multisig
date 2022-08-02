@@ -123,7 +123,7 @@ export default function MainPage() {
     const userAccount = qp.get("acct");
 
     if (fromScript) {
-      if (fromScript.toLocaleLowerCase() === FOUNDATION) {        
+      if (fromScript.toLocaleLowerCase() === FOUNDATION) {
         if (namedScript) {
           fetchFoundationFilename(namedScript)
           setScriptName(namedScript);
@@ -386,8 +386,19 @@ export default function MainPage() {
                         </FormControl>
                       </HStack>
                     </Stack>
-                    <Stack direction="row" spacing={4} align="start">
-                      <Stack>
+                    <Stack spacing={4} align="start">
+                      <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
+                        <VStack align="flex-start">
+                          <HStack>
+                            <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
+                            <Text fontSize='15px'>Page URL</Text>
+                          </HStack>
+                          <Link isExternal href={getFormUrlLink()}>
+                            {getFormUrlLink().substring(0, 90)}...
+                          </Link>
+                        </VStack>
+                      </Stack>
+                      <HStack>
                         <Button disabled={selectedProposalKey === null} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
@@ -402,11 +413,12 @@ export default function MainPage() {
                           </Link>
 
                         )}
-                      </Stack>
-                      {!state.inFlightRequests?.[cleanAddress(account)] &&
-                        state.inFlight && (
-                          <CircularProgress isIndeterminate color="green.300" />
-                        )}
+                        {!state.inFlightRequests?.[cleanAddress(account)] &&
+                          state.inFlight && (
+                            <CircularProgress isIndeterminate color="green.300" />
+                          )}
+                      </HStack>
+
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys]) => (
@@ -422,18 +434,6 @@ export default function MainPage() {
                             <Text fontSize='20px' color='black'>Signature Request Id:</Text>
                             <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
                           </HStack>
-                          <HStack backgroundColor="lightgray" padding="0.5rem">
-                            <VStack align="flex-start">
-                              <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
-                                <Text fontSize='15px'>Page URL</Text>
-                              </HStack>
-                              <Link isExternal href={getFormUrlLink()}>
-                                {getFormUrlLink(signatureRequestId)}
-                              </Link>
-                            </VStack>
-                          </HStack>
-
                           <HStack backgroundColor="lightgray" padding="0.5rem">
                             <VStack align="flex-start">
                               <HStack>
