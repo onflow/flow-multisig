@@ -21,6 +21,7 @@ import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
+import { abbrvKey } from "../../utils/formatting";
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -121,6 +122,11 @@ export default function MainPage() {
     const namedScript = qp.get("name");
     const jsonParam = qp.get("param");
     const userAccount = qp.get("acct");
+    const exeLimit = qp.get("limit");
+
+    if (exeLimit) {
+      setExeEffort(parseInt(exeLimit));
+    }
 
     if (fromScript) {
       if (fromScript.toLocaleLowerCase() === FOUNDATION) {
@@ -229,7 +235,7 @@ export default function MainPage() {
 
   const getFormUrlLink = () => {
     const network = getNetwork();
-    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}`;
+    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}&limit=${exeEffort}`;
     return encodeURI(url);
   };
 
@@ -296,7 +302,7 @@ export default function MainPage() {
     })
 
   }
-
+ 
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -399,7 +405,7 @@ export default function MainPage() {
                         </VStack>
                       </Stack>
                       <HStack>
-                        <Button disabled={selectedProposalKey === null} onClick={() => onSubmit(account)}>
+                        <Button disabled={selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
@@ -445,9 +451,9 @@ export default function MainPage() {
                           </HStack>
                           <CountdownTimer endTime={countdown} />
                           <Text fontSize='20px'>Incoming Signatures:</Text>
-                          <KeysTableStatus keys={compositeKeys} />
+                          <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
                           {accounts[account] && accounts[account].transaction && (
-                            <HStack><Text>Tx:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
+                            <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
                         </Stack>
                       ))}
