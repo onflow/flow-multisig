@@ -20,7 +20,7 @@ import {
 import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { CountdownTimer } from "../../components/CountdownTimer";
-import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
+import { authzManyKeyResolver, buildProperAuthz } from "../../utils/authz";
 import { abbrvKey } from "../../utils/formatting";
 
 if (typeof window !== "undefined") window.fcl = fcl;
@@ -191,17 +191,16 @@ export default function MainPage() {
   };
 
   const onSubmit = async (accountKey) => {
+    const proposerAccount = "0x4cd9606ad17814a4";
+    const proposerKeyId = 0;
+
     const account = accounts[accountKey];
     const keys = account.keys;
-    if (selectedProposalKey === null) return;
-    // selected key is proposer
-    const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
-    if (!proposalKey) return;
 
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
-    const authorizations = [authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch)];
-    const resolver = authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch);
-    const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
+    const authorizations = [authzManyKeyResolver({ address: accountKey }, keys, dispatch)];
+    const resolver = authzManyKeyResolver({ address: accountKey }, keys, dispatch);
+    const resolveProposer = buildProperAuthz({ address: proposerAccount, index: proposerKeyId }, dispatch);
 
     setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
     const { transactionId } = await fcl.send([
@@ -405,7 +404,7 @@ export default function MainPage() {
                         </VStack>
                       </Stack>
                       <HStack>
-                        <Button disabled={selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
+                        <Button disabled={state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (

@@ -3,12 +3,12 @@ import * as fcl from "@onflow/fcl";
 const wait = async (period = 3000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
-export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => {
+export const authzManyKeyResolver = ({ address }, keys, dispatch) => {
   const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
+  console.log('auth account', account)
   return {
-    ...account,
-    addr: fcl.sansPrefix(account.address),
-    address: fcl.sansPrefix(account.address),
+    addr: fcl.sansPrefix(address),
+    address: fcl.sansPrefix(address),
     resolve: (account) => {
       return keys.map(({ index }) => ({
         ...account,
@@ -55,15 +55,14 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
             })
             if (data?.length > 0) {
               const weights = data.reduce((p, d) => d.sig ? p + parseInt(keysWeight[d.keyId]) : p, 0);
-              // has proposer signed
-              const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-              if (weights >= 1000 && proposerSigned.sig) {
+              if (weights >= 1000) {
                 const sigKey = data.find(d => d.keyId === index);
                 const sig = {
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,
                   signature: sigKey.sig,
                 };
+                console.log('auth sig', sig)
                 return sig;
               }
             }
@@ -76,9 +75,8 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
 
 }
 
-export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispatch) => {
+export const buildProperAuthz = ({ address, index }, dispatch) => {
   return async function authz(account) {
-    const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
     return {
       ...account,
       addr: fcl.sansPrefix(address),
@@ -101,40 +99,22 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
           }
         ).then((r) => r.json());
 
-        // Check status and update UI with status here.
         while (true) {
           await wait();
-          const { data } = await fetch(
-            `/api/${id}`
+
+          const data = await fetch(
+            `/api/pending/rlp/${id}/proposer`
           ).then((r) => r.json());
 
-          data.forEach(d => {
-            dispatch({
-              type: "update-composite-key",
-              data: {
-                address: signable.addr,
-                sig: d.sig,
-                keyId: d.keyId,
-                signatureRequestId: id,
-                weight: keysWeight[d.keyId]
-              },
-            });
-          })
-          if (data?.length > 0) {
-            const weights = data.reduce((p, d) => (d.sig ? p + parseInt(keysWeight[d.keyId]) : p), 0);
-            if (weights >= 1000) {
-              const sigKey = data.find(d => d.keyId === index);
-              // has proposer signed
-              const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-
-              if (sigKey && proposerSigned.sig) {
-                return ({
-                  addr: fcl.withPrefix(sigKey.address),
-                  keyId: sigKey.keyId,
-                  signature: sigKey.sig,
-                })
-              }
-            }
+          if (data?.sig) {
+            console.log('proposer sig', data.sig);
+            const sigHex = data.sig.toString("hex");
+            console.log('sig hex', sigHex);
+            return ({
+              addr: fcl.withPrefix(address),
+              keyId: index,
+              signature: data.sig,
+            })
           }
         }
       },

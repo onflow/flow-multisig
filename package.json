@@ -18,6 +18,8 @@
     "@onflow/six-transfer-tokens": "^0.0.8",
     "@onflow/transport-http": "1.4.0",
     "@supabase/supabase-js": "^1.29.0",
+    "crypto": "^1.0.1",
+    "elliptic": "^6.5.4",
     "framer-motion": "^4.1.17",
     "next": "12.1.0",
     "prettier": "^2.5.1",
