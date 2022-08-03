@@ -5,7 +5,7 @@ const wait = async (period = 3000) =>
 
 export const authzManyKeyResolver = ({ address }, keys, dispatch) => {
   const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
-  console.log('auth account', account)
+
   return {
     addr: fcl.sansPrefix(address),
     address: fcl.sansPrefix(address),
@@ -54,9 +54,17 @@ export const authzManyKeyResolver = ({ address }, keys, dispatch) => {
               });
             })
             if (data?.length > 0) {
-              const weights = data.reduce((p, d) => d.sig ? p + parseInt(keysWeight[d.keyId]) : p, 0);
+              console.log('data', account.address, data)
+              const weights = data.reduce((p, d) => d.sig ?
+                d.address === fcl.sansPrefix(account.address) ?
+                  p + parseInt(keysWeight[d.keyId])
+                  : p
+                : p, 0);
               if (weights >= 1000) {
-                const sigKey = data.find(d => d.keyId === index);
+                console.log('KeyId of auth', index)
+                const sigKey = data.find(d =>
+                  d.address === fcl.sansPrefix(account.address)
+                  && d.keyId === index);
                 const sig = {
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,
@@ -108,8 +116,7 @@ export const buildProperAuthz = ({ address, index }, dispatch) => {
 
           if (data?.sig) {
             console.log('proposer sig', data.sig);
-            const sigHex = data.sig.toString("hex");
-            console.log('sig hex', sigHex);
+
             return ({
               addr: fcl.withPrefix(address),
               keyId: index,

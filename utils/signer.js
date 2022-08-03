@@ -21,7 +21,6 @@ function getEC(sigAlgo) {
     }
 }
 
-
 export const signTx = (message, privateKeyHex) => {
     const privateKey = ECPrivateKey.fromHex(privateKeyHex, signatureAlgorithms.ECDSA_P256)
     const signer = new ECSigner(privateKey, hashAlgorithms.SHA2_256)
@@ -134,7 +133,8 @@ class ECSigner {
     }
 
     sign(message) {
-        return this.privateKey.sign(message)
+        const digest = this.hasher.hash(message)
+        return this.privateKey.sign(digest)
     }
 }
 

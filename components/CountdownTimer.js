@@ -26,7 +26,7 @@ export const CountdownTimer = ({ endTime }) => {
                 (<><Text>Countdown: </Text><Text>{minutes} minutes</Text><Text>{seconds} seconds</Text></>
                 )}
             {done &&
-                (<><Text>Countdown: </Text><Text>Done</Text></>
+                (<><Text>Countdown: </Text><Text>Expired!</Text></>
                 )}
         </HStack>
     )

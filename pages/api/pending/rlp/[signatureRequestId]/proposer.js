@@ -1,6 +1,7 @@
 import { supabase } from "../../../../../utils/supabaseClient";
 import { decode } from "rlp";
 import { signTx } from "../../../../../utils/signer";
+import { encodeTransactionPayload } from "@onflow/sdk";
 
 const unique = (value, index, self) => {
     return self.indexOf(value) === index;
@@ -32,20 +33,30 @@ const decodedEnvelopeSignature = (envelopeRLP) => {
 export default async function handler({ body, method, query }, res) {
     switch (method) {
         case "GET":
+            const privKey = "23e0d456a46265bed677f3ff39b804c5464216674e1f4fad798dcf9cfc191e97";
             const { data, error, status } = await supabase
                 .from("payloadSigs")
-                .select("rlp")
+                .select("rlp, signable")
                 .match(query);
 
             // Could not find row.
             if (status === 406) {
                 return res.status(404).send(error);
             }
-            const rlp = data[0].rlp;
+            const { voucher } = data[0].signable;
+            const { rlp } = data[0];
+            console.log('rlp  ', rlp)
+            console.log(JSON.stringify(voucher))
+            const txPayloadRLP = encodeTransactionPayload(voucher).slice("464c4f572d56302e302d7472616e73616374696f6e0000000000000000000000".length);
+            console.log('payload', txPayloadRLP);
+            const address = decode("0x" + txPayloadRLP)[4]
+            console.log('decoded', address.toString("hex"));
+            console.log(txPayloadRLP)
             // sign RLP with default signer
-            const privKey = "23e0d456a46265bed677f3ff39b804c5464216674e1f4fad798dcf9cfc191e97";
-            const sig = signTx(rlp, privKey);
-
+            const sig = signTx(txPayloadRLP, privKey);
+            console.log('signed', sig)
+            const txSig = signTx(rlp, privKey);
+            console.log('\nrlp signed', txSig);
             // Could not find row.
             if (status === 406) {
                 return res.status(404).json({

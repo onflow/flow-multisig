@@ -4,8 +4,6 @@ import {
   getSignatureRequestIdFromRLP,
 } from "../../../../../utils/fclCLI";
 
-const WHITELIST = process.env.WHITELIST_ADDRESSES
-
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "GET":
