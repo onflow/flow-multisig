@@ -205,11 +205,11 @@ export default function MainPage() {
 
     setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
 
-    const privKey = "23e0d456a46265bed677f3ff39b804c5464216674e1f4fad798dcf9cfc191e97";
+    const privKey = "add-env-private-key-here";
     const privateKey = InMemoryECPrivateKey.fromHex(privKey, SignatureAlgorithm.ECDSA_P256);
     const signer = new InMemoryECSigner(privateKey, HashAlgorithm.SHA2_256);
     
-    const proposer = new Authorizer({ address: '0x4cd9606ad17814a4', keyIndex: 0, signer });
+    const proposer = new Authorizer({ address: "add-env-public-address-here", keyIndex: 0, signer });
     
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
