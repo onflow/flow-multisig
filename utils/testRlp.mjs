@@ -1,5 +1,19 @@
 import { encodeTransactionPayload } from "@onflow/sdk";
+import { encodeVoucherToEnvelope } from "./fclCLI.js";
 import { encode, decode } from "rlp";
+
+// package.json //    "type": "module",
+// to use fclCLI methods
+
+const decodeRlp = (rlp, label) => {
+  console.log(label, rlp)
+  console.log(label, decode(rlp))
+  console.log(label, "0", decode(rlp)[0].toString("hex"))
+  console.log(label, "1",decode(rlp)[1].toString("hex"))
+  console.log(label, "2",decode(rlp)[2].toString("hex"))
+  console.log(label, "3",decode(rlp)[3].toString("hex"))  
+  console.log(label, "4", decode(rlp)[4].toString("hex"));
+}
 const data = {
     "addr": "4cd9606ad17814a4",
     "args": [],
@@ -130,8 +144,11 @@ const data = {
   }
 
 const { voucher } = data;
+
+console.log(JSON.stringify(voucher))
+const cliRLP = "f897f893b84e7472616e73616374696f6e207b0a202070726570617265287369676e65723a20417574684163636f756e7429207b0a202020206c6f67282248656c6c6f2c20576f726c642122290a20207d0a7d0ac0a019a644a124f3ed95e7b5adc86c86ba300885fc79ce03dae7697cf511f4bfa89382270f884cd9606ad17814a4808088be311185fc0b4a5cc988be311185fc0b4a5cc0c0"
+
 // encode voucher
 const rlp = "0x" + encodeTransactionPayload(voucher).slice("464c4f572d56302e302d7472616e73616374696f6e0000000000000000000000".length);
-console.log('rlp', rlp)
-const address = decode(rlp)[4]
-console.log('decoded', address.toString("hex"));
+decodeRlp(rlp, "payload")
+decodeRlp("0x" + cliRLP, "envelope")

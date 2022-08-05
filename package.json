@@ -12,6 +12,8 @@
     "@chakra-ui/react": "^1.7.3",
     "@emotion/react": "^11.7.1",
     "@emotion/styled": "^11.6.0",
+    "@fresh-js/core": "^0.0.5",
+    "@fresh-js/crypto": "^0.0.4",
     "@onflow/config": "^0.0.2",
     "@onflow/fcl": "1.1.1",
     "@onflow/sdk": "1.1.1",

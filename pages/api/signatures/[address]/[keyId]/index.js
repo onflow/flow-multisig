@@ -30,7 +30,7 @@ export default async function handler({ body, method, query }, res) {
         envelopeSigs: [],
         payloadSigs: [],
       });
-
+      console.log('cliRLP', cliRLP)
       const signatureRequestId = getSignatureRequestIdFromRLP(cliRLP);
 
       await supabase.from("payloadSigs").upsert({

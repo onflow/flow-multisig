@@ -35,6 +35,7 @@ export const authzManyKeyResolver = ({ address }, keys, dispatch) => {
           ).then((r) => r.json());
 
           // Check status and update UI with status here.
+          console.log('waiting for auth sigs')
           while (true) {
             await wait();
             const { data } = await fetch(

@@ -21,7 +21,8 @@ import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildProperAuthz } from "../../utils/authz";
-import { abbrvKey } from "../../utils/formatting";
+import { HashAlgorithm, InMemoryECPrivateKey, InMemoryECSigner, SignatureAlgorithm } from '@fresh-js/crypto';
+import { Authorizer } from '@fresh-js/core';
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -203,12 +204,19 @@ export default function MainPage() {
     const resolveProposer = buildProperAuthz({ address: proposerAccount, index: proposerKeyId }, dispatch);
 
     setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
+
+    const privKey = "23e0d456a46265bed677f3ff39b804c5464216674e1f4fad798dcf9cfc191e97";
+    const privateKey = InMemoryECPrivateKey.fromHex(privKey, SignatureAlgorithm.ECDSA_P256);
+    const signer = new InMemoryECSigner(privateKey, HashAlgorithm.SHA2_256);
+    
+    const proposer = new Authorizer({ address: '0x4cd9606ad17814a4', keyIndex: 0, signer });
+    
     const { transactionId } = await fcl.send([
       fcl.transaction(cadencePayload),
       fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
       //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
       //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
-      fcl.proposer(resolveProposer),
+      fcl.proposer(proposer.toFCLAuthorizationFunction()),
       fcl.authorizations(authorizations),
       fcl.payer(resolver),
       fcl.limit(parseInt(exeEffort)),

@@ -755,6 +755,30 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
+"@fresh-js/core@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@fresh-js/core/-/core-0.0.5.tgz#e6996d8fd15efd0ad169f9b4f4d9edbd6fa9f7e5"
+  integrity sha512-XrxwvyJaxoKg2vwmtw+PpRG5RmIB4zHIUKEUaIgaQ4J9baH5UJ59h4zRQQ3iLpG2gD1ewo4WatRUYZ2mCJVlmg==
+  dependencies:
+    "@fresh-js/crypto" "^0.0.2"
+    "@onflow/fcl" "^1.0.2"
+
+"@fresh-js/crypto@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@fresh-js/crypto/-/crypto-0.0.2.tgz#6e76946344a1a4abdf6a627b4551c19d00b27fce"
+  integrity sha512-s8kdoqC2dxWiWoO9AG8fmpX1eLalra0Jy+KwR01uBzb2JW8B1J+jyu44QbjzvzYwREPKmPVBVa6/XlF+I7Z2CQ==
+  dependencies:
+    elliptic "^6.5.4"
+    sha3 "^2.1.4"
+
+"@fresh-js/crypto@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@fresh-js/crypto/-/crypto-0.0.4.tgz#1dbd3e81b4a65f156dbc6862ce1bda5da4f6b7c7"
+  integrity sha512-KXkjrniqeOZOP9rRx3MDBlwotDrNj0G8kg8UvuYZjhROE0pXmVmTfnSLkm5A/MyTNy9Ybe/ry8h0HnkVM0C/uQ==
+  dependencies:
+    elliptic "^6.5.4"
+    sha3 "^2.1.4"
+
 "@humanwhocodes/config-array@^0.9.2":
   version "0.9.5"
   resolved "https://registry.npmjs.org/@humanwhocodes/config-array/-/config-array-0.9.5.tgz"
@@ -876,6 +900,24 @@
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@onflow/fcl/-/fcl-1.1.1.tgz#07815fea05aca4ba05267316addeeba254c8da4e"
   integrity sha512-xdYsBMmWHCTp3lUh9J4WShYQMhXPYUEgCG/XFGv2eurC/nXeca46KWuAXhvQqBqCJ3/+JRbrKLhB33ypKvBIjQ==
+  dependencies:
+    "@babel/runtime" "^7.18.6"
+    "@onflow/config" "^1.0.3"
+    "@onflow/interaction" "0.0.11"
+    "@onflow/rlp" "^1.0.2"
+    "@onflow/sdk" "^1.1.1"
+    "@onflow/types" "^1.0.3"
+    "@onflow/util-actor" "^1.1.1"
+    "@onflow/util-address" "^1.0.2"
+    "@onflow/util-invariant" "^1.0.2"
+    "@onflow/util-logger" "^1.1.1"
+    "@onflow/util-template" "^1.0.3"
+    "@onflow/util-uid" "^1.0.2"
+
+"@onflow/fcl@^1.0.2":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@onflow/fcl/-/fcl-1.2.0.tgz#cce0ec8ab3efe4ca4c86d5e968b52690b1a40fc7"
+  integrity sha512-vgPsDuYhRmCVEQWRcfyY3KPxHAk+EGF4MLv08VUpN4vudDUY1J3AXM/NBk/ebeBis7CfgqC5gAarLsHX1omvIg==
   dependencies:
     "@babel/runtime" "^7.18.6"
     "@onflow/config" "^1.0.3"
