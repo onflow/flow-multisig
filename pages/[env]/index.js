@@ -104,6 +104,7 @@ export default function MainPage() {
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText2, setCopyText2] = useState("Copy");
+  const [copyText3, setCopyText3] = useState("Copy");
   const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
@@ -250,6 +251,11 @@ export default function MainPage() {
     return encodeURI(url);
   };
 
+  const getOauthPageLink = (signatureRequestId) => {
+    const network = getNetwork();
+    const url = `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
+    return url;
+  }
 
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
@@ -302,7 +308,7 @@ export default function MainPage() {
     })
 
   }
- 
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -424,10 +430,21 @@ export default function MainPage() {
                             <CircularProgress isIndeterminate color="green.300" />
                           )}
                       </HStack>
-
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys]) => (
+                        <>
+                                              {signatureRequestId && <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
+                        <VStack align="flex-start">
+                          <HStack>
+                            <Button size="sm" onClick={() => copyTextToClipboard(getOauthPageLink(signatureRequestId), setCopyText3)}>{copyText3}</Button>
+                            <Text fontSize='15px'>OAuth page URL</Text>
+                          </HStack>
+                          <Link isExternal href={getOauthPageLink(signatureRequestId)}>
+                            {getOauthPageLink(signatureRequestId).substring(0, 90)}...
+                          </Link>
+                        </VStack>
+                      </Stack>}
                         <Stack
                           key={signatureRequestId}
                           flex="1"
@@ -456,6 +473,7 @@ export default function MainPage() {
                             <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                           )}
                         </Stack>
+                        </>
                       ))}
                     </Stack>
                   </React.Fragment>
