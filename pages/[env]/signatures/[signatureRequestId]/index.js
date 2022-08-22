@@ -17,6 +17,7 @@ import useSWR from "swr";
 import * as fcl from "@onflow/fcl";
 import { GoogleLogin, googleLogout, hasGrantedAllScopesGoogle, hasGrantedAnyScopeGoogle } from '@react-oauth/google';
 import useScript from 'react-script-hook';
+import { convert } from "../../../../utils/kmsSignature";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -31,6 +32,8 @@ const KEY_LOCATION = "keyLocation";
 const KEY_RING = "keyRing";
 const KEY_NAME = "keyName";
 const KEY_VERSION = "keyVersion";
+const SIGN_ACCT = "signingAccount";
+const SIGN_KEYID = "signingKeyId";
 //const CLIENT_ID = "769260085272-espd1f4180edgc2h4p9i1vad8pv6js26.apps.googleusercontent.com"; //process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const CLIENT_ID = "769260085272-oif0n1ut40vn6p8ldhvp4c4fdkfm3f4d.apps.googleusercontent.com";
 const projectId = "my-kms-project-35857";
@@ -175,12 +178,7 @@ export default function SignatureRequestPage() {
   const signPayload = async () => {
     setSigningStatus(SIGNING_REQUESTED);
     const kmsUrl = getSigningUrl(userKeyInfo)
-
-    // convert RLP to base64
-    const hello = "464c4f572d56302e302d7472616e73616374696f6e0000000000000000000000f896f893b84e7472616e73616374696f6e207b0a202070726570617265287369676e65723a20417574684163636f756e7429207b0a202020206c6f67282248656c6c6f2c20576f726c642122290a20207d0a7d0ac0a07d20be3e1313db894e3e4f81803de3fc54c579c4c2e5048967df53d19847590782270f88eba0ffa73653b2f1080188eba0ffa73653b2f1c988eba0ffa73653b2f1c0";
-    const message = hello; //cliRLP;
-    console.log('rlp\n', message, '\n')
-    const rlpHex = Buffer.from(message, "hex");
+    const rlpHex = Buffer.from(cliRLP, "hex");
     const rlpBase64 = rlpHex.toString("base64")
 
     if (typeof window !== 'undefined') {
@@ -211,14 +209,20 @@ export default function SignatureRequestPage() {
           setSigningMessage(`Signing Successful, account ${account}, keyId: ${keyId}`);
           // parse up result and package up sig
           const result = await response.json();
-          const sig = result.signature
-          console.log(sig)
-          // google kms only supports 2 curves resulting in 32 length
-          // TODO: put in helper to process signature
-          // signature := make([]byte, 2*curveOrderLen)
-          const sigBase64 = Buffer.from(sig, "base64");
-          const sigHex = sigBase64.toString("hex");
-          console.log('sig hex', sigHex)
+          let sig = null;
+          
+          if (response.status === 200) {
+            const kmsSignature = result.signature
+            sig = convert(kmsSignature);
+            //const env = prepareSignedEnvelope(cliRLP, signingAccount, signingKeyId, sig);
+            // save env to backend
+            // asn1 not working in browser but works in nodejs
+            
+
+          } else {
+            setSigningStatus(SIGNING_ERROR);
+            setSigningMessage(`KMS Service returned error ${response.status}, check network status`)
+          }
 
 
         }
@@ -257,7 +261,9 @@ export default function SignatureRequestPage() {
   const key_ring = userKeyInfo?.[KEY_RING];
   const key_name = userKeyInfo?.[KEY_NAME];
   const key_version = userKeyInfo?.[KEY_VERSION];
-  const canSign = project_id && key_location && key_ring && key_name && key_version;
+  const signing_account = userKeyInfo?.[SIGN_ACCT];
+  const signing_keyId = userKeyInfo?.[SIGN_KEYID];
+  const canSign = project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId);
 
   return (
     <>
@@ -320,6 +326,22 @@ export default function SignatureRequestPage() {
               placeholder="Enter Key Version"
               onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_VERSION)}
               value={key_version}
+            />
+            <FormLabel>Signing Account</FormLabel>
+            <Input
+              size="sm"
+              id="signing-account"
+              placeholder="Enter Account Address"
+              onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_ACCT)}
+              value={signing_account}
+            />
+            <FormLabel>Signing KeyId</FormLabel>
+            <Input
+              size="sm"
+              id="key-id"
+              placeholder="Enter Key Id"
+              onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
+              value={signing_keyId}
             />
             <FormLabel>KMS: Full Key Path</FormLabel>
             <FormLabel>{getRestEndpoint(userKeyInfo)}</FormLabel>

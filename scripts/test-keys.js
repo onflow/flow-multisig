@@ -1,21 +1,29 @@
-//
-// TODO(developer): Uncomment these variables before running the sample.
-//
-// const projectId = 'my-project';
-// const locationId = 'us-east1';
+// Imports the Cloud KMS library
+import * as kms from '@google-cloud/kms';
+import * as fcl from "@onflow/fcl";
+import { SHA3 } from 'sha3';
+import { fromBER } from "asn1js"
+import { decode, encode } from "rlp";
+
 const projectId = "my-kms-project-35857";
 const locationId = "global";
 const keyRingId = "test";
 const keyId = "tester002";
 const versionId = "1";
 
-// Imports the Cloud KMS library
-import * as kms from '@google-cloud/kms';
-import { SHA3 } from 'sha3';
-import { fromBER } from "asn1js"
-
 // Instantiates a client
 const client = new kms.KeyManagementServiceClient();
+
+const rightPaddedHexBuffer = (value, pad) =>
+  Buffer.from(value.padEnd(pad * 2, 0), "hex");
+
+const leftPaddedHexBuffer = (value, pad) =>
+  Buffer.from(value.padStart(pad * 2, 0), "hex");
+
+const TRANSACTION_DOMAIN_TAG = rightPaddedHexBuffer(
+  Buffer.from("FLOW-V0.0-transaction").toString("hex"),
+  32
+).toString("hex");
 
 const hash = (message) => {
     const sha = new SHA3(256)
@@ -34,12 +42,11 @@ async function mySignFunction(message) {
         versionId
     );
 
-    const txMessage = hash(message)
-
+    console.log('message', message.toString("hex"));
     // Sign the message with Cloud KMS
     const [signResponse] = await client.asymmetricSign({
         name: versionName,
-        data: txMessage,
+        data: message,
     });
 
 
@@ -60,25 +67,44 @@ const parseSignature = (buf) => {
     const values = (result).valueBlock.value
 
     const getHex = (value) => {
-      const buf = Buffer.from(value.valueBlock.valueHex)
-      return buf.slice(Math.max(buf.length - 32, 0))
+        const buf = Buffer.from(value.valueBlock.valueHex)
+        return buf.slice(Math.max(buf.length - 32, 0))
     }
 
     const r = getHex(values[0])
     const s = getHex(values[1])
     return { r, s }
-  }
+}
 
-  const toArrayBuffer = (buffer) => {
+const toArrayBuffer = (buffer) => {
     const ab = new ArrayBuffer(buffer.length)
     const view = new Uint8Array(ab)
     for (let i = 0; i < buffer.length; ++i) {
-      view[i] = buffer[i]
+        view[i] = buffer[i]
     }
     return ab
-  }
+}
 
-const message = "f897f893b84e7472616e73616374696f6e207b0a202070726570617265287369676e65723a20417574684163636f756e7429207b0a202020206c6f67282248656c6c6f2c20576f726c642122290a20207d0a7d0ac0a0a57f82c3eceebbee8c371b6551e6c380e2e952a9607848f38e111c16e755eaa782270f88eba0ffa73653b2f1080288eba0ffa73653b2f1c988eba0ffa73653b2f1c0c0";
-const sig = await mySignFunction(message);
+const fetchMessage = async (url) => {
+    const res = await fetch(url, {
+        headers: {
+            'Content-Type': 'application/text'
+        }
+    });
+    return res.text();
+}
+const arg = process.argv.slice(2) || [];
+
+const arg1 = arg[0];
+const arg2 = arg[1];
+
+console.log('args1', arg1, 'args2', arg2)
+const message = await fetchMessage(arg1);
+const decodeMsg = decode("0x" + message)[0]
+const payload = TRANSACTION_DOMAIN_TAG + encode([decodeMsg, []]).toString("hex");
+const sig = await mySignFunction(payload);
 console.log("\nsignature: ", sig);
 
+const envelope = encode([payload[0], [], [[0, 8, sig]]]).toString("hex");
+
+console.log('envelope', envelope)
