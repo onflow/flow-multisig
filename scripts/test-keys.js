@@ -83,9 +83,7 @@ async function mySignFunction(message) {
     // Sign the message with Cloud KMS
     const [signResponse] = await client.asymmetricSign({
         name: versionName,
-        digest: {
-            sha256: digest,
-        },
+        data: message
     });
 
     // Because the signature is in a binary format, you need to encode the output before printing it to a
