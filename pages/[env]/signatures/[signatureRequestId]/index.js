@@ -18,6 +18,7 @@ import * as fcl from "@onflow/fcl";
 import { GoogleLogin, googleLogout, hasGrantedAllScopesGoogle, hasGrantedAnyScopeGoogle } from '@react-oauth/google';
 import useScript from 'react-script-hook';
 import { convert } from "../../../../utils/kmsSignature";
+import { encodeTransactionPayload } from "@onflow/sdk";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -178,8 +179,10 @@ export default function SignatureRequestPage() {
   const signPayload = async () => {
     setSigningStatus(SIGNING_REQUESTED);
     const kmsUrl = getSigningUrl(userKeyInfo)
-    const rlpHex = Buffer.from(cliRLP, "hex");
-    const rlpBase64 = rlpHex.toString("base64")
+    console.log('sss', signatures[0].signable.voucher)
+    const message = encodeTransactionPayload(signatures[0].signable.voucher)
+    const rlpBase64 = Buffer.from(message, 'hex').toString('base64')
+    console.log('message', rlpBase64)
 
     if (typeof window !== 'undefined') {
 
@@ -204,8 +207,8 @@ export default function SignatureRequestPage() {
         if (response.status === 200) {
           setSigningStatus(SIGNING_DONE)
           // TODO: put on helper to parse out account info
-          const account = "TBD";
-          const keyId = "TBD";
+          const account = userKeyInfo?.[SIGN_ACCT];
+          const keyId = userKeyInfo?.[SIGN_KEYID];
           setSigningMessage(`Signing Successful, account ${account}, keyId: ${keyId}`);
           // parse up result and package up sig
           const result = await response.json();
@@ -213,11 +216,12 @@ export default function SignatureRequestPage() {
           
           if (response.status === 200) {
             const kmsSignature = result.signature
+            console.log('kms sig', kmsSignature)
             sig = convert(kmsSignature);
             //const env = prepareSignedEnvelope(cliRLP, signingAccount, signingKeyId, sig);
             // save env to backend
             // asn1 not working in browser but works in nodejs
-            
+
 
           } else {
             setSigningStatus(SIGNING_ERROR);

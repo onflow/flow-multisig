@@ -1,5 +1,6 @@
 import { decode, encode } from "rlp";
 import { fromBER } from "asn1js"
+import { TRANSACTION_DOMAIN_TAG } from "./fclCLI";
 
 
 const parseSignature = (buf) => {
@@ -32,7 +33,11 @@ export const convert = (kmsSignature) => {
     const { r, s } = parseSignature(sig)
     return Buffer.concat([r, s]).toString("hex")
 }
-
+export const prepareMessage = (message) => {
+    const decodeMsg = decode("0x" + message)[0]
+    const payload = TRANSACTION_DOMAIN_TAG + encode([decodeMsg, []]).toString("hex");
+    return payload;
+}
 export const prepareSignedEnvelope = (rlp, address, keyId, signature) => {
     const payload = decode("0x" + rlp);
     const env = encode([payload[0], [], [[address, keyId, signature]]]).toString("hex");
