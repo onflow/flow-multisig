@@ -17,8 +17,7 @@ import useSWR from "swr";
 import * as fcl from "@onflow/fcl";
 import { GoogleLogin, googleLogout, hasGrantedAllScopesGoogle, hasGrantedAnyScopeGoogle } from '@react-oauth/google';
 import useScript from 'react-script-hook';
-import { convert } from "../../../../utils/kmsSignature";
-import { encodeTransactionPayload } from "@onflow/sdk";
+import { convert, getPayload, prepareSignedEnvelope, getDigest } from "../../../../utils/kmsSignature";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -176,14 +175,50 @@ export default function SignatureRequestPage() {
     return `${KMS_REST_ENDPOINT}/${getRestEndpoint(userKeyInfo)}:asymmetricSign`;
   }
 
+  const fetchMessage = async (id) => {
+    const res = await fetch(`/api/pending/rlp/${id}`, {
+      headers: {
+        'Content-Type': 'application/text'
+      }
+    });
+    return res.text();
+  }
+
+  const fetchPostSignature = async (id, envelope) => {
+    const res = await fetch(`/api/pending/rlp/${id}`, {
+      method: "post",
+      headers: {
+        'Content-Type': 'application/text'
+      },
+      body: envelope
+    });
+  }
+
+  const fetchSignature = async (accessToken, id, keyPath) => {
+    const { data, error } = await fetch(
+      `/api/signatures/convert`,
+      {
+        method: "post",
+        body: JSON.stringify({ signature: kmsSignature }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then((r) => r.json());
+
+    console.log('data', data, 'error', error)
+  }
+
   const signPayload = async () => {
     setSigningStatus(SIGNING_REQUESTED);
     const kmsUrl = getSigningUrl(userKeyInfo)
-    console.log('sss', signatures[0].signable.voucher)
-    const message = encodeTransactionPayload(signatures[0].signable.voucher)
-    const rlpBase64 = Buffer.from(message, 'hex').toString('base64')
-    console.log('message', rlpBase64)
-
+    //    console.log('sss', signatures[0].signable.voucher)
+    //    const message = encodeTransactionPayload(signatures[0].signable.voucher)
+    //    const rlpBase64 = Buffer.from(message, 'hex').toString('base64')
+    //console.log('message', rlpBase64)
+    const rlp = await fetchMessage(signatureRequestId);
+    console.log('rlp', rlp)
+    const message = getPayload(rlp);
     if (typeof window !== 'undefined') {
 
       try {
@@ -196,13 +231,12 @@ export default function SignatureRequestPage() {
           },
           redirect: 'follow',
           body: JSON.stringify({
-            name: getRestEndpoint(userKeyInfo),
-            data: rlpBase64,
+            digest: getDigest(message), 
           })
         }).catch(e => {
           console.log('error', e)
           setSigningStatus(SIGNING_ERROR);
-          setSigningMessage(e)
+          setSigningMessage(e.toString())
         })
         if (response.status === 200) {
           setSigningStatus(SIGNING_DONE)
@@ -213,12 +247,16 @@ export default function SignatureRequestPage() {
           // parse up result and package up sig
           const result = await response.json();
           let sig = null;
-          
+
           if (response.status === 200) {
             const kmsSignature = result.signature
             console.log('kms sig', kmsSignature)
             sig = convert(kmsSignature);
-            //const env = prepareSignedEnvelope(cliRLP, signingAccount, signingKeyId, sig);
+            console.log('converted sig', sig)
+            console.log('keyId', keyId)
+            const env = prepareSignedEnvelope(rlp, keyId, sig);
+            console.log('env', env)
+            fetchPostSignature(signatureRequestId, env);
             // save env to backend
             // asn1 not working in browser but works in nodejs
 
@@ -234,7 +272,7 @@ export default function SignatureRequestPage() {
       } catch (e) {
         console.log('error', e)
         setSigningStatus(SIGNING_ERROR);
-        setSigningMessage(e)
+        setSigningMessage(e.toString())
       }
 
     }

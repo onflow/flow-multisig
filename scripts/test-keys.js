@@ -37,7 +37,7 @@ const mySignFunction = async (message) => {
         keyId,
         versionId
     );
-    const payload = Buffer.from(message)
+
     const hash = crypto.createHash("sha256")
     hash.update(Buffer.from(message, "hex"))
     const digest = hash.digest()
@@ -82,7 +82,7 @@ const parseSignature = (buf) => {
     const r = getHex(values[0])
     const s = getHex(values[1])
     console.log('\nr', r.toString("hex"));
-    console.log('\ns', s.toString("hex"));
+    console.log('s', s.toString("hex"));
     return { r, s }
 }
 
