@@ -39,7 +39,7 @@ const mySignFunction = async (message) => {
     );
     const payload = Buffer.from(message)
     const hash = crypto.createHash("sha256")
-    hash.update(Buffer.from(payload, "hex"))
+    hash.update(Buffer.from(message, "hex"))
     const digest = hash.digest()
 
     const sha256Message = sha2.SHA256(message);
@@ -52,7 +52,12 @@ const mySignFunction = async (message) => {
     // Sign the message with Cloud KMS
     const [signResponse] = await client.asymmetricSign({
         name: resourceId,
-        data: Buffer.from(message, "hex")
+        digest: {
+            sha256: digest
+        },
+        digestCrc32c: {
+            value: digestCrc32c,
+        },
     });
 
     // Because the signature is in a binary format, you need to encode the output before printing it to a
