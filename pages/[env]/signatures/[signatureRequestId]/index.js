@@ -314,21 +314,9 @@ export default function SignatureRequestPage() {
       </Helmet>
 
       <Stack margin="4" alignContent="left">
-        <Stack>
-          {!userCred && <GoogleLogin
-            scope={KEY_SCOPE}
-            onSuccess={onSuccess}
-            onError={onFailure}
-          />}
-          {userCred && (
-            <Button width={"12rem"}
-              onClick={() => logout()}
-            >
-              Logout
-            </Button>
-
-          )}
+        <Stack>          
           <Stack>
+            <Text color={"blue"}>*** Make sure to allow pop ups for this site ***</Text>
             <FormLabel>Project Id</FormLabel>
             <Input
               size="sm"

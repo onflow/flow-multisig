@@ -6,7 +6,6 @@ const unique = (value, index, self) => {
 };
 
 export const decodedEnvelopeSignature = (envelopeRLP) => {
-  console.log('decodedEnvelopeSignature', envelopeRLP)
   const decoded = decode("0x" + envelopeRLP);
 
   // Addresses in signature index order.
@@ -20,12 +19,6 @@ export const decodedEnvelopeSignature = (envelopeRLP) => {
     const signerIndex = r[0][0] || 0;
     const address = signerIndexedAddresses[signerIndex].toString("hex");
 
-    console.log({
-      address,
-      // In RLP zero is an empty (null) buffer.
-      keyId: r[1][0] || 0,
-      sig: r[2].toString("hex"),
-    })
     return {
       address,
       // In RLP zero is an empty (null) buffer.

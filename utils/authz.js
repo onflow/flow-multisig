@@ -126,7 +126,6 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
               const sigKey = data.find(d => d.keyId === index);
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-
               if (sigKey && proposerSigned.sig) {
                 return ({
                   addr: fcl.withPrefix(sigKey.address),
