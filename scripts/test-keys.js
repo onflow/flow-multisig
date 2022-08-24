@@ -3,67 +3,30 @@ import * as kms from '@google-cloud/kms';
 import * as fcl from "@onflow/fcl";
 import { fromBER } from "asn1js"
 import { decode, encode } from "rlp";
-import * as crypto from "crypto"
+import * as crypto from "crypto";
+import CRC32C from "crc-32/crc32c.js";
 
 const projectId = "my-kms-project-35857";
 const locationId = "global";
 const keyRingId = "test";
 const keyId = "tester002";
 const versionId = "1";
-const walletAddress = "eba0ffa73653b2f1";
-const walletKeyId = 8;
-
-const resourceId = "projects/my-kms-project-35857/locations/global/keyRings/test/cryptoKeys/tester002/cryptoKeyVersions/1"
+const walletAddress = "4cfab7e565eb93e1";
+const walletKeyId = 0;
+const resourceId = "projects/my-kms-project-35857/locations/global/keyRings/test/cryptoKeys/tester002/cryptoKeyVersions/1";
 // Instantiates a client
 const client = new kms.KeyManagementServiceClient();
 
-const signatureBuffer = (signature) => Buffer.from(signature, "hex");
-
 const rightPaddedHexBuffer = (value, pad) =>
     Buffer.from(value.padEnd(pad * 2, 0), "hex");
-
-const leftPaddedHexBuffer = (value, pad) =>
-    Buffer.from(value.padStart(pad * 2, 0), "hex");
 
 const TRANSACTION_DOMAIN_TAG = rightPaddedHexBuffer(
     Buffer.from("FLOW-V0.0-transaction").toString("hex"),
     32
 ).toString("hex");
 
-const buildTx = (payloadDecoded) => {
-    let transaction = `transaction {
-        prepare(signer: AuthAccount) {
-          log("Hello, World!")
-        }
-      }
-      `
-    transaction = payloadDecoded[0];
-    const transactionByteArray = Buffer.from(transaction.toString())
-    const args = [];
-    const proposalKeyAddressByteArray = Buffer.from(walletAddress, 'hex');
-    const refBlockId = payloadDecoded[2].toString("hex");
-    const limit = payloadDecoded[3].toString("hex");
-    const sequence_number = payloadDecoded[5].toString("hex")
-    console.log('\ncdc', transaction.toString())
-    console.log('ref block', refBlockId);
-    console.log('limit', limit);
-    console.log('seq', sequence_number)
 
-    const payloadCanonicalForm = [
-        transactionByteArray,
-        args,
-        refBlockId,
-        parseInt(limit),
-        proposalKeyAddressByteArray,
-        parseInt(walletKeyId),
-        parseInt(sequence_number),
-        proposalKeyAddressByteArray,
-        []
-    ];
-    return payloadCanonicalForm;
-}
-
-async function mySignFunction(message) {
+const mySignFunction = async (message) => {
     // Create a digest of the message. The digest needs to match the digest
     // configured for the Cloud KMS key.
     const versionName = client.cryptoKeyVersionPath(
@@ -78,12 +41,20 @@ async function mySignFunction(message) {
     hash.update(Buffer.from(payload, "hex"))
     const digest = hash.digest()
 
-    console.log('key', versionName)
-    console.log('message sent', message)
+    console.log('key', versionName);
+    console.log('hash', digest.toString("hex"));
+    console.log('message sent', message);
+    const digestCrc32c = CRC32C.buf(digest);
+    console.log('crc', digestCrc32c)
     // Sign the message with Cloud KMS
     const [signResponse] = await client.asymmetricSign({
-        name: versionName,
-        data: message
+        name: resourceId,
+        digest: {
+            sha256: digest
+        },
+        digestCrc32c: {
+            value: digestCrc32c,
+        },
     });
 
     // Because the signature is in a binary format, you need to encode the output before printing it to a
@@ -146,7 +117,7 @@ const arg = process.argv.slice(2) || [];
 const url = arg[0];
 
 const message = await fetchMessage(url);
-console.log('start:', message)
+console.log('pre message:', message)
 const decodePayload = decode("0x" + message)[0]
 const payload = TRANSACTION_DOMAIN_TAG + encode([decodePayload, []]).toString("hex");
 let sig = await mySignFunction(payload);

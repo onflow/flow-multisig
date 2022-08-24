@@ -25,6 +25,7 @@
     "@supabase/supabase-js": "^1.29.0",
     "asn1js": "^3.0.5",
     "bn.js": "^5.2.1",
+    "crc-32": "^1.2.2",
     "crypto": "^1.0.1",
     "elliptic": "^6.5.4",
     "fast-crc32c": "^2.0.0",
