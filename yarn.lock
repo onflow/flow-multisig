@@ -4338,6 +4338,11 @@ set-harmonic-interval@^1.0.1:
   resolved "https://registry.npmjs.org/set-harmonic-interval/-/set-harmonic-interval-1.0.1.tgz"
   integrity sha512-AhICkFV84tBP1aWqPwLZqFvAwqEoVA9kxNMniGEUvzOlm4vLmOFLiTT3UZ6bziJTy4bOVpzWGTfSCbmaayGx8g==
 
+sha2@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/sha2/-/sha2-1.0.2.tgz#80c9efa6b918f3bfe8bd71a6c78dd4c0dc0ab618"
+  integrity sha512-sQ1sFn+WN2weGkwwt25bllwocaJLyYeDrn/T221Bovc6XEHRf7NSn0KPoPQMV2+NT+RhJoStkdm4TrEGCXkKHA==
+
 sha3@^2.1.4:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/sha3/-/sha3-2.1.4.tgz#000fac0fe7c2feac1f48a25e7a31b52a6492cc8f"
