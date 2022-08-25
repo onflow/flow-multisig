@@ -11,9 +11,9 @@ function MyApp({ Component, pageProps }) {
 
   useEffect(() => setupConfig(env, isLedger), [env, isLedger]);
   return (
-      <ChakraProvider>
-          <Component {...pageProps} />
-      </ChakraProvider>
+    <ChakraProvider>
+      <Component {...pageProps} />
+    </ChakraProvider>
   );
 }
 export default MyApp;

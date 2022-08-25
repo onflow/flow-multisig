@@ -28,7 +28,6 @@
     "crypto": "^1.0.1",
     "elliptic": "^6.5.4",
     "fast-crc32c": "^2.0.0",
-    "fcl-gcp-kms-authorizer": "^0.0.1-b",
     "framer-motion": "^4.1.17",
     "next": "12.1.0",
     "prettier": "^2.5.1",
