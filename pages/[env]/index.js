@@ -285,7 +285,7 @@ export default function MainPage() {
 
   const getOauthPageLink = (signatureRequestId) => {
     const network = getNetwork();
-    const url = `${window.location.origin}/${network}/signatures/${signatureRequestId}`;
+    const url = `${window.location.origin}/${network}/oauth/${signatureRequestId}`;
     return url;
   }
 
@@ -354,7 +354,7 @@ export default function MainPage() {
   }
 
   const sendTransaction = () => {
-    setSendTx(true);
+    
   }
 
   return (
