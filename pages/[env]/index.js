@@ -21,7 +21,6 @@ import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
-import { abbrvKey } from "../../utils/formatting";
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -61,6 +60,7 @@ function reducer(state, action) {
       if (!state.inFlightRequests[action.data.address]) {
         state.inFlightRequests[action.data.address] = {};
       }
+      const signatureRequestId = action.data.signatureRequestId
       const relevantRequest =
         state.inFlightRequests[action.data.address][
         action.data.signatureRequestId
@@ -69,6 +69,7 @@ function reducer(state, action) {
       return {
         ...state,
         inFlight: false,
+        signatureRequestId,
         inFlightRequests: {
           ...state.inFlightRequests,
           [action.data.address]: {
@@ -114,6 +115,7 @@ export default function MainPage() {
   const [txWaiting, setTxWaiting] = useState(false);
   const [eventButtonText, setEventButtonText] = useState("show");
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
+  const [sendButtonText, setSendButtonText] = useState("Send Transaction");
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -245,7 +247,6 @@ export default function MainPage() {
     try {
       if (tx?.transactionId) {
         transaction = await fcl.tx(tx?.transactionId).onceSealed()
-        console.log(transaction)
         if (transaction?.errorMessage) {
           setTransactionErrorMessage(transaction.errorMessage)
         }
@@ -348,13 +349,23 @@ export default function MainPage() {
       setEventButtonText("hide");
   }
 
-  const totalUpdater = (keys) => {
-    const total = keys.reduce((p, k) => k.sig ? p + k.weight : p, 0);
-    console.log('total', total)
+  const enoughSignatures = (keys) => {
+    const total = keys.reduce((p, k) => k.sig ? p + parseInt(k.weight) : p, 0);
+    const result = total >= 1000;
+    return result;
   }
 
-  const sendTransaction = () => {
-    
+  const sendTransaction = async () => {
+    setSendButtonText("Sending Transaction")
+    const signatureRequestId = state?.signatureRequestId
+    await fetch(
+      `/api/${signatureRequestId}/confirmation`,
+      {
+        method: "post",
+        body: signatureRequestId,
+      }
+    ).then((r) => r.json());    
+    setTimeout(() => setSendButtonText("Transaction Sent"), 1200);
   }
 
   return (
@@ -486,7 +497,7 @@ export default function MainPage() {
                             <VStack align="flex-start">
                               <HStack>
                                 <Button size="sm" onClick={() => copyTextToClipboard(getOauthPageLink(signatureRequestId), setCopyText3)}>{copyText3}</Button>
-                                <Text fontSize='15px'>OAuth page URL</Text>
+                                <Text fontSize='15px'>OAuth page URL</Text><Text color="blue">** In testing **</Text>
                               </HStack>
                               <Link isExternal href={getOauthPageLink(signatureRequestId)}>
                                 {getOauthPageLink(signatureRequestId).substring(0, 90)}...
@@ -517,7 +528,7 @@ export default function MainPage() {
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                            {/*<Button disabled={totalUpdater(compositeKeys)} onClick={sendTransaction}>Send Transaction</Button>*/}
+                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction} onClick={() => sendTransaction()}>{sendButtonText}</Button>
                             {accounts[account].transaction && (
                               <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                             )}

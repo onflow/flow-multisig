@@ -3,6 +3,11 @@ import * as fcl from "@onflow/fcl";
 const wait = async (period = 3000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
+const isTriggerSend = async (id) => {
+  const resp = await fetch(
+    `/api/${id}/confirmation`).then((r) => r.json());
+  return resp?.triggered || false
+}
 export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => {
   const keysWeight = keys.reduce((p, k) => ({ ...p, [k.index]: k.weight }), {});
   return {
@@ -57,7 +62,9 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               const weights = data.reduce((p, d) => d.sig ? p + parseInt(keysWeight[d.keyId]) : p, 0);
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-              if (weights >= 1000 && proposerSigned.sig) {
+              const doSend = await isTriggerSend(id)
+
+              if (weights >= 1000 && proposerSigned.sig && doSend) {
                 const sigKey = data.find(d => d.keyId === index);
                 const sig = {
                   addr: fcl.withPrefix(sigKey.address),
@@ -126,7 +133,9 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
               const sigKey = data.find(d => d.keyId === index);
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
-              if (sigKey && proposerSigned.sig) {
+              const doSend = await isTriggerSend(id)
+
+              if (sigKey && proposerSigned.sig && doSend) {
                 return ({
                   addr: fcl.withPrefix(sigKey.address),
                   keyId: sigKey.keyId,
