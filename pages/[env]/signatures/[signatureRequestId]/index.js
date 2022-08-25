@@ -14,8 +14,6 @@ import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
-import * as fcl from "@onflow/fcl";
-import { GoogleLogin, googleLogout, hasGrantedAllScopesGoogle, hasGrantedAnyScopeGoogle } from '@react-oauth/google';
 import useScript from 'react-script-hook';
 import { convert, getPayload, prepareSignedEnvelope, getDigest } from "../../../../utils/kmsSignature";
 
@@ -52,6 +50,7 @@ export default function SignatureRequestPage() {
   );
   const [signingStatus, setSigningStatus] = useState(null);
   const [signingMessage, setSigningMessage] = useState(null);
+  const [loginError, setLoginError] = useState(null);
 
   // --- api configuration --- //
   function gapiInit() {
@@ -74,13 +73,8 @@ export default function SignatureRequestPage() {
     , onload: () => gAPILoaded()
   });
 
-
-  const onTokenCallback = (response) => {
-    console.log('gis init');
-    console.log(response);
-  }
   // --- account configuration --- //
-  function gGsiLoaded() {
+  function gGsiSignIn() {
     console.log('loaded', GOOGLE_CLIENT_URL)
     google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
@@ -92,6 +86,8 @@ export default function SignatureRequestPage() {
           KEY_SCOPE)) {
           console.log('user has scope, saving access token')
           setAccessToken(tokenResponse.access_token)
+        } else {
+          setLoginError(`account needs scope ${KEY_SCOPE}`)
         }
       },
     }).requestAccessToken();
@@ -100,7 +96,7 @@ export default function SignatureRequestPage() {
 
   useScript.default({
     src: GOOGLE_CLIENT_URL
-    , onload: () => gGsiLoaded()
+    , onload: () => setIsGapiLoaded(true)
   });
 
   const router = useRouter();
@@ -121,34 +117,6 @@ export default function SignatureRequestPage() {
   };
 
   const signatures = data ? data.data : [];
-
-  const onSuccess = (res) => {
-    console.log('success:', res);
-    setUserCred(res?.credential)
-    const hasScope = hasGrantedAllScopesGoogle(res, KEY_SCOPE);
-    const anyScope = hasGrantedAnyScopeGoogle(res, KEY_SCOPE);
-
-    if (google.accounts.oauth2.hasGrantedAllScopes(res,
-      KEY_SCOPE)) {
-      console.log('user has scope')
-    }
-
-    console.log('scopes', hasScope, anyScope);
-  };
-
-  const onFailure = (err) => {
-    console.log('failed:', err);
-  };
-
-  const logout = () => {
-    console.log("logging user out")
-    //googleLogout()
-    setUserCred(null)
-  }
-
-  const updateSigninStatus = () => {
-    console.log('updateSigninStatus called');
-  }
 
   // The voucher is the same for all these. Doesn't matter which we pick here.
   const cliRLP = signatures && signatures.length
@@ -184,7 +152,7 @@ export default function SignatureRequestPage() {
     return res.text();
   }
 
-  const fetchPostSignature = async (id, envelope) => {
+  const postSignatureToApi = async (id, envelope) => {
     const res = await fetch(`/api/pending/rlp/${id}`, {
       method: "post",
       headers: {
@@ -194,30 +162,10 @@ export default function SignatureRequestPage() {
     });
   }
 
-  const fetchSignature = async (accessToken, id, keyPath) => {
-    const { data, error } = await fetch(
-      `/api/signatures/convert`,
-      {
-        method: "post",
-        body: JSON.stringify({ signature: kmsSignature }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((r) => r.json());
-
-    console.log('data', data, 'error', error)
-  }
-
   const signPayload = async () => {
     setSigningStatus(SIGNING_REQUESTED);
     const kmsUrl = getSigningUrl(userKeyInfo)
-    //    console.log('sss', signatures[0].signable.voucher)
-    //    const message = encodeTransactionPayload(signatures[0].signable.voucher)
-    //    const rlpBase64 = Buffer.from(message, 'hex').toString('base64')
-    //console.log('message', rlpBase64)
     const rlp = await fetchMessage(signatureRequestId);
-    console.log('rlp', rlp)
     const message = getPayload(rlp);
     if (typeof window !== 'undefined') {
 
@@ -231,7 +179,7 @@ export default function SignatureRequestPage() {
           },
           redirect: 'follow',
           body: JSON.stringify({
-            digest: getDigest(message), 
+            digest: getDigest(message),
           })
         }).catch(e => {
           console.log('error', e)
@@ -250,23 +198,13 @@ export default function SignatureRequestPage() {
 
           if (response.status === 200) {
             const kmsSignature = result.signature
-            console.log('kms sig', kmsSignature)
             sig = convert(kmsSignature);
-            console.log('converted sig', sig)
-            console.log('keyId', keyId)
             const env = prepareSignedEnvelope(rlp, keyId, sig);
-            console.log('env', env)
-            fetchPostSignature(signatureRequestId, env);
-            // save env to backend
-            // asn1 not working in browser but works in nodejs
-
-
+            postSignatureToApi(signatureRequestId, env);
           } else {
             setSigningStatus(SIGNING_ERROR);
             setSigningMessage(`KMS Service returned error ${response.status}, check network status`)
           }
-
-
         }
 
       } catch (e) {
@@ -314,9 +252,12 @@ export default function SignatureRequestPage() {
       </Helmet>
 
       <Stack margin="4" alignContent="left">
-        <Stack>          
+        <Stack>
           <Stack>
-            <Text color={"blue"}>*** Make sure to allow pop ups for this site ***</Text>
+            {!accessToken && <Text color={"blue"}>*** Make sure to allow pop ups for this site ***</Text>}
+            {!accessToken && <Button onClick={gGsiSignIn}>Google Login</Button>}
+            {accessToken && <Text>You are logged in</Text>}
+            {loginError && <Text color={"red"}>{loginError}</Text>}
             <FormLabel>Project Id</FormLabel>
             <Input
               size="sm"
@@ -392,11 +333,11 @@ export default function SignatureRequestPage() {
             id="arguments"
             placeholder="Cadence Arguments"
             onChange={() => { }}
-            value={cadenceArguments}
+            value={`[${cadenceArguments}]`}
           />
         </Stack>
         <Button
-          disabled={!canSign}
+          disabled={!canSign || !accessToken}
           onClick={signPayload}
         >
           Sign Payload

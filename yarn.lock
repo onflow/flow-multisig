@@ -1221,11 +1221,6 @@
     prop-types "^15.7.2"
     tslib "^2.1.0"
 
-"@react-oauth/google@0.2.6":
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/@react-oauth/google/-/google-0.2.6.tgz#42f7a18c62d677c77ee8e1fc2eec2ccbe50be997"
-  integrity sha512-Az6w/EL3QHSvWVbfX2WbUB15PGqM0hm86bpAoyvjw2nhDdPp9IOjpFg5HfSGJQJBydjbCFnZjI8PJskTzLOhew==
-
 "@rushstack/eslint-patch@^1.0.8":
   version "1.1.1"
   resolved "https://registry.npmjs.org/@rushstack/eslint-patch/-/eslint-patch-1.1.1.tgz"

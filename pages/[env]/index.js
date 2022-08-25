@@ -469,7 +469,7 @@ export default function MainPage() {
                               accounts[account].transaction
                             )}
                           >
-                            <Button colorScheme='pink'>Transaction</Button>
+                            <Button disabled={txWaiting} colorScheme='pink'>{txWaiting ? "TX Processing" : "Transaction"}</Button>
                           </Link>
 
                         )}

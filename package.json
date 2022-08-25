@@ -21,7 +21,6 @@
     "@onflow/sdk": "1.1.1",
     "@onflow/six-transfer-tokens": "^0.0.8",
     "@onflow/transport-http": "1.4.0",
-    "@react-oauth/google": "0.2.6",
     "@supabase/supabase-js": "^1.29.0",
     "asn1js": "^3.0.5",
     "bn.js": "^5.2.1",
