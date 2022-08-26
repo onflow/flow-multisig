@@ -239,6 +239,7 @@ export default function MainPage() {
 
     } catch (e) {
       console.log('transaction error', e)
+      setTransactionErrorMessage(e)
     }
 
     setTxWaiting(true);
@@ -456,9 +457,9 @@ export default function MainPage() {
                       </HStack>
                     </Stack>
                     <Stack spacing={4} align="start">
-                      <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
-                        <MessageLink link={getFormUrlLink()} message={"Page URL"} />
-                      </Stack>
+
+                      <MessageLink link={getFormUrlLink()} message={"Page URL"} />
+
                       <HStack>
                         <Button disabled={selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
                           Generate Link
@@ -483,10 +484,12 @@ export default function MainPage() {
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys]) => (
                         <>
-                          {signatureRequestId && <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
-                            <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
-                            {/*<MessageLink link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />  */}
-                          </Stack>}
+                          {signatureRequestId &&
+                            <>
+                              <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
+                              <MessageLink disabled link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />
+                            </>
+                          }
                           <Stack
                             key={signatureRequestId}
                             flex="1"
@@ -495,13 +498,13 @@ export default function MainPage() {
                             overflow="hidden"
                             padding="4"
                           >
-                            <HStack align="center">
+                            <HStack width="100%">
                               <Text fontSize='20px' color='black'>Signature Request Id:</Text>
                               <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
                             </HStack>
-                            <HStack backgroundColor="lightgray" padding="0.5rem">
-                              <MessageLink link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
-                            </HStack>
+
+                            <MessageLink link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
+
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />

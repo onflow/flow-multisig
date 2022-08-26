@@ -5,7 +5,7 @@ export const KeysTableStatus = ({ keys, account }) => {
     const total = keys.reduce((p, k) => k.sig ? p + k.weight : p, 0);
     const accountKeys = (account?.keys || []).reduce((p, d) => ({ ...p, [d.index]: abbrvKey(d.publicKey) }), {})
     return (
-        <Table variant='simple' size='sm'>
+        <Table variant='simple' size='sm' boxShadow="1px 1px 3px">
             <Tbody><Tr><Td>Weight</Td><Td>KeyId</Td><Td>Public Key</Td></Tr>
                 {keys.sort((a, b) => a.keyId > b.keyId ? 1 : -1).map(key => {
                     return (<Tr backgroundColor={key?.sig ? 'lightGreen' : 'white'} key={`tr-${key.index}`} >
