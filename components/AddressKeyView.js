@@ -12,7 +12,7 @@ export const AddressKeyView = ({ address, keyId, weight }) => {
       )}`}</Text>
       <Text fontSize="18px" paddingLeft={"10px"} paddingRight={"2px"}>KeyId:</Text>
       <Text>{`${keyId} `}</Text>
-      <Text>{`${weight} `}</Text>
+      <Text>{`${weight || ""} `}</Text>
     </HStack>
   );
 }
