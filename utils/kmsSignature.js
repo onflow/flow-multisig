@@ -11,11 +11,8 @@ const getHex = (value) => {
 const parseSignature = (buf) => {
     const { result } = fromBER(toArrayBuffer(buf))
     const values = (result).valueBlock.value
-
     const r = getHex(values[0])
     const s = getHex(values[1])
-    console.log('\nr', r.toString("hex"));
-    console.log('s', s.toString("hex"));
     return { r, s }
 }
 
