@@ -25,6 +25,7 @@ import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
+import { MessageLink } from "../../components/MessageLink";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -105,9 +106,6 @@ export default function MainPage() {
   const [jsonError, setJsonError] = useState("")
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
-  const [copyText2, setCopyText2] = useState("Copy");
-  const [copyText3, setCopyText3] = useState("Copy");
-  const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
   const [selectedProposalKey, setProposalKey] = useState(null);
@@ -292,6 +290,12 @@ export default function MainPage() {
     return url;
   }
 
+  const getLedgerPageLink = (signatureRequestId) => {
+    const network = getNetwork();
+    const url = `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+    return url;
+  }
+
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
     return `${flowscanUrls[network]}/${tx}`;
@@ -311,14 +315,6 @@ export default function MainPage() {
     setCadencePayload("loading ...")
     getFoundationFilename(filename)
       .then(contents => setCadencePayload(contents));
-  }
-
-  const copyTextToClipboard = (text, setTextMethod) => {
-    setTextMethod("Copied!")
-    copyToClipboard(text);
-    setTimeout(() => {
-      setTextMethod("Copy")
-    }, 500)
   }
 
   const setArgumentsValue = (value) => {
@@ -366,7 +362,7 @@ export default function MainPage() {
         method: "post",
         body: signatureRequestId,
       }
-    ).then((r) => r.json());    
+    ).then((r) => r.json());
     setTimeout(() => setSendButtonText("Transaction Sent"), 1200);
   }
 
@@ -461,15 +457,7 @@ export default function MainPage() {
                     </Stack>
                     <Stack spacing={4} align="start">
                       <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
-                        <VStack align="flex-start">
-                          <HStack>
-                            <Button size="sm" onClick={() => copyTextToClipboard(getFormUrlLink(), setCopyTextFormUrl)}>{copyTextFormUrl}</Button>
-                            <Text fontSize='15px'>Page URL</Text>
-                          </HStack>
-                          <Link isExternal href={getFormUrlLink()}>
-                            {getFormUrlLink().substring(0, 90)}...
-                          </Link>
-                        </VStack>
+                        <MessageLink link={getFormUrlLink()} message={"Page URL"} />
                       </Stack>
                       <HStack>
                         <Button disabled={selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
@@ -496,15 +484,8 @@ export default function MainPage() {
                       ).map(([signatureRequestId, compositeKeys]) => (
                         <>
                           {signatureRequestId && <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
-                            <VStack align="flex-start">
-                              <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getOauthPageLink(signatureRequestId), setCopyText3)}>{copyText3}</Button>
-                                <Text fontSize='15px'>OAuth page URL</Text><Text color="blue">** In testing **</Text>
-                              </HStack>
-                              <Link isExternal href={getOauthPageLink(signatureRequestId)}>
-                                {getOauthPageLink(signatureRequestId).substring(0, 90)}...
-                              </Link>
-                            </VStack>
+                            <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
+                            {/*<MessageLink link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />  */}
                           </Stack>}
                           <Stack
                             key={signatureRequestId}
@@ -519,13 +500,7 @@ export default function MainPage() {
                               <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
                             </HStack>
                             <HStack backgroundColor="lightgray" padding="0.5rem">
-                              <VStack align="flex-start">
-                                <HStack>
-                                  <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
-                                  <Text fontSize='15px'>FLOW CLI:</Text>
-                                </HStack>
-                                <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
-                              </VStack>
+                              <MessageLink link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
                             </HStack>
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
