@@ -90,6 +90,7 @@ const FOUNDATION = "foundation";
 const SERVICE_ACCOUNT = "serviceAccount";
 const MAX_ALLOWED_BLOCKS = 600;
 const SECONDS_PER_BLOCK = 1;
+const SEND_TX_BUTTON = "Send Transaction";
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -115,7 +116,7 @@ export default function MainPage() {
   const [txWaiting, setTxWaiting] = useState(false);
   const [eventButtonText, setEventButtonText] = useState("show");
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
-  const [sendButtonText, setSendButtonText] = useState("Send Transaction");
+  const [sendButtonText, setSendButtonText] = useState(SEND_TX_BUTTON);
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -254,6 +255,7 @@ export default function MainPage() {
     } catch (e) {
       console.error(e)
       setTransactionErrorMessage(e)
+      setSendButtonText(SEND_TX_BUTTON); // revert button text on error
     } finally {
       setTxWaiting(false);
     }
@@ -528,7 +530,7 @@ export default function MainPage() {
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction} onClick={() => sendTransaction()}>{sendButtonText}</Button>
+                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction || sendButtonText !== SEND_TX_BUTTON} onClick={() => sendTransaction()}>{sendButtonText}</Button>
                             {accounts[account].transaction && (
                               <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                             )}
