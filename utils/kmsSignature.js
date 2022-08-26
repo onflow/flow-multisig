@@ -3,8 +3,18 @@ import { fromBER } from "asn1js"
 import { TRANSACTION_DOMAIN_TAG } from "./fclCLI";
 import * as crypto from "crypto";
 
+
+function padArrayWithZero(byteArray, size) {
+    if (byteArray.length < size) {
+        const lacking = new Array(size - byteArray.length).fill(0);
+        return lacking.concat(byteArray);
+    }
+    return byteArray
+}
+
 const getHex = (value) => {
-    const buf = Buffer.from(value.valueBlock.valueHex)
+    const arrBuffer = padArrayWithZero(value.valueBlock.valueHex, 32);
+    const buf = Buffer.from(arrBuffer, "hex");
     return buf.slice(Math.max(buf.length - 32, 0))
 }
 
