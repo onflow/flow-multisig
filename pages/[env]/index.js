@@ -21,7 +21,6 @@ import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
-import { abbrvKey } from "../../utils/formatting";
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
@@ -61,6 +60,7 @@ function reducer(state, action) {
       if (!state.inFlightRequests[action.data.address]) {
         state.inFlightRequests[action.data.address] = {};
       }
+      const signatureRequestId = action.data.signatureRequestId
       const relevantRequest =
         state.inFlightRequests[action.data.address][
         action.data.signatureRequestId
@@ -69,6 +69,7 @@ function reducer(state, action) {
       return {
         ...state,
         inFlight: false,
+        signatureRequestId,
         inFlightRequests: {
           ...state.inFlightRequests,
           [action.data.address]: {
@@ -104,11 +105,17 @@ export default function MainPage() {
   const [exeEffort, setExeEffort] = useState(9999)
   const [myState, copyToClipboard] = useCopyToClipboard();
   const [copyText2, setCopyText2] = useState("Copy");
+  const [copyText3, setCopyText3] = useState("Copy");
   const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
   const [selectedProposalKey, setProposalKey] = useState(null);
   const [countdown, setCountdown] = useState(0);
+  const [transaction, setTransaction] = useState(null);
+  const [txWaiting, setTxWaiting] = useState(false);
+  const [eventButtonText, setEventButtonText] = useState("show");
+  const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
+  const [sendButtonText, setSendButtonText] = useState("Send Transaction");
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -204,27 +211,54 @@ export default function MainPage() {
     const resolveProposer = buildSinglaAuthz({ address: accountKey, ...proposalKey }, proposalKey.index, keys, dispatch);
 
     setCountdown(new Date().getTime() + (MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000));
-    const { transactionId } = await fcl.send([
-      fcl.transaction(cadencePayload),
-      fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
-      //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
-      //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
-      fcl.proposer(resolveProposer),
-      fcl.authorizations(authorizations),
-      fcl.payer(resolver),
-      fcl.limit(parseInt(exeEffort)),
-      ix => {
-        console.log(ix)
-        return ix
-      }
-    ]);
+    let tx = null;
+    try {
+      tx = await fcl.send([
+        fcl.transaction(cadencePayload),
+        fcl.args(userDefinedArgs.map(a => fcl.arg(a, fcl.t.Identity))),
+        //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
+        //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
+        fcl.proposer(resolveProposer),
+        fcl.authorizations(authorizations),
+        fcl.payer(resolver),
+        fcl.limit(parseInt(exeEffort)),
+        ix => {
+          console.log(ix)
+          return ix
+        }
+      ]);
 
-    account.transaction = transactionId;
-    if (transactionId) setCountdown(0);
-    setAccounts({
-      ...accounts,
-      [accountKey]: account,
-    });
+      console.log('transactionId', tx?.transactionId)
+      account.transaction = tx?.transactionId;
+      if (tx?.transactionId) setCountdown(0);
+
+      setAccounts({
+        ...accounts,
+        [accountKey]: account,
+      });
+
+
+    } catch (e) {
+      console.log('transaction error', e)
+    }
+
+    setTxWaiting(true);
+    let transaction = null;
+    try {
+      if (tx?.transactionId) {
+        transaction = await fcl.tx(tx?.transactionId).onceSealed()
+        if (transaction?.errorMessage) {
+          setTransactionErrorMessage(transaction.errorMessage)
+        }
+      }
+    } catch (e) {
+      console.error(e)
+      setTransactionErrorMessage(e)
+    } finally {
+      setTxWaiting(false);
+    }
+
+    if (transaction) setTransaction(transaction)
   };
 
   const getNetwork = () => {
@@ -250,6 +284,11 @@ export default function MainPage() {
     return encodeURI(url);
   };
 
+  const getOauthPageLink = (signatureRequestId) => {
+    const network = getNetwork();
+    const url = `${window.location.origin}/${network}/oauth/${signatureRequestId}`;
+    return url;
+  }
 
   const getFlowscanLink = (tx) => {
     const network = getNetwork();
@@ -302,7 +341,33 @@ export default function MainPage() {
     })
 
   }
- 
+
+  const showHideEvents = () => {
+    if (eventButtonText === "hide")
+      setEventButtonText("show");
+    else
+      setEventButtonText("hide");
+  }
+
+  const enoughSignatures = (keys) => {
+    const total = keys.reduce((p, k) => k.sig ? p + parseInt(k.weight) : p, 0);
+    const result = total >= 1000;
+    return result;
+  }
+
+  const sendTransaction = async () => {
+    setSendButtonText("Sending Transaction")
+    const signatureRequestId = state?.signatureRequestId
+    await fetch(
+      `/api/${signatureRequestId}/confirmation`,
+      {
+        method: "post",
+        body: signatureRequestId,
+      }
+    ).then((r) => r.json());    
+    setTimeout(() => setSendButtonText("Transaction Sent"), 1200);
+  }
+
   return (
     <Stack minH={"100vh"} margin={"50"}>
       <Stack>
@@ -415,7 +480,7 @@ export default function MainPage() {
                               accounts[account].transaction
                             )}
                           >
-                            <Button colorScheme='pink'>Transaction</Button>
+                            <Button disabled={txWaiting} colorScheme='pink'>{txWaiting ? "TX Processing" : "Transaction"}</Button>
                           </Link>
 
                         )}
@@ -424,38 +489,72 @@ export default function MainPage() {
                             <CircularProgress isIndeterminate color="green.300" />
                           )}
                       </HStack>
-
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys]) => (
-                        <Stack
-                          key={signatureRequestId}
-                          flex="1"
-                          borderWidth="1px"
-                          borderRadius="lg"
-                          overflow="hidden"
-                          padding="4"
-                        >
-                          <HStack align="center">
-                            <Text fontSize='20px' color='black'>Signature Request Id:</Text>
-                            <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
-                          </HStack>
-                          <HStack backgroundColor="lightgray" padding="0.5rem">
+                        <>
+                          {signatureRequestId && <Stack backgroundColor="lightgray" padding="0.5rem" width="100%">
                             <VStack align="flex-start">
                               <HStack>
-                                <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
-                                <Text fontSize='15px'>FLOW CLI:</Text>
+                                <Button size="sm" onClick={() => copyTextToClipboard(getOauthPageLink(signatureRequestId), setCopyText3)}>{copyText3}</Button>
+                                <Text fontSize='15px'>OAuth page URL</Text><Text color="blue">** In testing **</Text>
                               </HStack>
-                              <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
+                              <Link isExternal href={getOauthPageLink(signatureRequestId)}>
+                                {getOauthPageLink(signatureRequestId).substring(0, 90)}...
+                              </Link>
                             </VStack>
-                          </HStack>
-                          <CountdownTimer endTime={countdown} />
-                          <Text fontSize='20px'>Incoming Signatures:</Text>
-                          <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                          {accounts[account] && accounts[account].transaction && (
-                            <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
-                          )}
-                        </Stack>
+                          </Stack>}
+                          <Stack
+                            key={signatureRequestId}
+                            flex="1"
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            padding="4"
+                          >
+                            <HStack align="center">
+                              <Text fontSize='20px' color='black'>Signature Request Id:</Text>
+                              <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
+                            </HStack>
+                            <HStack backgroundColor="lightgray" padding="0.5rem">
+                              <VStack align="flex-start">
+                                <HStack>
+                                  <Button size="sm" onClick={() => copyTextToClipboard(getCliCommand(signatureRequestId), setCopyText2)}>{copyText2}</Button>
+                                  <Text fontSize='15px'>FLOW CLI:</Text>
+                                </HStack>
+                                <Text fontSize='15px'>{getCliCommand(signatureRequestId)}</Text>
+                              </VStack>
+                            </HStack>
+                            <CountdownTimer endTime={countdown} />
+                            <Text fontSize='20px'>Incoming Signatures:</Text>
+                            <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
+                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction} onClick={() => sendTransaction()}>{sendButtonText}</Button>
+                            {accounts[account].transaction && (
+                              <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
+                            )}
+                            {txWaiting && (
+                              <Text>Waiting for Transaction to be sealed</Text>
+                            )}
+                            {transactionErrorMessage &&
+                              <Text color={"red"}>{transactionErrorMessage}</Text>
+                            }
+                            {transaction && (
+                              <>
+                                <Text>{transaction?.statusString}</Text>
+
+                                <HStack>
+                                  <Text>Events</Text><Button size="sm" onClick={showHideEvents}>{eventButtonText}</Button>
+                                </HStack>
+                                <VStack alignItems={"flex-start"}>
+                                  {eventButtonText === "hide" && transaction.events.map((e, i) => {
+                                    return (<><Text key={i}>{e.type}</Text><Text key={i}>{JSON.stringify(e.data)}</Text></>)
+                                  })}
+                                </VStack>
+
+                              </>
+                            )}
+                          </Stack>
+                        </>
                       ))}
                     </Stack>
                   </React.Fragment>

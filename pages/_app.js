@@ -10,7 +10,6 @@ function MyApp({ Component, pageProps }) {
   const isLedger = router.pathname.indexOf('ledger') !== -1;
 
   useEffect(() => setupConfig(env, isLedger), [env, isLedger]);
-
   return (
     <ChakraProvider>
       <Component {...pageProps} />
