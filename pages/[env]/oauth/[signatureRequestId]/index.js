@@ -127,8 +127,10 @@ export default function SignatureRequestPage() {
     })
     : "";
 
-  const cadencePayload = cliRLP ? decode("0x" + cliRLP)[0][0] : "";
-  const cadenceArguments = cliRLP ? decode("0x" + cliRLP)[0][1] : "";
+  const decodedMsg = cliRLP ? decode("0x" + cliRLP) : null;
+  const cadencePayload = decodedMsg ? decodedMsg[0][0] : "";
+  const cadenceArguments = decodedMsg ? decodedMsg[0][1] : "";
+  const decodedAccount = decodedMsg ? "0x" + decodedMsg[0][7].toString("hex") : ""
 
   const getRestEndpoint = (userKeyInfo) => {
     const project_id = userKeyInfo?.[KEY_PROJECT_ID] || "-";
@@ -241,7 +243,7 @@ export default function SignatureRequestPage() {
   const key_ring = userKeyInfo?.[KEY_RING];
   const key_name = userKeyInfo?.[KEY_NAME];
   const key_version = userKeyInfo?.[KEY_VERSION];
-  const signing_account = userKeyInfo?.[SIGN_ACCT];
+  const signing_account = userKeyInfo?.[SIGN_ACCT] || decodedAccount;
   const signing_keyId = userKeyInfo?.[SIGN_KEYID];
   const canSign = project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId);
 
