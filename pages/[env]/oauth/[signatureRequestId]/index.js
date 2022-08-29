@@ -1,6 +1,5 @@
 import {
   Flex,
-  Icon,
   Text,
   Stack,
   Input,
@@ -35,15 +34,12 @@ const SIGN_KEYID = "signingKeyId";
 //const CLIENT_ID = "769260085272-espd1f4180edgc2h4p9i1vad8pv6js26.apps.googleusercontent.com"; //process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const CLIENT_ID = "769260085272-oif0n1ut40vn6p8ldhvp4c4fdkfm3f4d.apps.googleusercontent.com";
 const projectId = "my-kms-project-35857";
-const locationId = "global";
-const cryptoKeyVersions = 1;
 const SIGNING_REQUESTED = "SIGNING_REQUESTED";
 const SIGNING_ERROR = "SIGNING_ERROR";
 const SIGNING_DONE = "SIGNING_DONE";
+const noop = () => {};
+
 export default function SignatureRequestPage() {
-  const [rlpStatusMessage, setRLPStatusMessage] = useState("");
-  const [userCred, setUserCred] = useState(null);
-  const [isGapiLoaded, setIsGapiLoaded] = useState(false);
   const [accessToken, setAccessToken] = useState(null);
   const [userKeyInfo, setUserKeyInfo] = useState(
     typeof window !== "undefined" ? JSON.parse(window?.localStorage.getItem(KEY_LOC_LOCATION)) : {}
@@ -96,7 +92,7 @@ export default function SignatureRequestPage() {
 
   useScript.default({
     src: GOOGLE_CLIENT_URL
-    , onload: () => setIsGapiLoaded(true)
+    , onload: noop
   });
 
   const router = useRouter();
