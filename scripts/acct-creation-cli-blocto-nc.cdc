@@ -31,7 +31,7 @@ transaction(
 
         bonusAccount.keys.add(
             publicKey: AdminKey,
-            hashAlgorithm: HashAlgorithm.SHA3_256,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
             weight: 500.0
         )
 

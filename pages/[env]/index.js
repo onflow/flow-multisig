@@ -101,7 +101,7 @@ export default function MainPage() {
   const [accounts, setAccounts] = useState({});
   const [serviceAccountFilenames, setServiceAccountFilenames] = useState([]);
   const [foundationFilenames, setFoundationFilenames] = useState([]);
-  const [jsonArgs, setJsonArgs] = useState("");
+  const [jsonArgs, setJsonArgs] = useState("[]");
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
   const [exeEffort, setExeEffort] = useState(9999)

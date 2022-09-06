@@ -1,4 +1,4 @@
-#ACCT=authorizer
+ACCT=authorizer
 echo "Creating account with cli and blocto keys for non-custodial"
 echo "Creating tx using authorizer account in flow.json"
 flow transactions build ./flow-multisig/scripts/acct-creation-cli-blocto-nc.cdc \

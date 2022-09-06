@@ -1116,6 +1116,40 @@
     prop-types "^15.7.2"
     tslib "^2.1.0"
 
+"@root/asn1@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@root/asn1/-/asn1-1.0.0.tgz#8748cf7b4497324de91a154b606ca1ddfe97c5d7"
+  integrity sha512-0lfZNuOULKJDJmdIkP8V9RnbV3XaK6PAHD3swnFy4tZwtlMDzLKoM/dfNad7ut8Hu3r91wy9uK0WA/9zym5mig==
+  dependencies:
+    "@root/encoding" "^1.0.1"
+
+"@root/encoding@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@root/encoding/-/encoding-1.0.1.tgz#60cf3ccb9e2239226b30e8394c7a4a258a161c3e"
+  integrity sha512-OaEub02ufoU038gy6bsNHQOjIn8nUjGiLcaRmJ40IUykneJkIW5fxDqKxQx48cszuNflYldsJLPPXCrGfHs8yQ==
+
+"@root/keypairs@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/@root/keypairs/-/keypairs-0.10.3.tgz#dc89c6996bbfcc085e11bc2dd70c35a164e17466"
+  integrity sha512-hbmjVbk/G99Z1XlUzJM4VOAaR8jm4vMnfwpZL301FA24ubJ/bOjj6enCrz9gKsQvBO6RY4/R4MgUuWpXeqeZZQ==
+  dependencies:
+    "@root/encoding" "^1.0.1"
+    "@root/pem" "^1.0.4"
+    "@root/x509" "^0.7.2"
+
+"@root/pem@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@root/pem/-/pem-1.0.4.tgz#9ecc3419c0a05c92b8ecbfe0a41f474970f8c72f"
+  integrity sha512-rEUDiUsHtild8GfIjFE9wXtcVxeS+ehCJQBwbQQ3IVfORKHK93CFnRtkr69R75lZFjcmKYVc+AXDB+AeRFOULA==
+
+"@root/x509@^0.7.2":
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/@root/x509/-/x509-0.7.2.tgz#422ca7e46c09f5ddf3af86306383778eb004ace1"
+  integrity sha512-ENq3LGYORK5NiMFHEVeNMt+fTXaC7DTS6sQXoqV+dFdfT0vmiL5cDLjaXQhaklJQq0NiwicZegzJRl1ZOTp3WQ==
+  dependencies:
+    "@root/asn1" "^1.0.0"
+    "@root/encoding" "^1.0.1"
+
 "@rushstack/eslint-patch@^1.0.8":
   version "1.1.1"
   resolved "https://registry.npmjs.org/@rushstack/eslint-patch/-/eslint-patch-1.1.1.tgz"
