@@ -187,7 +187,7 @@ export default function SignatureRequestPage() {
         if (response.status === 200) {
           setSigningStatus(SIGNING_DONE)
           // TODO: put on helper to parse out account info
-          const account = userKeyInfo?.[SIGN_ACCT];
+          const account = userKeyInfo?.[SIGN_ACCT] || decodedAccount;
           const keyId = userKeyInfo?.[SIGN_KEYID];
           setSigningMessage(`Signing Successful, account ${account}, keyId: ${keyId}`);
           // parse up result and package up sig
