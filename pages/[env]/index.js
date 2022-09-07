@@ -122,6 +122,7 @@ export default function MainPage() {
 
   const { query } = useRouter()
   const qp = new URLSearchParams(query)
+  const isLedgerDisabled = true;
 
   useEffect(() => {
 
@@ -491,7 +492,7 @@ export default function MainPage() {
                           {signatureRequestId &&
                             <>
                               <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
-                              <MessageLink disabled link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />
+                              <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />
                             </>
                           }
                           <Stack

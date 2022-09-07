@@ -45,11 +45,18 @@ export default function SignatureRequestPage() {
         fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
     }, []);
 
-    const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
+    const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
         refreshInterval: 3,
     });
 
     const signatures = data ? data.data : [];
+
+    const { data: signableRecord } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
+        refreshInterval: 3,
+    });
+
+    const signableItems = signableRecord ? signableRecord.data : [];
+
 
     // Get the keys
     useEffect(
@@ -155,7 +162,7 @@ export default function SignatureRequestPage() {
             </Stack>
             <Stack>
                 <Heading>Key status</Heading>
-                {signatures.map(({ address, sig, keyId, signable }) => {
+                {signatures.map(({ address, sig, keyId }) => {
                     return (
                         <HStack
                             flex="1"
@@ -165,7 +172,7 @@ export default function SignatureRequestPage() {
                             padding="4"
                             key={address + keyId}
                         >
-                            <Button width="200px" onClick={signTheMessage(signable)} disabled={keyId === 0}>
+                            <Button width="200px" onClick={signTheMessage(signableItems[0].signable)} disabled={keyId === 0}>
                                 Sign the message!
                             </Button>
 
