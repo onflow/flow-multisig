@@ -45,7 +45,7 @@ export default function SignatureRequestPage() {
         fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
     }, []);
 
-    const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
+    const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
         refreshInterval: 3,
     });
 

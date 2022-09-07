@@ -115,6 +115,7 @@ export default function MainPage() {
   const [eventButtonText, setEventButtonText] = useState("show");
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
   const [sendButtonText, setSendButtonText] = useState(SEND_TX_BUTTON);
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
   useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
@@ -197,6 +198,7 @@ export default function MainPage() {
   };
 
   const onSubmit = async (accountKey) => {
+    setGenerating(true);
     const account = accounts[accountKey];
     const keys = account.keys;
     if (selectedProposalKey === null) return;
@@ -240,6 +242,7 @@ export default function MainPage() {
     } catch (e) {
       console.log('transaction error', e)
       setTransactionErrorMessage(e)
+      setGenerating(false);
     }
 
     setTxWaiting(true);
@@ -255,6 +258,7 @@ export default function MainPage() {
       console.error(e)
       setTransactionErrorMessage(e)
       setSendButtonText(SEND_TX_BUTTON); // revert button text on error
+      setGenerating(false);
     } finally {
       setTxWaiting(false);
     }
@@ -461,7 +465,7 @@ export default function MainPage() {
                       <MessageLink link={getFormUrlLink()} message={"Page URL"} />
 
                       <HStack>
-                        <Button disabled={selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
+                        <Button disabled={generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
                           Generate Link
                         </Button>
                         {accounts[account].transaction && (
