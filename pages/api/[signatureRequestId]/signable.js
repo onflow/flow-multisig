@@ -6,7 +6,7 @@ export default async function handler({ body, method, query }, res) {
     case "GET":
       const { data, error, status } = await supabase
         .from("payloadSigs")
-        .select("sig, keyId, address, sigable")
+        .select("sig, keyId, address, signable")
         .match(query);
 
       // Could not find row.
