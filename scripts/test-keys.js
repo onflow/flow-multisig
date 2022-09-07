@@ -6,7 +6,6 @@ import { decode, encode } from "rlp";
 import * as crypto from "crypto";
 import CRC32C from "crc-32/crc32c.js";
 import sha2 from "sha2";
-import Keypairs from "@root/keypairs"
 
 const projectId = "my-kms-project-35857";
 const locationId = "global";
@@ -120,29 +119,6 @@ const savePayload = async (url, payload) => {
     console.log('status', res.status)
 }
 
-const getPublicKey = async () => {
-    const versionName = client.cryptoKeyVersionPath(
-        projectId,
-        locationId,
-        keyRingId,
-        keyId,
-        versionId
-    );
-
-    const [publicKey] = await client.getPublicKey({
-        name: versionName,
-    });
-    console.log(`Public key pem: ${publicKey.pem}`);
-
-
-    const jwk = await Keypairs.import({ pem: publicKey.pem });
-    const xValue = leftPaddedHexBuffer(jwk.x, 32);
-    const yValue = leftPaddedHexBuffer(jwk.y, 32);
-    const key = Buffer.concat([xValue, yValue]).toString("hex");
-    console.log(jwk);
-    console.log('key', key);
-
-}
 
 const arg = process.argv.slice(2) || [];
 
@@ -161,4 +137,3 @@ const envelope = encode([decodePayload, [], [[0, walletKeyId, Buffer.from(sig, "
 console.log('envelope', envelope)
 savePayload(url, envelope);
 
-getPublicKey()
