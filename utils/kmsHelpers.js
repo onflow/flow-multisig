@@ -2,7 +2,16 @@ import { decode, encode } from "rlp";
 import { fromBER } from "asn1js"
 import { TRANSACTION_DOMAIN_TAG } from "./fclCLI";
 import * as crypto from "crypto";
+import Keypairs from "@root/keypairs"
 
+const leftPaddedHexBuffer = (value, pad) => {
+    let result = Buffer.from(value, "base64");
+    if (value.length < 32) {
+        console.log('lenght too short, left padding value')
+        result = Buffer.from(value.padStart(pad * 2, 0), "hex");
+    }
+    return result;
+}
 
 function padArrayWithZero(byteArray, size) {
     if (byteArray.length < size) {
@@ -69,4 +78,16 @@ export const prepareSignedEnvelope = (rlp, keyId, signature) => {
     const decodePayload = decode("0x" + rlp)[0];
     const env = encode([decodePayload, [], [[0, parseInt(keyId), Buffer.from(signature, "hex")]]]).toString("hex");
     return env;
+}
+export const convertPublicKey = async (kmsPublicKey) => {
+    const jwk = await Keypairs.import({ pem: kmsPublicKey.pem });
+    const xValue = leftPaddedHexBuffer(jwk.x, 32);
+    const yValue = leftPaddedHexBuffer(jwk.y, 32);
+    const key = Buffer.concat([xValue, yValue]).toString("hex");
+    return key;
+}
+export const lookupAccounts = async(publicKey) => {
+    // look up public key to get all accounts
+    
+    // get keyIds for all public keys
 }

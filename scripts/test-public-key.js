@@ -20,9 +20,12 @@ const resourceId = "projects/my-kms-project-35857/locations/global/keyRings/test
 const client = new kms.KeyManagementServiceClient();
 
 const leftPaddedHexBuffer = (value, pad) => {
-  const val = Buffer.from(value, 'base64');
-  const res = Buffer.from(value.padStart(pad * 2, 0), "hex");
-  return res;
+    let result = Buffer.from(value, "base64");
+    if (value.length < 32) {
+        console.log('lenght too short, left padding value')
+        result = Buffer.from(value.padStart(pad * 2, 0), "hex");
+    }
+    return result;
 }
 
 const getPublicKey = async () => {

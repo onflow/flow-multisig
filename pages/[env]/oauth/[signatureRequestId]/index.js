@@ -14,7 +14,7 @@ import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 import useScript from 'react-script-hook';
-import { convert, getPayload, prepareSignedEnvelope, getDigest } from "../../../../utils/kmsSignature";
+import { convert, getPayload, prepareSignedEnvelope, getDigest } from "../../../../utils/kmsHelpers";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
