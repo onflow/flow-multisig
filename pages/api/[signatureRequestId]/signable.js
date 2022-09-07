@@ -7,7 +7,8 @@ export default async function handler({ body, method, query }, res) {
       const { data, error, status } = await supabase
         .from("payloadSigs")
         .select("sig, keyId, address, signable")
-        .match(query);
+        .match(query)
+        .limit(1);
 
       // Could not find row.
       if (status === 406) {
