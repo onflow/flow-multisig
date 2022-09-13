@@ -31,6 +31,7 @@ const KEY_NAME = "keyName";
 const KEY_VERSION = "keyVersion";
 const SIGN_ACCT = "signingAccount";
 const SIGN_KEYID = "signingKeyId";
+const KEY_FULL_PATH = "keyFullPath";
 //const CLIENT_ID = "769260085272-espd1f4180edgc2h4p9i1vad8pv6js26.apps.googleusercontent.com"; //process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const CLIENT_ID = "769260085272-oif0n1ut40vn6p8ldhvp4c4fdkfm3f4d.apps.googleusercontent.com";
 const projectId = "my-kms-project-35857";
@@ -47,14 +48,15 @@ export default function SignatureRequestPage() {
   const [signingStatus, setSigningStatus] = useState(null);
   const [signingMessage, setSigningMessage] = useState(null);
   const [loginError, setLoginError] = useState(null);
+  const [togglePath, setTogglePath] = useState(false);
 
   // --- api configuration --- //
   function gapiInit() {
-    gapi.client.init({
+    window?.gapi.client.init({
       // NOTE: OAuth2 'scope' and 'client_id' parameters have moved to initTokenClient().
     })
       .then(function () {  // Load the Calendar API discovery document.
-        gapi.client.load(DISCOVERY_DOC);
+        window?.gapi.client.load(DISCOVERY_DOC);
       });
   }
   const gAPILoaded = () => {
@@ -128,7 +130,8 @@ export default function SignatureRequestPage() {
   const cadenceArguments = decodedMsg ? decodedMsg[0][1] : "";
   const decodedAccount = decodedMsg ? "0x" + decodedMsg[0][7].toString("hex") : ""
 
-  const getRestEndpoint = (userKeyInfo) => {
+  const getRestEndpoint = (userKeyInfo, generated = false) => {
+    if (userKeyInfo?.[KEY_FULL_PATH] && !generated) return userKeyInfo[KEY_FULL_PATH];
     const project_id = userKeyInfo?.[KEY_PROJECT_ID] || "-";
     const key_location = userKeyInfo?.[KEY_LOCATION] || "-";
     const key_ring = userKeyInfo?.[KEY_RING] || "-";
@@ -241,7 +244,8 @@ export default function SignatureRequestPage() {
   const key_version = userKeyInfo?.[KEY_VERSION];
   const signing_account = userKeyInfo?.[SIGN_ACCT] || decodedAccount;
   const signing_keyId = userKeyInfo?.[SIGN_KEYID];
-  const canSign = project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId);
+  const full_key_path = userKeyInfo?.[KEY_FULL_PATH]
+  const canSign = !!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId));
 
   return (
     <>
@@ -256,6 +260,16 @@ export default function SignatureRequestPage() {
             {!accessToken && <Button onClick={gGsiSignIn}>Google Login</Button>}
             {accessToken && <Text>You are logged in</Text>}
             {loginError && <Text color={"red"}>{loginError}</Text>}
+            <FormLabel>Full Key Path</FormLabel>
+            <Input
+              size="sm"
+              id="full-key-path"
+              placeholder="Full key Path"
+              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
+              value={full_key_path}
+            />
+            <Stack><Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button></Stack>
+            {togglePath && <Stack>
             <FormLabel>Project Id</FormLabel>
             <Input
               size="sm"
@@ -312,8 +326,9 @@ export default function SignatureRequestPage() {
               onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
               value={signing_keyId}
             />
-            <FormLabel>KMS: Full Key Path</FormLabel>
-            <FormLabel>{getRestEndpoint(userKeyInfo)}</FormLabel>
+            <FormLabel>Full Key Path <Text display={"inline-block"} color="orange">(only used if Full Key Path input is empty)</Text></FormLabel>
+            <FormLabel>{getRestEndpoint(userKeyInfo, true)}</FormLabel>
+            </Stack>}
           </Stack>
         </Stack>
         <Stack>
