@@ -228,7 +228,11 @@ export default function MainPage() {
           console.log(ix)
           return ix
         }
-      ]);
+      ]).catch(e => {
+        console.log('transaction error', e)
+        setTransactionErrorMessage(e)
+        setGenerating(false);
+      });
 
       console.log('transactionId', tx?.transactionId)
       account.transaction = tx?.transactionId;
