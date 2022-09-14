@@ -38,7 +38,7 @@ const projectId = "my-kms-project-35857";
 const SIGNING_REQUESTED = "SIGNING_REQUESTED";
 const SIGNING_ERROR = "SIGNING_ERROR";
 const SIGNING_DONE = "SIGNING_DONE";
-const noop = () => {};
+const noop = () => { };
 
 export default function SignatureRequestPage() {
   const [accessToken, setAccessToken] = useState(null);
@@ -268,48 +268,6 @@ export default function SignatureRequestPage() {
               onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
               value={full_key_path}
             />
-            <Stack><Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button></Stack>
-            {togglePath && <Stack>
-            <FormLabel>Project Id</FormLabel>
-            <Input
-              size="sm"
-              id="project-id"
-              placeholder="Enter ProjectId"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_PROJECT_ID)}
-              value={project_id}
-            />
-            <FormLabel>Loction</FormLabel>
-            <Input
-              size="sm"
-              id="location"
-              placeholder="Enter Location"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_LOCATION)}
-              value={key_location}
-            />
-            <FormLabel>Key Ring</FormLabel>
-            <Input
-              size="sm"
-              id="key-ring"
-              placeholder="Enter Key Ring Name"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_RING)}
-              value={key_ring}
-            />
-            <FormLabel>Key Name</FormLabel>
-            <Input
-              size="sm"
-              id="key-name"
-              placeholder="Enter Key Name"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_NAME)}
-              value={key_name}
-            />
-            <FormLabel>Key Version</FormLabel>
-            <Input
-              size="sm"
-              id="key-version"
-              placeholder="Enter Key Version"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_VERSION)}
-              value={key_version}
-            />
             <FormLabel>Signing Account</FormLabel>
             <Input
               size="sm"
@@ -326,8 +284,50 @@ export default function SignatureRequestPage() {
               onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
               value={signing_keyId}
             />
-            <FormLabel>Full Key Path <Text display={"inline-block"} color="orange">(only used if Full Key Path input is empty)</Text></FormLabel>
-            <FormLabel>{getRestEndpoint(userKeyInfo, true)}</FormLabel>
+            <Stack><Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button></Stack>
+            {togglePath && <Stack>
+              <FormLabel>Project Id</FormLabel>
+              <Input
+                size="sm"
+                id="project-id"
+                placeholder="Enter ProjectId"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_PROJECT_ID)}
+                value={project_id}
+              />
+              <FormLabel>Loction</FormLabel>
+              <Input
+                size="sm"
+                id="location"
+                placeholder="Enter Location"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_LOCATION)}
+                value={key_location}
+              />
+              <FormLabel>Key Ring</FormLabel>
+              <Input
+                size="sm"
+                id="key-ring"
+                placeholder="Enter Key Ring Name"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_RING)}
+                value={key_ring}
+              />
+              <FormLabel>Key Name</FormLabel>
+              <Input
+                size="sm"
+                id="key-name"
+                placeholder="Enter Key Name"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_NAME)}
+                value={key_name}
+              />
+              <FormLabel>Key Version</FormLabel>
+              <Input
+                size="sm"
+                id="key-version"
+                placeholder="Enter Key Version"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_VERSION)}
+                value={key_version}
+              />
+              <FormLabel>Full Key Path <Text display={"inline-block"} color="orange">(only used if Full Key Path input is empty)</Text></FormLabel>
+              <FormLabel>{getRestEndpoint(userKeyInfo, true)}</FormLabel>
             </Stack>}
           </Stack>
         </Stack>
