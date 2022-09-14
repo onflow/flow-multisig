@@ -482,7 +482,7 @@ export default function MainPage() {
                         )}
                         {!state.inFlightRequests?.[cleanAddress(account)] &&
                           state.inFlight && (
-                            <CircularProgress isIndeterminate color="green.300" />
+                            <CircularProgress size={"2rem"} isIndeterminate color="green.300" />
                           )}
                       </HStack>
                       {Object.entries(

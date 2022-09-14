@@ -2,6 +2,7 @@ import { decode, encode } from "rlp";
 import { fromBER } from "asn1js"
 import { TRANSACTION_DOMAIN_TAG } from "./fclCLI";
 import * as crypto from "crypto";
+import * as fcl from "@onflow/fcl";
 import Keypairs from "@root/keypairs"
 
 const leftPaddedHexBuffer = (value, pad) => {
@@ -80,14 +81,29 @@ export const prepareSignedEnvelope = (rlp, keyId, signature) => {
     return env;
 }
 export const convertPublicKey = async (kmsPublicKey) => {
-    const jwk = await Keypairs.import({ pem: kmsPublicKey.pem });
+    const jwk = await Keypairs.import({ pem: kmsPublicKey });
     const xValue = leftPaddedHexBuffer(jwk.x, 32);
     const yValue = leftPaddedHexBuffer(jwk.y, 32);
     const key = Buffer.concat([xValue, yValue]).toString("hex");
     return key;
 }
-export const lookupAccounts = async(publicKey) => {
-    // look up public key to get all accounts
-    
+export const getAccountKeyId = async (address, publicKey) => {
     // get keyIds for all public keys
+    const account = await fcl.send([fcl.getAccount(address)]).then(fcl.decode);
+    console.log(account.keys)
+    let keyId = null;
+    for(let i= 0; i < account.keys.length; i++) {
+        const key = account.keys[i];
+        if (key.publicKey === publicKey && !key.revoked) {
+            let id = key.index;
+            if (keyId) {
+                // keyId has been set compare weights
+                if (key.weight >= account.keys[keyId].weight) {
+                    id = key.index;
+                }
+            }
+            keyId = id;
+        }
+    }
+    return keyId;
 }

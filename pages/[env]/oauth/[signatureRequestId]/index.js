@@ -6,6 +6,8 @@ import {
   Button,
   Textarea,
   FormLabel,
+  HStack,
+  CircularProgress
 } from "@chakra-ui/react";
 import Helmet from 'react-helmet';
 import { useRouter } from "next/router";
@@ -14,7 +16,7 @@ import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 import useScript from 'react-script-hook';
-import { convert, getPayload, prepareSignedEnvelope, getDigest } from "../../../../utils/kmsHelpers";
+import { convert, getPayload, prepareSignedEnvelope, getDigest, convertPublicKey, getAccountKeyId } from "../../../../utils/kmsHelpers";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -22,6 +24,7 @@ const DISCOVERY_DOC = "https://docs.googleapis.com/$discovery/rest?version=v1";
 const GOOGLE_API_URL = "https://apis.google.com/js/api.js";
 const GOOGLE_CLIENT_URL = "https://accounts.google.com/gsi/client";
 const KMS_REST_ENDPOINT = "https://cloudkms.googleapis.com/v1"
+const CONTENT_KMS_REST_ENDPOINT = "https://content-cloudkms.googleapis.com/v1"
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 const KEY_PROJECT_ID = "keyProjectId";
@@ -37,6 +40,7 @@ const CLIENT_ID = "769260085272-oif0n1ut40vn6p8ldhvp4c4fdkfm3f4d.apps.googleuser
 const projectId = "my-kms-project-35857";
 const SIGNING_REQUESTED = "SIGNING_REQUESTED";
 const SIGNING_ERROR = "SIGNING_ERROR";
+const PUBLIC_KEY_ERROR = "PUBLIC_KEY_ERROR";
 const SIGNING_DONE = "SIGNING_DONE";
 const noop = () => { };
 
@@ -46,6 +50,7 @@ export default function SignatureRequestPage() {
     typeof window !== "undefined" ? JSON.parse(window?.localStorage.getItem(KEY_LOC_LOCATION)) : {}
   );
   const [signingStatus, setSigningStatus] = useState(null);
+  const [publicKeyStatus, setPublicKeyStatus] = useState(null);
   const [signingMessage, setSigningMessage] = useState(null);
   const [loginError, setLoginError] = useState(null);
   const [togglePath, setTogglePath] = useState(false);
@@ -106,9 +111,7 @@ export default function SignatureRequestPage() {
     }
   }, [JSON.stringify(userKeyInfo)])
 
-  const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
-    refreshInterval: 3,
-  });
+  const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher);
 
   const handleKeyInfoUpdate = (value, property) => {
     setUserKeyInfo({ ...userKeyInfo, [property]: value })
@@ -130,7 +133,7 @@ export default function SignatureRequestPage() {
   const cadenceArguments = decodedMsg ? decodedMsg[0][1] : "";
   const decodedAccount = decodedMsg ? "0x" + decodedMsg[0][7].toString("hex") : ""
 
-  const getRestEndpoint = (userKeyInfo, generated = false) => {
+  const getKeyPath = (userKeyInfo, generated = false) => {
     if (userKeyInfo?.[KEY_FULL_PATH] && !generated) return userKeyInfo[KEY_FULL_PATH];
     const project_id = userKeyInfo?.[KEY_PROJECT_ID] || "-";
     const key_location = userKeyInfo?.[KEY_LOCATION] || "-";
@@ -141,7 +144,11 @@ export default function SignatureRequestPage() {
   }
 
   const getSigningUrl = (userKeyInfo) => {
-    return `${KMS_REST_ENDPOINT}/${getRestEndpoint(userKeyInfo)}:asymmetricSign`;
+    return `${KMS_REST_ENDPOINT}/${getKeyPath(userKeyInfo)}:asymmetricSign`;
+  }
+
+  const getPublicKeyUrl = (userKeyInfo) => {
+    return `${CONTENT_KMS_REST_ENDPOINT}/${getKeyPath(userKeyInfo)}/publicKey`;
   }
 
   const fetchMessage = async (id) => {
@@ -190,7 +197,7 @@ export default function SignatureRequestPage() {
         if (response.status === 200) {
           setSigningStatus(SIGNING_DONE)
           // TODO: put on helper to parse out account info
-          const account = userKeyInfo?.[SIGN_ACCT] || decodedAccount;
+          const account = decodedAccount;
           const keyId = userKeyInfo?.[SIGN_KEYID];
           setSigningMessage(`Signing Successful, account ${account}, keyId: ${keyId}`);
           // parse up result and package up sig
@@ -217,6 +224,37 @@ export default function SignatureRequestPage() {
     }
   }
 
+  const getKeyId = async () => {
+    setPublicKeyStatus("")
+    const account = decodedAccount;
+    handleKeyInfoUpdate("-", SIGN_KEYID)
+    const url = getPublicKeyUrl(userKeyInfo)
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-cache",
+      headers: {
+        'authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'application/json',
+      },
+      redirect: 'follow',
+    }).catch(e => {
+      console.log('error', e)
+      setPublicKeyStatus(PUBLIC_KEY_ERROR);
+    })
+    if (response?.status === 200) {
+      const { pem } = await response.json();
+      console.log('result', pem)
+      const flowPublicKey = await convertPublicKey(pem);
+      console.log('flow public key', flowPublicKey)
+      console.log('userKeyInfo', userKeyInfo)
+      let keyId = await getAccountKeyId(account, flowPublicKey)
+      if (!keyId) {
+        setPublicKeyStatus("KeyId not found for this account");
+        handleKeyInfoUpdate(0, SIGN_KEYID)
+      }
+      handleKeyInfoUpdate(keyId, SIGN_KEYID)
+    }
+  }
   // Deal with dat flash and/or bad sig request id.
   if (!cliRLP) {
     return (
@@ -242,7 +280,7 @@ export default function SignatureRequestPage() {
   const key_ring = userKeyInfo?.[KEY_RING];
   const key_name = userKeyInfo?.[KEY_NAME];
   const key_version = userKeyInfo?.[KEY_VERSION];
-  const signing_account = userKeyInfo?.[SIGN_ACCT] || decodedAccount;
+  const signing_account = decodedAccount;
   const signing_keyId = userKeyInfo?.[SIGN_KEYID];
   const full_key_path = userKeyInfo?.[KEY_FULL_PATH]
   const canSign = !!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId));
@@ -269,21 +307,22 @@ export default function SignatureRequestPage() {
               value={full_key_path}
             />
             <FormLabel>Signing Account</FormLabel>
-            <Input
+            <Text
               size="sm"
-              id="signing-account"
-              placeholder="Enter Account Address"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_ACCT)}
-              value={signing_account}
-            />
+            >{signing_account}</Text>
             <FormLabel>Signing KeyId</FormLabel>
-            <Input
-              size="sm"
-              id="key-id"
-              placeholder="Enter Key Id"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
-              value={signing_keyId}
-            />
+            {publicKeyStatus !== null && <Text color={"red"}>{publicKeyStatus}</Text>}
+            <HStack>
+              <Button size={"sm"} disabled={!accessToken} onClick={() => getKeyId()}>Lookup KeyId</Button>
+              {signing_keyId === "-" && <CircularProgress size={"2rem"} isIndeterminate color="green.300" />}
+              <Input
+                size="sm"
+                id="key-id"
+                placeholder="Enter Key Id"
+                onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
+                value={signing_keyId}
+              />
+            </HStack>
             <Stack><Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button></Stack>
             {togglePath && <Stack>
               <FormLabel>Project Id</FormLabel>
@@ -327,7 +366,7 @@ export default function SignatureRequestPage() {
                 value={key_version}
               />
               <FormLabel>Full Key Path <Text display={"inline-block"} color="orange">(only used if Full Key Path input is empty)</Text></FormLabel>
-              <FormLabel>{getRestEndpoint(userKeyInfo, true)}</FormLabel>
+              <FormLabel>{getKeyPath(userKeyInfo, true)}</FormLabel>
             </Stack>}
           </Stack>
         </Stack>
