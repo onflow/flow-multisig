@@ -2,6 +2,11 @@ import React, { useEffect, useReducer, useState, useMemo } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
 import {
+  Tab,
+  Tabs,
+  TabPanel,
+  TabPanels,
+  TabList,
   Button,
   FormControl,
   FormErrorMessage,
@@ -26,6 +31,7 @@ if (typeof window !== "undefined") window.fcl = fcl;
 import { useCopyToClipboard } from "react-use";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
 import { MessageLink } from "../../components/MessageLink";
+import { LedgerCadenceTransactions, LedgerTransactionNames } from "../../utils/payloads";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -89,6 +95,8 @@ function reducer(state, action) {
 
 const FOUNDATION = "foundation";
 const SERVICE_ACCOUNT = "serviceAccount";
+const LEDGER = "ledger";
+const TAB_NAMES = [SERVICE_ACCOUNT, FOUNDATION, LEDGER];
 const MAX_ALLOWED_BLOCKS = 600;
 const SECONDS_PER_BLOCK = 1;
 const SEND_TX_BUTTON = "Send Transaction";
@@ -122,7 +130,7 @@ export default function MainPage() {
 
   const { query } = useRouter()
   const qp = new URLSearchParams(query)
-  const isLedgerDisabled = true;
+  const isLedgerDisabled = false;
 
   useEffect(() => {
 
@@ -142,6 +150,12 @@ export default function MainPage() {
           fetchFoundationFilename(namedScript)
           setScriptName(namedScript);
           setScriptType(FOUNDATION);
+        }
+      } else if (fromScript.toLocaleLowerCase() === LEDGER) {
+        if (namedScript) {
+          setLedgerTransaction(namedScript)
+          setScriptName(namedScript);
+          setScriptType(LEDGER);
         }
       } else {
         if (namedScript) {
@@ -327,6 +341,12 @@ export default function MainPage() {
       .then(contents => setCadencePayload(contents));
   }
 
+  const setLedgerTransaction = (name) => {
+    setScriptName(name);
+    setScriptType(LEDGER);
+    setCadencePayload(LedgerCadenceTransactions[name])
+  }
+
   const setArgumentsValue = (value) => {
     // test if value json
     setJsonArgs(value);
@@ -347,7 +367,6 @@ export default function MainPage() {
       else
         return (<option key={filename} value={filename}>{filename}</option>)
     })
-
   }
 
   const showHideEvents = () => {
@@ -382,24 +401,44 @@ export default function MainPage() {
         <Stack spacing="24px">
           <Stack>
             <VStack align="start">
-              <Heading>Service Account</Heading>
+              <Heading size="lg">Multisig Webapp</Heading>
             </VStack>
           </Stack>
-          <HStack>
-            <FormLabel width="20%" size="sm" htmlFor="serviceAccount">From Service Account</FormLabel>
-            <Select id="serviceAccount" placeholder='Select Cadence' onChange={(e) => fetchServiceAccountFilename(e.target.value)}>
-              {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
-            </Select>
-
-          </HStack>
-          <HStack>
-            <FormLabel width="20%" size="sm" htmlFor="foundation">From Foundation</FormLabel>
-            <Select id="foundation" placeholder='Select Cadence' onChange={(e) => fetchFoundationFilename(e.target.value)}>
-              {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
-            </Select>
-
-          </HStack>
-          <Stack>
+          <Tabs onChange={(index) => setScriptType(TAB_NAMES[index])} index={TAB_NAMES.indexOf(scriptType) || 0}>
+            <TabList>
+              <Tab>Service Account</Tab>
+              <Tab>Foundation</Tab>
+              <Tab>Ledger</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <HStack>
+                  <FormLabel width="20%" size="sm" htmlFor="serviceAccount">From Service Account</FormLabel>
+                  <Select id="serviceAccount" placeholder='Select Cadence' onChange={(e) => fetchServiceAccountFilename(e.target.value)}>
+                    {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
+                  </Select>
+                </HStack>
+              </TabPanel>
+              <TabPanel>
+                <HStack>
+                  <FormLabel width="20%" size="sm" htmlFor="foundation">From Foundation</FormLabel>
+                  <Select id="foundation" placeholder='Select Cadence' onChange={(e) => fetchFoundationFilename(e.target.value)}>
+                    {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
+                  </Select>
+                </HStack>
+              </TabPanel>
+              <TabPanel>
+              <HStack>
+                  <FormLabel width="20%" size="sm" htmlFor="ledger">From Ledger</FormLabel>
+                  <Select id="ledger" placeholder='Select Cadence' onChange={(e) => setLedgerTransaction(e.target.value)}>
+                    {getDropdownOptions(LedgerTransactionNames, scriptName, scriptType === LEDGER)}
+                  </Select>
+                </HStack>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+          <Stack><Heading size="md">Cadence</Heading></Stack>          
+          <Stack>            
             <Textarea size="lg"
               placeholder='Cadence Script'
               resize={'vertical'}

@@ -8,13 +8,13 @@ import {
     Stack,
     Text,
     VStack,
-    FormLabel,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
+import { CadenceViewer } from "../../../../components/CadenceViewer";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
@@ -63,11 +63,11 @@ export default function SignatureRequestPage() {
         () => async () => {
             const getBalance = async (accountAddress) => fcl.account(accountAddress).then(account => {
                 if (!transferAmount) {
-                  const balance = (parseInt(account.balance) / 10e7) - 0.01
-                  setTransferAmount(balance.toFixed(8))
+                    const balance = (parseInt(account.balance) / 10e7) - 0.01
+                    setTransferAmount(balance.toFixed(8))
                 }
-              });
-      
+            });
+
             if (currentUser && signatures?.length > 0) {
                 console.log("currentUser", currentUser, signatures?.length);
                 getBalance(signatures[0]?.address);
@@ -144,24 +144,16 @@ export default function SignatureRequestPage() {
         <Stack margin="4" alignContent="left">
             <Stack maxW="container.xl" align="start">
                 <Stack>
-                    <Heading>Sign with Ledger (v0.9.12)</Heading>
+                    <Heading size="md">Sign with Ledger (v0.9.12)</Heading>
                 </Stack>
                 <Stack maxW="container.xl">
                     User Address:
                     {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
                 </Stack>
-            <Stack paddingTop={"10px"}>
-                <FormLabel>Description: This UI is meant for a Ledger account to sign a transfer Bonus FLOW Tokens transaction for a key in a Multisig Account</FormLabel>
             </Stack>
-            </Stack>
-            <Stack>
-                <Heading>Transfer</Heading>   
-                <HStack>
-                    <Text>Transfer </Text><Text fontSize="18px">{transferAmount}</Text><Text>FLOW tokens to </Text><Text fontSize="18px">{toAddress}</Text>
-                </HStack>
-            </Stack>
-            <Stack>
-                <Heading>Key status</Heading>
+            <CadenceViewer code={signableItems[0]?.signable.voucher.cadence} args={signableItems[0]?.signable.voucher.arguments} />
+            <Stack padding="1rem 0">
+                <Heading size="sm">Key status</Heading>
                 {signatures.map(({ address, sig, keyId }) => {
                     return (
                         <HStack
@@ -169,15 +161,15 @@ export default function SignatureRequestPage() {
                             borderWidth="1px"
                             borderRadius="lg"
                             overflow="hidden"
-                            padding="4"
+                            padding="0.25rem"                            
                             key={address + keyId}
                         >
-                            <Button width="200px" onClick={signTheMessage(signableItems[0].signable)} disabled={keyId === 0}>
+                            <Button disabled={!currentUser.loggedIn} size="sm" width="200px" onClick={signTheMessage(signableItems[0]?.signable)}>
                                 Sign the message!
                             </Button>
 
                             <HStack>
-                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>                                
+                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
                                 <AddressKeyView address={address} keyId={keyId} />
                             </HStack>
                         </HStack>
