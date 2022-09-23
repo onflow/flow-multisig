@@ -87,23 +87,16 @@ export const convertPublicKey = async (kmsPublicKey) => {
     const key = Buffer.concat([xValue, yValue]).toString("hex");
     return key;
 }
-export const getAccountKeyId = async (address, publicKey) => {
+export const getMatchingAccountKeys = async (address, publicKey) => {
     // get keyIds for all public keys
     const account = await fcl.send([fcl.getAccount(address)]).then(fcl.decode);
     console.log(account.keys)
-    let keyId = null;
-    for(let i= 0; i < account.keys.length; i++) {
+    let keys = [];
+    for (let i = 0; i < account.keys.length; i++) {
         const key = account.keys[i];
         if (key.publicKey === publicKey && !key.revoked) {
-            let id = key.index;
-            if (keyId) {
-                // keyId has been set compare weights
-                if (key.weight >= account.keys[keyId].weight) {
-                    id = key.index;
-                }
-            }
-            keyId = id;
+            keys.push({ address: address, keyId: key.index, weight: key.weight, publicKey: key.publicKey });
         }
     }
-    return keyId;
+    return keys.sort((a, b) => a.weight > b.weight ? 1 : -1)
 }

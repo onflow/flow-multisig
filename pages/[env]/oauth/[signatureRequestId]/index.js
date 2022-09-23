@@ -4,7 +4,6 @@ import {
   Stack,
   Input,
   Button,
-  Textarea,
   FormLabel,
   HStack,
   CircularProgress
@@ -16,7 +15,9 @@ import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 import useScript from 'react-script-hook';
-import { convert, getPayload, prepareSignedEnvelope, getDigest, convertPublicKey, getAccountKeyId } from "../../../../utils/kmsHelpers";
+import { convert, getPayload, prepareSignedEnvelope, getDigest, convertPublicKey, getMatchingAccountKeys } from "../../../../utils/kmsHelpers";
+import { CadenceViewer } from "../../../../components/CadenceViewer";
+import { AddressKeyView } from "../../../../components/AddressKeyView";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -51,9 +52,13 @@ export default function SignatureRequestPage() {
   );
   const [signingStatus, setSigningStatus] = useState(null);
   const [publicKeyStatus, setPublicKeyStatus] = useState(null);
+  const [loadingKeys, setLoadingKeys] = useState(false);
   const [signingMessage, setSigningMessage] = useState(null);
   const [loginError, setLoginError] = useState(null);
   const [togglePath, setTogglePath] = useState(false);
+  const [cadencePayload, setCadencePayload] = useState(null);
+  const [decodedAccount, setDecodedAccount] = useState(null);
+  const [signableKeys, setSignableKeys] = useState([]);
 
   // --- api configuration --- //
   function gapiInit() {
@@ -89,6 +94,7 @@ export default function SignatureRequestPage() {
           KEY_SCOPE)) {
           console.log('user has scope, saving access token')
           setAccessToken(tokenResponse.access_token)
+          getKeyId(tokenResponse.access_token)
         } else {
           setLoginError(`account needs scope ${KEY_SCOPE}`)
         }
@@ -119,19 +125,24 @@ export default function SignatureRequestPage() {
 
   const signatures = data ? data.data : [];
 
-  // The voucher is the same for all these. Doesn't matter which we pick here.
-  const cliRLP = signatures && signatures.length
-    ? encodeVoucherToEnvelope({
-      ...signatures[0].signable.voucher,
-      envelopeSigs: [],
-      payloadSigs: [],
-    })
-    : "";
+  useEffect(() => {
+    if (signatures && signatures.length > 0) {
+      // The voucher is the same for all these. Doesn't matter which we pick here.
+      const cliRLP = signatures && signatures.length
+        ? encodeVoucherToEnvelope({
+          ...signatures[0].signable.voucher,
+          envelopeSigs: [],
+          payloadSigs: [],
+        })
+        : "";
 
-  const decodedMsg = cliRLP ? decode("0x" + cliRLP) : null;
-  const cadencePayload = decodedMsg ? decodedMsg[0][0] : "";
-  const cadenceArguments = decodedMsg ? decodedMsg[0][1] : "";
-  const decodedAccount = decodedMsg ? "0x" + decodedMsg[0][7].toString("hex") : ""
+      const decodedMsg = cliRLP ? decode("0x" + cliRLP) : null;
+      const cp = decodedMsg ? decodedMsg[0][0] : "";
+      const da = decodedMsg ? "0x" + decodedMsg[0][7].toString("hex") : ""
+      setCadencePayload(cp)
+      setDecodedAccount(da)
+    }
+  }, [signatures])
 
   const getKeyPath = (userKeyInfo, generated = false) => {
     if (userKeyInfo?.[KEY_FULL_PATH] && !generated) return userKeyInfo[KEY_FULL_PATH];
@@ -214,7 +225,6 @@ export default function SignatureRequestPage() {
             setSigningMessage(`KMS Service returned error ${response.status}, check network status`)
           }
         }
-
       } catch (e) {
         console.log('error', e)
         setSigningStatus(SIGNING_ERROR);
@@ -224,8 +234,13 @@ export default function SignatureRequestPage() {
     }
   }
 
-  const getKeyId = async () => {
+  const getKeyId = async (accessToken) => {
+    if (!accessToken) {
+      setPublicKeyStatus("error with authentication credentials")
+      return;
+    }
     setPublicKeyStatus("")
+    setLoadingKeys(true);
     const account = decodedAccount;
     handleKeyInfoUpdate("-", SIGN_KEYID)
     const url = getPublicKeyUrl(userKeyInfo)
@@ -240,23 +255,28 @@ export default function SignatureRequestPage() {
     }).catch(e => {
       console.log('error', e)
       setPublicKeyStatus(PUBLIC_KEY_ERROR);
+    }).finally(() => {
+      setLoadingKeys(false);
     })
+
     if (response?.status === 200) {
       const { pem } = await response.json();
-      console.log('result', pem)
       const flowPublicKey = await convertPublicKey(pem);
       console.log('flow public key', flowPublicKey)
       console.log('userKeyInfo', userKeyInfo)
-      let keyId = await getAccountKeyId(account, flowPublicKey)
-      if (!keyId) {
-        setPublicKeyStatus("KeyId not found for this account");
+      let keys = await getMatchingAccountKeys(account, flowPublicKey)
+      console.log('keys', keys)
+      if (!keys || keys.length === 0) {
+        setPublicKeyStatus("No signing keys found for this account");
         handleKeyInfoUpdate(0, SIGN_KEYID)
       }
-      handleKeyInfoUpdate(keyId, SIGN_KEYID)
+      const primaryKey = keys[0]
+      handleKeyInfoUpdate(primaryKey.keyId, SIGN_KEYID)
+      setSignableKeys(keys)
     }
   }
   // Deal with dat flash and/or bad sig request id.
-  if (!cliRLP) {
+  if (signatures && signatures.length === 0) {
     return (
       <Stack margin={"50"}>
         <Flex
@@ -306,24 +326,33 @@ export default function SignatureRequestPage() {
               onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
               value={full_key_path}
             />
-            <FormLabel>Signing Account</FormLabel>
-            <Text
-              size="sm"
-            >{signing_account}</Text>
-            <FormLabel>Signing KeyId</FormLabel>
+            <HStack alignItems={"baseline"}>
+              <FormLabel fontSize={"12px"}>Signing Account</FormLabel>
+              <Text
+                size="sm"
+              >{signing_account}</Text>
+            </HStack>
+            <HStack alignItems={"baseline"}>
+              <FormLabel fontSize={"12px"}>Using KeyId</FormLabel>
+              <Text size="sm">{signing_keyId}</Text>
+            </HStack>
             {publicKeyStatus !== null && <Text color={"red"}>{publicKeyStatus}</Text>}
             <HStack>
-              <Button size={"sm"} disabled={!accessToken} onClick={() => getKeyId()}>Lookup KeyId</Button>
-              {signing_keyId === "-" && <CircularProgress size={"2rem"} isIndeterminate color="green.300" />}
-              <Input
-                size="sm"
-                id="key-id"
-                placeholder="Enter Key Id"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, SIGN_KEYID)}
-                value={signing_keyId}
-              />
+              {loadingKeys && <CircularProgress size={"2rem"} isIndeterminate color="green.300" />}
+              {!loadingKeys && (
+                signableKeys.map(k => {
+                  return (
+                    <Button onClick={() => handleKeyInfoUpdate(k.keyId, SIGN_KEYID)} disabled={signing_keyId === k.keyId} key={k.keyId}>
+                      <AddressKeyView address={k.address} keyId={k.keyId} weight={k.weight} />
+                    </Button>
+                  )
+                })
+              )}
             </HStack>
-            <Stack><Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button></Stack>
+
+            <Stack>
+              <Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button>
+            </Stack>
             {togglePath && <Stack>
               <FormLabel>Project Id</FormLabel>
               <Input
@@ -370,24 +399,7 @@ export default function SignatureRequestPage() {
             </Stack>}
           </Stack>
         </Stack>
-        <Stack>
-          <FormLabel>Cadence Code</FormLabel>
-          <Textarea size="md"
-            placeholder='Cadence Script'
-            resize={'vertical'}
-            value={cadencePayload}
-            onChange={() => { }} />
-        </Stack>
-        <Stack>
-          <FormLabel>Cadence Arguments</FormLabel>
-          <Input
-            size="md"
-            id="arguments"
-            placeholder="Cadence Arguments"
-            onChange={() => { }}
-            value={`[${cadenceArguments}]`}
-          />
-        </Stack>
+        <CadenceViewer code={cadencePayload} args={signatures[0]?.signable.voucher.arguments} />
         <Button
           disabled={!canSign || !accessToken}
           onClick={signPayload}

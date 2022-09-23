@@ -16,6 +16,7 @@ import useSWR from "swr";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
 import { CadenceViewer } from "../../../../components/CadenceViewer";
+import { filerKeys } from "../../../../utils/accountHelper";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
@@ -150,16 +151,6 @@ export default function SignatureRequestPage() {
         }).then((r) => r.json());
     };
 
-    const filerKeys = (txUser, user, signatures) => {
-        let keys = [];
-        if (!txUser || !user) return keys;
-        const userKeys = user.keys.map(k => k.publicKey)
-        const signingKeys = txUser.keys.filter(k => userKeys.includes(k.publicKey));
-        const keyIds = signingKeys.map(s => s.index);
-        const possibleSigs = signatures.filter(s => keyIds.includes(s.keyId));
-        return possibleSigs;
-    }
-
     const AuthedState = () => {
         return (
             <VStack>
@@ -198,7 +189,7 @@ export default function SignatureRequestPage() {
                 <Heading size="sm">Signing Keys</Heading>
                 {loading && <CircularProgress size="2rem" isIndeterminate color="green.300" />}
                 {!currentUser.loggedIn && <Text color={"red.400"} fontSize="lg">Log in to get started</Text>}
-                {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId }) => {
+                {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId, weight }) => {
                     return (
                         <HStack
                             flex="1"
@@ -208,14 +199,10 @@ export default function SignatureRequestPage() {
                             padding="0.25rem"
                             key={address + keyId}
                         >
-                            <Button disabled={!currentUser.loggedIn} size="sm" width="200px" onClick={signTheMessage(signableItems[0]?.signable, keyId)}>
-                                Sign the message!
+                            <Button disabled={!currentUser.loggedIn || sig} size="sm" width="200px" onClick={signTheMessage(signableItems[0]?.signable, keyId)}>
+                                {sig ? `Signed` : `Sign the message!`}
                             </Button>
-
-                            <HStack>
-                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                                <AddressKeyView address={address} keyId={keyId} />
-                            </HStack>
+                            <AddressKeyView address={address} keyId={keyId} weight={weight} />
                         </HStack>
                     );
                 })}

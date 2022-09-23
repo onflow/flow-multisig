@@ -535,7 +535,7 @@ export default function MainPage() {
                           {signatureRequestId &&
                             <>
                               <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
-                              <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** not all tx are supported **"} />
+                              {scriptType === LEDGER && <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** only Ledger specific tx are supported **"} />}
                             </>
                           }
                           <Stack
