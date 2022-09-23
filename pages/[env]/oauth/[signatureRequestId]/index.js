@@ -343,7 +343,7 @@ export default function SignatureRequestPage() {
                 signableKeys.map(k => {
                   return (
                     <Button onClick={() => handleKeyInfoUpdate(k.keyId, SIGN_KEYID)} disabled={signing_keyId === k.keyId} key={k.keyId}>
-                      <AddressKeyView address={k.address} keyId={k.keyId} weight={k.weight} />
+                      <AddressKeyView keyId={k.keyId} weight={k.weight} />
                     </Button>
                   )
                 })

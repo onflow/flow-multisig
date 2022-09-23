@@ -98,5 +98,5 @@ export const getMatchingAccountKeys = async (address, publicKey) => {
             keys.push({ address: address, keyId: key.index, weight: key.weight, publicKey: key.publicKey });
         }
     }
-    return keys.sort((a, b) => a.weight > b.weight ? 1 : -1)
+    return keys.sort((a, b) => a.weight > b.weight ? -1 : 1)
 }

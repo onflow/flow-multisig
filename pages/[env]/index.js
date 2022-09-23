@@ -404,9 +404,9 @@ export default function MainPage() {
               <Heading size="lg">Multisig Webapp</Heading>
             </VStack>
           </Stack>
-          <Tabs onChange={(index) => setScriptType(TAB_NAMES[index])} index={TAB_NAMES.indexOf(scriptType) || 0}>
+          <Tabs variant='solid-rounded' colorScheme='blue' onChange={(index) => setScriptType(TAB_NAMES[index])} index={TAB_NAMES.indexOf(scriptType) || 0} >
             <TabList>
-              <Tab>Service Account</Tab>
+              <Tab >Service Account</Tab>
               <Tab>Foundation</Tab>
               <Tab>Ledger</Tab>
             </TabList>

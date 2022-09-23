@@ -6,10 +6,14 @@ export const AddressKeyView = ({ address, keyId, weight }) => {
 
   return (
     <HStack alignItems={"baseline"}>
-      <Text fontSize="12px" paddingRight={"2px"}>Addr:</Text>
-      <Text>{`${fcl.withPrefix(
-        address
-      )}`}</Text>
+      {address && (
+        <>
+          <Text fontSize="12px" paddingRight={"2px"}>Addr:</Text>
+          <Text>{`${fcl.withPrefix(
+            address
+          )}`}</Text>
+        </>
+      )}
       <Text fontSize="12px" paddingLeft={"10px"} paddingRight={"2px"}>KeyId:</Text>
       <Text>{`${keyId} `}</Text>
       {weight && <Text fontSize="12px" paddingLeft={"10px"} paddingRight={"2px"}>Weight:</Text>}
