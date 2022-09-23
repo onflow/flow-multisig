@@ -1,7 +1,10 @@
 import { CODE } from "@onflow/six-transfer-tokens"
-export const CadencePayloadTypes = {
-    TransferEscrow: "Transfer Escrow"
-}
-export const CadencePayloads = {
-    [CadencePayloadTypes.TransferEscrow]: CODE
+const TRANSFERESCROW = "Transfer-Escrow.cdc"
+
+export const LedgerTransactionNames = [
+    TRANSFERESCROW
+]
+
+export const LedgerCadenceTransactions = {
+    [TRANSFERESCROW]: CODE
 }

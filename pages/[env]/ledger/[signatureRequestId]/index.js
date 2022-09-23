@@ -1,6 +1,7 @@
 import {
     Box,
     Button,
+    CircularProgress,
     Flex,
     Heading,
     HStack,
@@ -8,13 +9,14 @@ import {
     Stack,
     Text,
     VStack,
-    FormLabel,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
+import { CadenceViewer } from "../../../../components/CadenceViewer";
+import { filerKeys } from "../../../../utils/accountHelper";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
@@ -36,14 +38,13 @@ const RedDot = iconFn("red.500");
 export default function SignatureRequestPage() {
     const router = useRouter();
     const { signatureRequestId } = router.query;
-    const [transferAmount, setTransferAmount] = useState("")
-    const [toAddress, setToAddress] = useState("0x47fd53250cc3982f");
     const [currentUser, setCurrentUser] = useState({
         loggedIn: false,
     });
-    useEffect(() => {
-        fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
-    }, []);
+    const [user, setUser] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [signableKeys, setSignableKeys] = useState([])
 
     const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
         refreshInterval: 3,
@@ -57,24 +58,56 @@ export default function SignatureRequestPage() {
 
     const signableItems = signableRecord ? signableRecord.data : [];
 
+    const getUserAccount = async (address) => {
+        if (!address) return null;
+        let result = null;
+        try {
+            return await fcl.account(address);
+        } catch (e) {
+            console.error(e)
+            setErrorMessage(e)
+        }
+        return result;
+    };
+
+    useEffect(() => {
+        fcl.currentUser.subscribe((currentUser) => {
+            if (currentUser?.addr) {
+                setCurrentUser(currentUser)
+                getUserAccount(currentUser.addr).then(user => {
+                    if (user) {
+                        setUser(user);
+                        setLoading(false)
+                    } else {
+                        setErrorMessage("Could not load user information")
+                    }
+                }).catch(e => {
+                    setErrorMessage(e)
+                });
+            } else {
+                setCurrentUser({ loggedIn: false })
+            }
+        })
+    }, []);
 
     // Get the keys
-    useEffect(
-        () => async () => {
-            const getBalance = async (accountAddress) => fcl.account(accountAddress).then(account => {
-                if (!transferAmount) {
-                  const balance = (parseInt(account.balance) / 10e7) - 0.01
-                  setTransferAmount(balance.toFixed(8))
-                }
-              });
-      
-            if (currentUser && signatures?.length > 0) {
-                console.log("currentUser", currentUser, signatures?.length);
-                getBalance(signatures[0]?.address);
-            }
-        },
-        [currentUser, signatures, transferAmount]
-    );
+    useEffect(() => {
+        if (user && signatures?.length > 0) {
+            setLoading(true);
+            getUserAccount(signatures[0]?.address)
+                .then(acct => {
+                    if (acct) {
+                        const keys = filerKeys(acct, user, signatures);
+                        setSignableKeys(keys);
+                    } else {
+                        setErrorMessage("Could not retreive transaction account information")
+                    }
+                    setLoading(false)
+                }).catch(e => {
+                    setErrorMessage(e)
+                });
+        }
+    }, [signatures, user]);
 
     // Deal with dat flash and/or bad sig request id.
     if (!signatures || signatures.length === 0) {
@@ -96,7 +129,7 @@ export default function SignatureRequestPage() {
         );
     }
 
-    const signTheMessage = (signable) => async () => {
+    const signTheMessage = (signable, keyId) => async () => {
         const result = await fcl.authz();
         const result2 = await result.resolve();
         // remove payload sigs for ledger signing
@@ -106,7 +139,7 @@ export default function SignatureRequestPage() {
         console.log('signable', JSON.stringify(signable))
         console.log('signable Result', JSON.stringify(signedResult))
         // ledger returns keyId of 0, even though it signs correctly
-        signedResult.keyId = signable.keyId;
+        signedResult.keyId = keyId;
         signedResult.addr = signable.addr;
         console.log("Ledger signing message", signable, signedResult);
         await fetch(`/api/${signatureRequestId}`, {
@@ -124,7 +157,7 @@ export default function SignatureRequestPage() {
                 <Stack>Hello</Stack>
                 <Stack direction="row" spacing={4} align="center">
                     <div>Address: {currentUser?.addr ?? "No Address"}</div>
-                    <Button onClick={fcl.unauthenticate}>Log Out</Button>
+                    <Button onClick={fcl.currentUser.unauthenticate}>Log Out</Button>
                 </Stack>
             </VStack>
         );
@@ -144,46 +177,37 @@ export default function SignatureRequestPage() {
         <Stack margin="4" alignContent="left">
             <Stack maxW="container.xl" align="start">
                 <Stack>
-                    <Heading>Sign with Ledger (v0.9.12)</Heading>
+                    <Heading size="md">Sign with Ledger (v0.9.12)</Heading>
                 </Stack>
                 <Stack maxW="container.xl">
                     User Address:
                     {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
                 </Stack>
-            <Stack paddingTop={"10px"}>
-                <FormLabel>Description: This UI is meant for a Ledger account to sign a transfer Bonus FLOW Tokens transaction for a key in a Multisig Account</FormLabel>
             </Stack>
-            </Stack>
-            <Stack>
-                <Heading>Transfer</Heading>   
-                <HStack>
-                    <Text>Transfer </Text><Text fontSize="18px">{transferAmount}</Text><Text>FLOW tokens to </Text><Text fontSize="18px">{toAddress}</Text>
-                </HStack>
-            </Stack>
-            <Stack>
-                <Heading>Key status</Heading>
-                {signatures.map(({ address, sig, keyId }) => {
+            <CadenceViewer code={signableItems[0]?.signable.voucher.cadence} args={signableItems[0]?.signable.voucher.arguments} />
+            <Stack padding="1rem 0">
+                <Heading size="sm">Signing Keys</Heading>
+                {loading && <CircularProgress size="2rem" isIndeterminate color="green.300" />}
+                {!currentUser.loggedIn && <Text color={"red.400"} fontSize="lg">Log in to get started</Text>}
+                {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId, weight }) => {
                     return (
                         <HStack
                             flex="1"
                             borderWidth="1px"
                             borderRadius="lg"
                             overflow="hidden"
-                            padding="4"
+                            padding="0.25rem"
                             key={address + keyId}
                         >
-                            <Button width="200px" onClick={signTheMessage(signableItems[0].signable)} disabled={keyId === 0}>
-                                Sign the message!
+                            <Button disabled={!currentUser.loggedIn || sig} size="sm" width="200px" onClick={signTheMessage(signableItems[0]?.signable, keyId)}>
+                                {sig ? `Signed` : `Sign the message!`}
                             </Button>
-
-                            <HStack>
-                                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>                                
-                                <AddressKeyView address={address} keyId={keyId} />
-                            </HStack>
+                            <AddressKeyView address={address} keyId={keyId} weight={weight} />
                         </HStack>
                     );
                 })}
             </Stack>
+            <Stack><Text color={"red"}>{errorMessage}</Text></Stack>
         </Stack>
     );
 }
