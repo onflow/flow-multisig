@@ -113,7 +113,7 @@ export default function MainPage() {
   const [cadencePayload, setCadencePayload] = useState("");
   const [jsonError, setJsonError] = useState("")
   const [exeEffort, setExeEffort] = useState(9999)
-  const [myState, copyToClipboard] = useCopyToClipboard();
+  const [accountBalance, setAccountBalance] = useState(null);
   const [scriptName, setScriptName] = useState("");
   const [scriptType, setScriptType] = useState("");
   const [selectedProposalKey, setProposalKey] = useState(null);
@@ -201,8 +201,13 @@ export default function MainPage() {
     if (authAccountAddress !== "") {
       fcl
         .account(authAccountAddress)
-        .then(({ keys }) => {
-          // used to test account validity
+        .then((acct) => {
+          // used to test account validity get account balance
+          console.log('acct', acct);
+          if (acct) {
+            const bal = acct.balance / 1e8;
+            setAccountBalance(bal)
+          }          
         })
         .catch((e) => {
           // only log out error
@@ -458,7 +463,10 @@ export default function MainPage() {
           <Stack spacing="24px">
             <Stack>
               <FormControl isInvalid={error}>
-                <FormLabel>Service Account Address</FormLabel>
+                <HStack alignItems={"baseline"}>
+                  <Text fontWeight={"600"}>Multisig Account Address</Text>
+                  {scriptType === LEDGER && <Text fontSize={"0.65rem"}>{accountBalance ? `${accountBalance} FLOW` : ''}</Text>}
+                </HStack>
                 <HStack spacing={4}>
                   <Button
                     isDisabled={error || !authAccountAddress}
