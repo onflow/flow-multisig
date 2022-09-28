@@ -53,12 +53,15 @@ export default function SignatureRequestPage() {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
-  const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
+  console.log('signatureRequestId', signatureRequestId)
+  const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
     refreshInterval: 3,
   });
 
+  console.log('data', data);
   const signatures = data ? data.data : [];
 
+  console.log('sign', signatures)
   // Get the keys
   useEffect(
     () => async () => {
@@ -72,10 +75,10 @@ export default function SignatureRequestPage() {
   // The voucher is the same for all these. Doesn't matter which we pick here.
   const cliRLP = signatures.length
     ? encodeVoucherToEnvelope({
-        ...signatures[0].signable.voucher,
-        envelopeSigs: [],
-        payloadSigs: [],
-      })
+      ...signatures[0].signable.voucher,
+      envelopeSigs: [],
+      payloadSigs: [],
+    })
     : "";
 
   const { hasCopied, onCopy } = useClipboard(cliRLP);
@@ -227,20 +230,20 @@ export default function SignatureRequestPage() {
         <Text>{cliRLP}</Text>
       </Stack>
       <Stack paddingTop={"20px"}>
-                <Heading>CLI Command for signing</Heading>   
-                <Stack>
-                  <Text>1. Paste the above rlp in file sign-cli.rlp in the same directory as flow.json </Text>
-                  <Text>{`2. replace ####### with the account entry in your flow.json that will be signing. The account address needs to be 0x${signatures[0].address}.`} </Text>
-                  <Stack>
-                    <Text>3. Cli command: </Text>
-                    <pre>
-                    flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp
-                    </pre>
-                    <Text>4. paste the contents in sign-cli-signed.rlp to the text field below</Text>
-                    </Stack>
-                </Stack>
-            </Stack>
-            <Stack paddingTop="4">
+        <Heading>CLI Command for signing</Heading>
+        <Stack>
+          <Text>1. Paste the above rlp in file sign-cli.rlp in the same directory as flow.json </Text>
+          <Text>{`2. replace ####### with the account entry in your flow.json that will be signing. The account address needs to be 0x${signatures[0].address}.`} </Text>
+          <Stack>
+            <Text>3. Cli command: </Text>
+            <pre>
+              flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp
+            </pre>
+            <Text>4. paste the contents in sign-cli-signed.rlp to the text field below</Text>
+          </Stack>
+        </Stack>
+      </Stack>
+      <Stack paddingTop="4">
         <FormControl id="selected-account-payload">
           <Heading>Paste signed rlp here</Heading>
           <Input size="lg" onChange={onRLPChange} />
