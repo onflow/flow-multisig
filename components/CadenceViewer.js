@@ -19,11 +19,12 @@ export const CadenceViewer = ({ code, args }) => {
             </Stack>
             <Stack padding="0.5rem 0">
                 <Heading size="md">Cadence Arguments</Heading>
-                {args && args.map((arg, i) => {
-                    return (
-                        <HStack alignItems={"baseline"} key={i}><Text fontSize={"0.75rem"} >{arg.type}</Text><Text>{arg.value}</Text></HStack>
-                    )
-                })}
+                {args && args.map((arg, i) =>
+                    <HStack alignItems={"baseline"} key={`${i}`}>
+                        <Text fontSize={"0.75rem"} >{arg.type}</Text>
+                        <Text>{`${JSON.stringify(arg.value)}`}</Text>
+                    </HStack>
+                )}
             </Stack>
         </>
     )
