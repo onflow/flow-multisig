@@ -43,8 +43,8 @@ const GreenDot = iconFn("green.500");
 const RedDot = iconFn("red.500");
 
 const flowscanUrls = {
-  mainnet: "https://flowscan.org/transaction/",
-  testnet: "https://testnet.flowscan.org/transaction/",
+  mainnet: "https://flowscan.org/transaction",
+  testnet: "https://testnet.flowscan.org/transaction",
 };
 const cleanAddress = (address) => address.replace("0x", "");
 
