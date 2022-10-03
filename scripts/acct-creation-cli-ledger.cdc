@@ -31,7 +31,7 @@ transaction(
 
         bonusAccount.keys.add(
             publicKey: CLIKey,
-            hashAlgorithm: HashAlgorithm.SHA3_256,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
             weight: 400.0
         )
 
