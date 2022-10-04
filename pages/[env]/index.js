@@ -413,7 +413,7 @@ export default function MainPage() {
             <TabList>
               <Tab>Service Account</Tab>
               <Tab>Foundation</Tab>
-              <Tab>Ledger</Tab>
+              <Tab>Ledger (v0.10.0)</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
