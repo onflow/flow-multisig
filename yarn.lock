@@ -908,16 +908,16 @@
     "@babel/runtime" "^7.18.6"
     "@onflow/util-actor" "^1.1.1"
 
-"@onflow/fcl@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@onflow/fcl/-/fcl-1.1.1.tgz#07815fea05aca4ba05267316addeeba254c8da4e"
-  integrity sha512-xdYsBMmWHCTp3lUh9J4WShYQMhXPYUEgCG/XFGv2eurC/nXeca46KWuAXhvQqBqCJ3/+JRbrKLhB33ypKvBIjQ==
+"@onflow/fcl@1.3.1":
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/@onflow/fcl/-/fcl-1.3.1.tgz#3b89c9aff46963a9bdb1d15fe0ea6742380fb9cf"
+  integrity sha512-A01c1kh892uJZ7+4UbkoafMd0iLzCwNZbLvl+15mMSHr2MUDLV/y7E3v8YZZW2Ltp7vKrqtONoppHyksNEtyZg==
   dependencies:
     "@babel/runtime" "^7.18.6"
     "@onflow/config" "^1.0.3"
     "@onflow/interaction" "0.0.11"
     "@onflow/rlp" "^1.0.2"
-    "@onflow/sdk" "^1.1.1"
+    "@onflow/sdk" "^1.1.2"
     "@onflow/types" "^1.0.3"
     "@onflow/util-actor" "^1.1.1"
     "@onflow/util-address" "^1.0.2"
@@ -925,6 +925,7 @@
     "@onflow/util-logger" "^1.1.1"
     "@onflow/util-template" "^1.0.3"
     "@onflow/util-uid" "^1.0.2"
+    node-fetch "^2.6.7"
 
 "@onflow/interaction@0.0.11":
   version "0.0.11"
@@ -939,15 +940,15 @@
     "@babel/runtime" "^7.18.6"
     buffer "^6.0.3"
 
-"@onflow/sdk@1.1.1", "@onflow/sdk@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@onflow/sdk/-/sdk-1.1.1.tgz#ac7e18e723499b6c98b4c00f0b62bf6c69bb9d61"
-  integrity sha512-i+ZYja6jBq6HU8Hnpq/AoeMDQOazrxhgds0yU9KqxOKAA9tZ4DUv4J47eHSQbUEv09BbUeZAcIc/ZdqVqrMjJQ==
+"@onflow/sdk@1.1.2", "@onflow/sdk@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@onflow/sdk/-/sdk-1.1.2.tgz#3aa8b63395a44ac0be45d1081785ebaf64993ada"
+  integrity sha512-HNfQ6Q91FfFwd2g1wa/YHvmv6BYeXGONkEJyfOaoPRIbp3lG9W35HYX7Yvgtn7fvcQG+TRL8n386mzJ6Vn4dmA==
   dependencies:
     "@babel/runtime" "^7.18.6"
     "@onflow/config" "^1.0.3"
     "@onflow/rlp" "^1.0.2"
-    "@onflow/transport-http" "^1.4.0"
+    "@onflow/transport-http" "^1.5.0"
     "@onflow/util-actor" "^1.1.1"
     "@onflow/util-address" "^1.0.2"
     "@onflow/util-invariant" "^1.0.2"
@@ -961,10 +962,22 @@
   resolved "https://registry.npmjs.org/@onflow/six-transfer-tokens/-/six-transfer-tokens-0.0.8.tgz"
   integrity sha512-SQvTDFB4qk3/ObfvnzDS6jArN3Nw/1k+QtQ5+fJ+8nFpT0RGGL3tH3x2zH44YzDqlIe4yKW3bYPR93yxbdo3OA==
 
-"@onflow/transport-http@1.4.0", "@onflow/transport-http@^1.4.0":
+"@onflow/transport-http@1.4.0":
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/@onflow/transport-http/-/transport-http-1.4.0.tgz#7b1ab53db480b6e5d692aeedbeb5319c71238de7"
   integrity sha512-8rVpGoGovZVxxenYOtyUXUrpPYDJ9N5O9sRJay+gC3mcAyRyc9EHLlbh0QJsoC9Y71sMm5t5jqjR2kBfNal7Hw==
+  dependencies:
+    "@babel/runtime" "^7.18.6"
+    "@onflow/util-address" "^1.0.2"
+    "@onflow/util-invariant" "^1.0.2"
+    "@onflow/util-logger" "^1.1.1"
+    "@onflow/util-template" "^1.0.3"
+    node-fetch "^2.6.7"
+
+"@onflow/transport-http@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@onflow/transport-http/-/transport-http-1.5.0.tgz#eda720107d9d073b849a924a1444bed9c579b41a"
+  integrity sha512-CGgfPC1kI+ssqDgFXxGgKHLVtu1tCGtyGJiS/fplyVun9RC7AwEp2KkjTP2dxRlto3HmntoaBkOw7z38UCxRZw==
   dependencies:
     "@babel/runtime" "^7.18.6"
     "@onflow/util-address" "^1.0.2"
