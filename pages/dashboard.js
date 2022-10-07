@@ -24,28 +24,68 @@ import {
     GridItem,
 } from "@chakra-ui/react";
 import { MAINNET, TESTNET } from "../utils/constants";
-import { SetupFclConfiguration } from "../utils/configurations";
+import { GetPublicKeyAccounts, SetupFclConfiguration } from "../utils/configurations";
+import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
+import { abbrvKey } from "../utils/formatting";
 
 const networks = [MAINNET, TESTNET];
 
 export default function Dashboard() {
-    const [txs, setTxs] = useState(['bob', 'sue']);
+    const [txs, setTxs] = useState([]);
     const [signed, setSigned] = useState(['done one', 'done two'])
     const [selectedTx, setSelectedTx] = useState(null);
-    const [publicKey, setPublicKey] = useState(null);
     const [currentUserAddr, setCurrentUserAddr] = useState(null);
     const [network, setNetwork] = useState(MAINNET);
+    const [accounts, setAccounts] = useState([]);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(async () => {
         fcl.unauthenticate();
+        if (!network) return;
         SetupFclConfiguration(fcl, network);
-        fcl.currentUser().subscribe(currentUser => {
-            // get public key and look up all account infos
+        fcl.currentUser().subscribe(async currentUser => {
             console.log('current user', currentUser)
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
+
+            if (currentUser.addr) {
+                const accts = await processUserAccounts(currentUser.addr);
+                console.log('accts', accts);
+                const transactions = await lookUpSignableTransactions(accts);
+                setTxs(transactions)
+            }
         })
     }, [network])
+
+    const processUserAccounts = async (address) => {
+        if (!address) return;
+
+        const acct = await getUserAccount(address)
+        let accountInfos = []
+        console.log('acct', acct)
+        const publicKeys = getPrimaryPublicKeys(acct)
+        console.log('public keys', publicKeys)
+        for (let i = 0; i < publicKeys.length; i++) {
+            const publicKey = publicKeys[i];
+            const accounts = await GetPublicKeyAccounts(network, publicKey);
+            console.log('public key', publicKey, accounts)
+            accountInfos = [...accountInfos, ...accounts];
+        }
+        console.log('filtered accounts', accountInfos)
+        setAccounts(accountInfos)
+        return accountInfos;
+    }
+
+    const lookUpSignableTransactions = async (accounts) => {
+        let signableIds = []
+        for (let i = 0; i < accounts.length; i++) {
+            const { address, keyId } = accounts[i];
+            const items = await fetchSignableRequestIds(address, keyId);
+            const ids = (items?.data || []).map(i => i.signatureRequestId)
+            console.log('ids', ids)
+            signableIds = [...signableIds, ...ids]
+        }
+        return signableIds;
+    }
 
     const logout = async () => fcl.unauthenticate();
     const login = async () => {
@@ -65,6 +105,7 @@ export default function Dashboard() {
         });
         const ids = res.json();
         console.log('signable ids', ids);
+        return ids;
     }
 
     return (
@@ -84,7 +125,7 @@ export default function Dashboard() {
                         <Select size={"sm"} width="120px" id="network" value={network} onChange={(e) => setNetwork(e.target.value)}>
                             {networks.map(n => (<option key={n} value={n} selected>{n}</option>))}
                         </Select>
-                        {!currentUserAddr && <Button size={"sm"} onClick={() => login()}>{publicKey ? `Logged In` : `Login`}</Button>}
+                        {!currentUserAddr && <Button size={"sm"} onClick={() => login()}>Log In</Button>}
                         {currentUserAddr && (<HStack><Button size={"sm"} onClick={() => logout()}>Logout</Button><Text fontSize={"0.75rem"}>{currentUserAddr}</Text></HStack>)}
                     </HStack>
                 </GridItem>
@@ -94,7 +135,7 @@ export default function Dashboard() {
                         {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm">NO TRANSACTIONS</Heading>}
                         {txs.length > 0 && txs.map((tx) =>
                             <Stack key={tx}>
-                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{tx}</Button>
+                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx)}</Button>
                             </Stack>)
                         }
                     </Stack>

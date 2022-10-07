@@ -4,7 +4,7 @@ export const SetupFclConfiguration = (fcl, network) => {
     console.log('using ', network)
     switch (network) {
         case TESTNET: {
-            
+
             fcl.config()
                 .put("0xFLOWTOKENADDRESS", "0x7e60df042a9c0868")
                 .put("0xLOCKEDTOKENADDRESS", "0x95e019a17d0e23d7")
@@ -107,7 +107,7 @@ export const SetupFclConfiguration = (fcl, network) => {
                 .put("0xNONFUNGIBLETOKEN", "0x1d7e57aa55817448")
                 .put("0xUSDCADDRESS", "0xb19436aae4d94622")
                 .put("challenge.handshake", "https://fcl-discovery.onflow.org/authn")
-                .put("discovery.authn.endpoint", "https://fcl-discovery.onflow.org/authn" )
+                .put("discovery.authn.endpoint", "https://fcl-discovery.onflow.org/authn")
                 .put("accessNode.api", "https://rest-mainnet.onflow.org")
                 //.put("challenge.handshake", "http://localhost:3000/local/authn")
                 .put("env", MAINNET)
@@ -120,4 +120,13 @@ export const SetupFclConfiguration = (fcl, network) => {
         .put("app.detail.icon", "https://port.onflow.org/favicon/favicon-32x32.png")
         .put("app.detail.title", "Flow Port")
 
+}
+
+export const GetPublicKeyAccounts = async (network, publicKey) => {
+    let url = `https://key-indexer.production.flow.com/key/${publicKey}`
+    if (network === TESTNET) {
+        url = `https://key-indexer.staging.flow.com/key/${publicKey}`
+    }
+    const result = await fetch(url).then((r) => r.json());
+    return result?.accounts || []
 }

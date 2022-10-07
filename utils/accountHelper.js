@@ -24,3 +24,11 @@ export const filerKeys = (txUser, user, signatures) => {
     }, [])
     return matchedKeys;
 }
+
+
+export const getPrimaryPublicKeys = (loggedInUser) => {
+    let keys = [];
+    if (!loggedInUser) return keys;
+    const userPublicKeys = loggedInUser.keys.filter(k => k.weight === 1000).map(m => m.publicKey);
+    return userPublicKeys
+}

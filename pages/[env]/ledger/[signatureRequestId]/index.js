@@ -16,7 +16,7 @@ import useSWR from "swr";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
 import { CadenceViewer } from "../../../../components/CadenceViewer";
-import { filerKeys } from "../../../../utils/accountHelper";
+import { filerKeys, getUserAccount } from "../../../../utils/accountHelper";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
@@ -57,18 +57,6 @@ export default function SignatureRequestPage() {
     });
 
     const signableItems = signableRecord ? signableRecord.data : [];
-
-    const getUserAccount = async (address) => {
-        if (!address) return null;
-        let result = null;
-        try {
-            return await fcl.account(address);
-        } catch (e) {
-            console.error(e)
-            setErrorMessage(e)
-        }
-        return result;
-    };
 
     useEffect(() => {
         fcl.currentUser.subscribe((currentUser) => {
