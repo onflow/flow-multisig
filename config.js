@@ -16,7 +16,7 @@ const envSettings = {
   mainnet: {
     "accessNode.api": "https://rest-mainnet.onflow.org",
     //"discovery.wallet": "https://fcl-discovery.onflow.org/mainnet/authn",
-    //"discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/mainnet/authn",
+    "discovery.wallet": "https://fcl-ledger-web-git-authn-authz-locked-acct-onflow.vercel.app/mainnet/authn",
     "sdk.transport": httpSent,
     "0xFUNGIBLETOKENADDRESS": "0xf233dcee88fe0abe",
     "0xFLOWTOKENADDRESS": "0x1654653399040a61",
@@ -35,7 +35,9 @@ const envSettings = {
   },
 };
 
-export const setupConfig = (env = "mainnet") => {
+export const setupConfig = (env) => {
+  console.log('env', env)
+  if (!env) return;
   if (envSettings[env]) {
     config({ ...envSettings[env] })
   }
