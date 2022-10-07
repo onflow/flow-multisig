@@ -32,11 +32,12 @@ const networks = [MAINNET, TESTNET];
 
 export default function Dashboard() {
     const [txs, setTxs] = useState([]);
-    const [signed, setSigned] = useState(['done one', 'done two'])
+    const [signed, setSigned] = useState([])
     const [selectedTx, setSelectedTx] = useState(null);
     const [currentUserAddr, setCurrentUserAddr] = useState(null);
     const [network, setNetwork] = useState(MAINNET);
     const [accounts, setAccounts] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(async () => {
@@ -44,14 +45,15 @@ export default function Dashboard() {
         if (!network) return;
         SetupFclConfiguration(fcl, network);
         fcl.currentUser().subscribe(async currentUser => {
-            console.log('current user', currentUser)
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
-
             if (currentUser.addr) {
+                setLoading(true)
                 const accts = await processUserAccounts(currentUser.addr);
                 console.log('accts', accts);
-                const transactions = await lookUpSignableTransactions(accts);
-                setTxs(transactions)
+                const requests = await lookUpSignableTransactions(accts);
+                setTxs(requests.filter(t => !t.sig).map(t => t.signatureRequestId))
+                setSigned(requests.filter(t => !!t.sig).map(t => t.signatureRequestId))
+                setLoading(false)
             }
         })
     }, [network])
@@ -61,16 +63,12 @@ export default function Dashboard() {
 
         const acct = await getUserAccount(address)
         let accountInfos = []
-        console.log('acct', acct)
         const publicKeys = getPrimaryPublicKeys(acct)
-        console.log('public keys', publicKeys)
         for (let i = 0; i < publicKeys.length; i++) {
             const publicKey = publicKeys[i];
             const accounts = await GetPublicKeyAccounts(network, publicKey);
-            console.log('public key', publicKey, accounts)
             accountInfos = [...accountInfos, ...accounts];
         }
-        console.log('filtered accounts', accountInfos)
         setAccounts(accountInfos)
         return accountInfos;
     }
@@ -80,9 +78,7 @@ export default function Dashboard() {
         for (let i = 0; i < accounts.length; i++) {
             const { address, keyId } = accounts[i];
             const items = await fetchSignableRequestIds(address, keyId);
-            const ids = (items?.data || []).map(i => i.signatureRequestId)
-            console.log('ids', ids)
-            signableIds = [...signableIds, ...ids]
+            signableIds = [...signableIds, ...(items?.data || [])]
         }
         return signableIds;
     }
@@ -98,14 +94,8 @@ export default function Dashboard() {
     }
 
     const fetchSignableRequestIds = async (addr, keyId) => {
-        const res = await fetch(`/api/pending/${addr}/${keyId}`, {
-            headers: {
-                'Content-Type': 'application/text'
-            }
-        });
-        const ids = res.json();
-        console.log('signable ids', ids);
-        return ids;
+        const res = await fetch(`/api/pending/${addr}/${keyId}`);
+        return res.json();
     }
 
     return (
@@ -135,7 +125,7 @@ export default function Dashboard() {
                         {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm">NO TRANSACTIONS</Heading>}
                         {txs.length > 0 && txs.map((tx) =>
                             <Stack key={tx}>
-                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx)}</Button>
+                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx, 5)}</Button>
                             </Stack>)
                         }
                     </Stack>
@@ -147,7 +137,7 @@ export default function Dashboard() {
                     <Stack padding={"1rem"}>
                         <Heading bg="green.100" padding="0.5rem 1rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
                         {signed.length > 0 && signed.map(s =>
-                            <Stack key={s}><Text>{s}</Text></Stack>)
+                            <Stack key={s}><Text>{abbrvKey(s, 5)}</Text></Stack>)
                         }
                     </Stack>
                 </GridItem>

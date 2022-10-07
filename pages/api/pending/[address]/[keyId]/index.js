@@ -7,7 +7,7 @@ export default async function handler({ body, method, query }, res) {
             // TODO: change query to get signature request ids that don't have signatures and not too old
             const { data, error, status } = await supabase
                 .from("payloadSigs")
-                .select("signatureRequestId")
+                .select("signatureRequestId, sig")
                 .match({
                     address: fcl.sansPrefix(query.address),
                     keyId: query.keyId,

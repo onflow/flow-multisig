@@ -1,5 +1,4 @@
-export const abbrvKey = (publicKey) => {
+export const abbrvKey = (publicKey, nums = 8) => {
     if (!publicKey) return ""
-    const NUM_CHARS = 8;
-    return `${publicKey.substring(0, NUM_CHARS)}...${publicKey.substring(publicKey.length - NUM_CHARS, publicKey.length)}`
+    return `${publicKey.substring(0, nums)}...${publicKey.substring(publicKey.length - nums, publicKey.length)}`
   }
