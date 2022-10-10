@@ -122,7 +122,7 @@ export default function Dashboard() {
                 <GridItem pl='2' height="95vh" bg='blue.100' area={'nav'}>
                     <Stack padding={"1rem"}>
                         <Heading bg="green.100" padding="0.5rem 1rem" size="sm" textAlign={"center"}>PENDING</Heading>
-                        {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm">NO TRANSACTIONS</Heading>}
+                        {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm">NOTHING</Heading>}
                         {txs.length > 0 && txs.map((tx) =>
                             <Stack key={tx}>
                                 <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx, 5)}</Button>
