@@ -146,7 +146,7 @@ export const SetupFclConfiguration = async (fcl, network) => {
     // TODO: doesn't look like both wallet connect and plugin can be used at the same time
     fcl.pluginRegistry.add([gcpKmsPlugin])
     fcl.config()
-        .put("discovery.authn.include", ["0xe5cd26afebe62781", "0x9d2e44203cb13051", "0x3ef2e1c717c26127"])
+        .put("discovery.authn.include", ["0xe5cd26afebe62781", "0x9d2e44203cb13051"])
         .put("app.detail.icon", "https://flow-multisig-git-service-account-onflow.vercel.app/icon.png")
         .put("app.detail.title", "Flow Multisig")
         .put("flow.network", network)
