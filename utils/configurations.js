@@ -144,7 +144,7 @@ export const SetupFclConfiguration = (fcl, network) => {
       }
     fcl.pluginRegistry.add(plugins)
     fcl.config()
-        .put("discovery.authn.include", ["0xe5cd26afebe62781", "0x9d2e44203cb13051"])
+        .put("discovery.authn.include", ["0xe5cd26afebe62781", "0x9d2e44203cb13051", "0x3ef2e1c717c26127"])
         .put("app.detail.icon", "https://flow-multisig-git-service-account-onflow.vercel.app/icon.png")
         .put("app.detail.title", "Flow Multisig")
         .put("flow.network", network)

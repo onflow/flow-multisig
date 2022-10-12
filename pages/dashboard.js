@@ -42,11 +42,10 @@ export default function Dashboard() {
 
 
     const setup = () => {
-        console.log('run setup', process.env.REACT_APP_WALLET_CONNECT)
+        console.log('run setup')
         init({
-          projectId: process.env.REACT_APP_WALLET_CONNECT,
+          projectId: process.env.REACT_APP_WALLET_CONNECT || "b6f6a9afeecf7ff3ece00e7d85cdbca7",
           includeBaseWC: true,
-          projectId: "gcp-kms",          
           metadata: {
             name: 'FCL WC DApp',
             description: 'FCL DApp with support for WalletConnect',
@@ -64,7 +63,7 @@ export default function Dashboard() {
         fcl.unauthenticate();
         if (!network) return;
         SetupFclConfiguration(fcl, network);        
-        if (network === MAINNET || network === TESTNET) setup()
+        //if (network === MAINNET || network === TESTNET) setup()
         fcl.currentUser().subscribe(async currentUser => {
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
             if (currentUser.addr) {
