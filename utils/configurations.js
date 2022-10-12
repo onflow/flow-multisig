@@ -64,7 +64,8 @@ export const SetupFclConfiguration = async (fcl, network) => {
 
                 //.put("accessNode.api", "http://localhost:8888")
                 .put("accessNode.api", "https://rest-mainnet.onflow.org")
-                .put("discovery.wallet", "http://localhost:3001/mainnet/authn")
+                //.put("discovery.wallet", "http://localhost:3001/mainnet/authn")
+                .put("discovery.wallet", "https://fcl-gcp-kms-web.vercel.app/mainnet/authn")
                 .put("discovery.authn.endpoint", "http://localhost:3001/local/authn")
 
                 .put("env", LOCAL)
