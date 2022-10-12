@@ -23,13 +23,12 @@ import {
     Grid,
     GridItem,
 } from "@chakra-ui/react";
-import { MAINNET, TESTNET } from "../utils/constants";
+import { LOCAL, MAINNET, TESTNET } from "../utils/constants";
 import { GetPublicKeyAccounts, SetupFclConfiguration } from "../utils/configurations";
 import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
 import { abbrvKey } from "../utils/formatting";
-import { init } from '@onflow/fcl-wc'
 
-const networks = [MAINNET, TESTNET];
+const networks = [MAINNET, TESTNET, LOCAL];
 
 export default function Dashboard() {
     const [txs, setTxs] = useState([]);
@@ -123,7 +122,7 @@ export default function Dashboard() {
                 <GridItem pl='2' height="95vh" bg='blue.100' area={'nav'}>
                     <Stack padding={"1rem"}>
                         <Heading bg="green.100" padding="0.5rem 1rem" size="sm" textAlign={"center"}>PENDING</Heading>
-                        {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm">NOTHING</Heading>}
+                        {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
                         {txs.length > 0 && txs.map((tx) =>
                             <Stack key={tx}>
                                 <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx, 5)}</Button>
@@ -137,6 +136,7 @@ export default function Dashboard() {
                 <GridItem pl='2' bg='blue.100' area={"done"}>
                     <Stack padding={"1rem"}>
                         <Heading bg="green.100" padding="0.5rem 1rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
+                        {signed.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
                         {signed.length > 0 && signed.map(s =>
                             <Stack key={s}><Text>{abbrvKey(s, 5)}</Text></Stack>)
                         }

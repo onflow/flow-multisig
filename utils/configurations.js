@@ -64,7 +64,7 @@ export const SetupFclConfiguration = async (fcl, network) => {
 
                 //.put("accessNode.api", "http://localhost:8888")
                 .put("accessNode.api", "https://rest-mainnet.onflow.org")
-                .put("challenge.handshake", "http://localhost:3001/local/authn")
+                .put("challenge.handshake", "http://localhost:3001/mainnet/authn")
                 .put("discovery.authn.endpoint", "http://localhost:3001/local/authn")
 
                 .put("env", LOCAL)
