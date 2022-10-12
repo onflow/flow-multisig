@@ -221,10 +221,16 @@ export default function MainPage() {
     setGenerating(true);
     const account = accounts[accountKey];
     const keys = account.keys;
-    if (selectedProposalKey === null) return;
+    if (selectedProposalKey === null) {
+      console.log('selectedProposalKey is null, exiting')
+      return;
+    }
     // selected key is proposer
     const proposalKey = account.keys.find(k => k.index === selectedProposalKey)
-    if (!proposalKey) return;
+    if (!proposalKey) {
+      console.log('proposalKey is null, exiting') 
+      return;
+    }
 
     const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
     const authorizations = [authzManyKeyResolver({ address: accountKey }, proposalKey.index, keys, dispatch)];
