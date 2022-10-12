@@ -1,6 +1,7 @@
 import { CANARYNET, MAINNET, SANDBOXNET, TESTNET, LOCAL } from "./constants"
+import { init } from '@onflow/fcl-wc'
 
-export const SetupFclConfiguration = (fcl, network) => {
+export const SetupFclConfiguration = async (fcl, network) => {
     console.log('using ', network)
     switch (network) {
         case TESTNET: {
@@ -135,19 +136,38 @@ export const SetupFclConfiguration = (fcl, network) => {
             "website": "https://flow-multisig.vercel.app/"
         }
     }
-    const plugins = {
+    const gcpKmsPlugin = {
         name: "fcl-plugin-service-gcpKms",
         f_type: "ServicePlugin",
         type: "discovery-service",
-        services: [gcpKmsWallet] ,
-        serviceStrategy: {method: "HTTP/POST", exec: () => { }},
-      }
-    fcl.pluginRegistry.add(plugins)
+        services: [gcpKmsWallet],
+        serviceStrategy: { method: "HTTP/POST", exec: () => { } },
+    }
+    //const walletConnectPlugin = await setupWC();    
+    // TODO: doesn't look like both wallet connect and plugin can be used at the same time
+    fcl.pluginRegistry.add([gcpKmsPlugin])
     fcl.config()
         .put("discovery.authn.include", ["0xe5cd26afebe62781", "0x9d2e44203cb13051", "0x3ef2e1c717c26127"])
         .put("app.detail.icon", "https://flow-multisig-git-service-account-onflow.vercel.app/icon.png")
         .put("app.detail.title", "Flow Multisig")
         .put("flow.network", network)
+}
+
+const setupWC = async () => {
+    console.log('run setup')
+    const plugin = await init({
+        projectId: process.env.REACT_APP_WALLET_CONNECT,
+        includeBaseWC: true,
+        name: 'FCL WC DApp',
+        metadata: {
+            name: 'FCL WC DApp',
+            description: 'FCL DApp with support for WalletConnect',
+            url: 'https://flow.com/',
+            icons: ['https://avatars.githubusercontent.com/u/62387156?s=280&v=4']
+        }
+    })
+    console.log('plugin', plugin?.FclWcServicePlugin)
+    return plugin?.FclWcServicePlugin;
 }
 
 export const GetPublicKeyAccounts = async (network, publicKey) => {

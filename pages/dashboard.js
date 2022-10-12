@@ -40,30 +40,11 @@ export default function Dashboard() {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(false);
 
-
-    const setup = () => {
-        console.log('run setup')
-        init({
-          projectId: process.env.REACT_APP_WALLET_CONNECT || "b6f6a9afeecf7ff3ece00e7d85cdbca7",
-          includeBaseWC: true,
-          metadata: {
-            name: 'FCL WC DApp',
-            description: 'FCL DApp with support for WalletConnect',
-            url: 'https://flow.com/',
-            icons: ['https://avatars.githubusercontent.com/u/62387156?s=280&v=4']
-          }
-        }).then(({ FclWcServicePlugin }) => {
-          fcl.pluginRegistry.add(FclWcServicePlugin)
-        })
-      }
- 
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(async () => {
         fcl.unauthenticate();
         if (!network) return;
-        SetupFclConfiguration(fcl, network);        
-        //if (network === MAINNET || network === TESTNET) setup()
+        SetupFclConfiguration(fcl, network);
         fcl.currentUser().subscribe(async currentUser => {
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
             if (currentUser.addr) {
