@@ -19,6 +19,7 @@
     "@onflow/fcl": "1.3.1",
     "@onflow/rlp": "^1.0.2",
     "@onflow/sdk": "1.1.2",
+    "@onflow/fcl-wc": "1.0.0",
     "@onflow/six-transfer-tokens": "^0.0.8",
     "@onflow/transport-http": "1.4.0",
     "@root/keypairs": "^0.10.3",

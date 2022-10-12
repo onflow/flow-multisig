@@ -27,6 +27,7 @@ import { MAINNET, TESTNET } from "../utils/constants";
 import { GetPublicKeyAccounts, SetupFclConfiguration } from "../utils/configurations";
 import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
 import { abbrvKey } from "../utils/formatting";
+import { init } from '@onflow/fcl-wc'
 
 const networks = [MAINNET, TESTNET];
 
@@ -39,11 +40,31 @@ export default function Dashboard() {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(false);
 
+
+    const setup = () => {
+        console.log('run setup', process.env.REACT_APP_WALLET_CONNECT)
+        init({
+          projectId: process.env.REACT_APP_WALLET_CONNECT,
+          includeBaseWC: true,
+          projectId: "gcp-kms",          
+          metadata: {
+            name: 'FCL WC DApp',
+            description: 'FCL DApp with support for WalletConnect',
+            url: 'https://flow.com/',
+            icons: ['https://avatars.githubusercontent.com/u/62387156?s=280&v=4']
+          }
+        }).then(({ FclWcServicePlugin }) => {
+          fcl.pluginRegistry.add(FclWcServicePlugin)
+        })
+      }
+ 
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(async () => {
         fcl.unauthenticate();
         if (!network) return;
-        SetupFclConfiguration(fcl, network);
+        SetupFclConfiguration(fcl, network);        
+        if (network === MAINNET || network === TESTNET) setup()
         fcl.currentUser().subscribe(async currentUser => {
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
             if (currentUser.addr) {
