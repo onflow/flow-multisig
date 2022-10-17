@@ -51,9 +51,11 @@ export const SignOauthGcpTransaction = ({ signatureRequestId, keyId, address }) 
 
       try {
 
-        console.log('message', message);
-        const sig = await fcl.currentUser.signUserMessage(message)
-        console.log('signature', sig);
+        console.log('sending message', message);
+        const response = await fcl.currentUser.signUserMessage(message)
+        console.log('response from wallet', response);
+        const sig = response && response[0]?.signature
+        console.log('sig from wallet', sig)
         if (sig) {
           const env = prepareSignedEnvelope(rlp, keyId, sig);
           console.log('env', env)
