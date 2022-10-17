@@ -29,12 +29,13 @@ import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
 import { abbrvKey } from "../utils/formatting";
 import { ViewTransactionInfo } from "../components/ViewTransactionInfo";
 import { SignOauthGcpTransaction } from "../components/SignOauthGcpTransaction";
+import { AddressKeyView } from "../components/AddressKeyView";
 
 const networks = [MAINNET, TESTNET, LOCAL];
 
 export default function Dashboard() {
-    const [txs, setTxs] = useState([]);
-    const [signed, setSigned] = useState([])
+    const [pendingTxs, setPendingTxs] = useState([]);
+    const [signedTxs, setSignedTxs] = useState([])
     const [selectedTx, setSelectedTx] = useState(null); //"496e6c78f2b421de25ede8b240df781273f7fe1177e2d071d06d46c27b6c4564");
     const [currentUserAddr, setCurrentUserAddr] = useState(null);
     const [network, setNetwork] = useState(MAINNET);
@@ -49,8 +50,8 @@ export default function Dashboard() {
                 lookUpSignableTransactions(accounts)
                     .then(({ pending, signed }) => {
                         // filter out already fetched
-                        setTxs(pending);
-                        setSigned(signed);
+                        setPendingTxs(pending);
+                        setSignedTxs(signed);
                         setLoading(false)
                     });
             }
@@ -71,8 +72,8 @@ export default function Dashboard() {
                 const accountInfos = await processUserAccounts(currentUser.addr);
                 setAccounts(accountInfos)
                 const { pending, signed } = await lookUpSignableTransactions(accountInfos);
-                setTxs(pending)
-                setSigned(signed)
+                setPendingTxs(pending)
+                setSignedTxs(signed)
                 setLoading(false)
             }
         })
@@ -101,8 +102,8 @@ export default function Dashboard() {
             const requests = items?.data.map(i => ({...i, address, keyId}));
             signableIds = [...signableIds, ...(requests || [])]
         }
-        const pending = signableIds.filter(t => !t.sig).map(t => t.signatureRequestId);
-        const signed = signableIds.filter(t => !!t.sig).map(t => t.signatureRequestId);
+        const pending = signableIds.filter(t => !t.sig);
+        const signed = signableIds.filter(t => !!t.sig);
         return { pending, signed };
     }
 
@@ -146,10 +147,10 @@ export default function Dashboard() {
                     <Stack padding={"1rem"} overflowY="scroll">
                         <Heading bg="green.100" padding="0 0.25rem" size="sm" textAlign={"center"}>PENDING {loading && <CircularProgress size={"1rem"} isIndeterminate color="green.300" />}</Heading>
 
-                        {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
-                        {txs.length > 0 && txs.map((tx) =>
+                        {pendingTxs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
+                        {pendingTxs.length > 0 && pendingTxs.map((tx) =>
                             <Stack key={tx}>
-                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx, 5)}</Button>
+                                <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx.signatureRequestId, 5)}</Button>
                             </Stack>)
                         }
                     </Stack>
@@ -157,10 +158,11 @@ export default function Dashboard() {
                 <GridItem pl='2' bg='blue.100' area={'main'} rowSpan={2}>
                     {selectedTx &&
                         <Stack>
-                            <Text>{abbrvKey(selectedTx)}</Text>
-                            <ViewTransactionInfo signatureRequestId={selectedTx} />
-                            {selectedTx && txs.includes(selectedTx) && (
-                                <SignOauthGcpTransaction signatureRequestId={selectedTx} />
+                            <AddressKeyView {...selectedTx} />
+                            <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
+                            <ViewTransactionInfo {...selectedTx} />
+                            {selectedTx && pendingTxs.includes(selectedTx) && (
+                                <SignOauthGcpTransaction {...selectedTx} />
                             )}
                         </Stack>
                     }
@@ -169,9 +171,9 @@ export default function Dashboard() {
                 <GridItem pl='2' bg='blue.100' area={"done"} overflowY="scroll">
                     <Stack padding={"1rem"}>
                         <Heading bg="green.100" padding="0 0.25rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
-                        {signed.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
-                        {signed.length > 0 && signed.map(s =>
-                            <Stack cursor={"pointer"} onClick={() => setSelectedTx(s)} key={s}><Text>{abbrvKey(s, 5)}</Text></Stack>)
+                        {signedTxs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
+                        {signedTxs.length > 0 && signedTxs.map(s =>
+                            <Stack cursor={"pointer"} onClick={() => setSelectedTx(s)} key={s}><Text>{abbrvKey(s.signatureRequestId, 5)}</Text></Stack>)
                         }
                     </Stack>
                 </GridItem>

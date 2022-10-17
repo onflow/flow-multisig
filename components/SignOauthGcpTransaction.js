@@ -10,7 +10,7 @@ import {
   CircularProgress
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { fetchSignable, getPayload, prepareSignedEnvelope } from "../utils/kmsHelpers";
+import { fetchMessage, fetchSignable, getPayload, postSignatureToApi, prepareSignedEnvelope } from "../utils/kmsHelpers";
 
 const KEY_LOC_LOCATION = "multisig:kms:location"
 const KEY_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -43,25 +43,6 @@ export const SignOauthGcpTransaction = ({ signatureRequestId, keyId, address }) 
   const [signingMessage, setSigningMessage] = useState(null);
   const [decodedAccount, setDecodedAccount] = useState(null);
 
-  const fetchMessage = async (id) => {
-    const res = await fetch(`/api/pending/rlp/${id}`, {
-      headers: {
-        'Content-Type': 'application/text'
-      }
-    });
-    return res.text();
-  }
-
-  const postSignatureToApi = async (id, envelope) => {
-    const res = await fetch(`/api/pending/rlp/${id}`, {
-      method: "post",
-      headers: {
-        'Content-Type': 'application/text'
-      },
-      body: envelope
-    });
-  }
-
   const signPayload = async () => {
     setSigningStatus(SIGNING_REQUESTED);
     const rlp = await fetchMessage(signatureRequestId);
@@ -75,6 +56,7 @@ export const SignOauthGcpTransaction = ({ signatureRequestId, keyId, address }) 
         console.log('signature', sig);
         if (sig) {
           const env = prepareSignedEnvelope(rlp, keyId, sig);
+          console.log('env', env)
           postSignatureToApi(signatureRequestId, env);
         } else {
           setSigningStatus(SIGNING_ERROR);

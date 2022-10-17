@@ -101,6 +101,15 @@ export const getMatchingAccountKeys = async (address, publicKey) => {
     return keys.sort((a, b) => a.weight > b.weight ? -1 : 1)
 }
 
+export const fetchMessage = async (id) => {
+    const res = await fetch(`/api/pending/rlp/${id}`, {
+      headers: {
+        'Content-Type': 'application/text'
+      }
+    });
+    return res.text();
+  }
+
 export const fetchSignable = async (id) => {
     const res = await fetch(`/api/${id}/signable`, {
       headers: {
@@ -108,4 +117,14 @@ export const fetchSignable = async (id) => {
       }
     });
     return res.json();
+  }
+
+  export const postSignatureToApi = async (id, envelope) => {
+    const res = await fetch(`/api/pending/rlp/${id}`, {
+      method: "post",
+      headers: {
+        'Content-Type': 'application/text'
+      },
+      body: envelope
+    });
   }

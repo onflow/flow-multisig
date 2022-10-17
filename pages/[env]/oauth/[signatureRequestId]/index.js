@@ -15,7 +15,7 @@ import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
 import { decode } from "rlp";
 import useSWR from "swr";
 import useScript from 'react-script-hook';
-import { convert, getPayload, prepareSignedEnvelope, getDigest, convertPublicKey, getMatchingAccountKeys } from "../../../../utils/kmsHelpers";
+import { convert, getPayload, prepareSignedEnvelope, getDigest, convertPublicKey, getMatchingAccountKeys, postSignatureToApi, fetchMessage } from "../../../../utils/kmsHelpers";
 import { CadenceViewer } from "../../../../components/CadenceViewer";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 
@@ -160,25 +160,6 @@ export default function SignatureRequestPage() {
 
   const getPublicKeyUrl = (userKeyInfo) => {
     return `${CONTENT_KMS_REST_ENDPOINT}/${getKeyPath(userKeyInfo)}/publicKey`;
-  }
-
-  const fetchMessage = async (id) => {
-    const res = await fetch(`/api/pending/rlp/${id}`, {
-      headers: {
-        'Content-Type': 'application/text'
-      }
-    });
-    return res.text();
-  }
-
-  const postSignatureToApi = async (id, envelope) => {
-    const res = await fetch(`/api/pending/rlp/${id}`, {
-      method: "post",
-      headers: {
-        'Content-Type': 'application/text'
-      },
-      body: envelope
-    });
   }
 
   const signPayload = async () => {
