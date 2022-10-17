@@ -25,6 +25,9 @@ export const CadenceViewer = ({ code, args }) => {
                         <Text>{`${JSON.stringify(arg.value)}`}</Text>
                     </HStack>
                 )}
+                {args && args.length === 0 && (
+                    <Text padding="0 1rem" fontSize={"1rem"}>No Arguments</Text>
+                )}
             </Stack>
         </>
     )

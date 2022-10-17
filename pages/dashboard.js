@@ -23,21 +23,40 @@ import {
     Grid,
     GridItem,
 } from "@chakra-ui/react";
-import { LOCAL, MAINNET, TESTNET } from "../utils/constants";
+import { GCP_WALLET, LOCAL, MAINNET, TESTNET } from "../utils/constants";
 import { GetPublicKeyAccounts, SetupFclConfiguration } from "../utils/configurations";
 import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
 import { abbrvKey } from "../utils/formatting";
+import { ViewTransactionInfo } from "../components/ViewTransactionInfo";
+import { SignOauthGcpTransaction } from "../components/SignOauthGcpTransaction";
 
 const networks = [MAINNET, TESTNET, LOCAL];
 
 export default function Dashboard() {
     const [txs, setTxs] = useState([]);
     const [signed, setSigned] = useState([])
-    const [selectedTx, setSelectedTx] = useState(null);
+    const [selectedTx, setSelectedTx] = useState(null); //"496e6c78f2b421de25ede8b240df781273f7fe1177e2d071d06d46c27b6c4564");
     const [currentUserAddr, setCurrentUserAddr] = useState(null);
     const [network, setNetwork] = useState(MAINNET);
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [walletType, setWalletType] = useState(GCP_WALLET)
+
+    useEffect(() => {
+        const polling = setInterval(() => {
+            if (accounts && accounts.length > 0) {
+                setLoading(true)
+                lookUpSignableTransactions(accounts)
+                    .then(({ pending, signed }) => {
+                        // filter out already fetched
+                        setTxs(pending);
+                        setSigned(signed);
+                        setLoading(false)
+                    });
+            }
+        }, 5000)
+        return () => clearInterval(polling)
+    }, [accounts])
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(async () => {
@@ -47,12 +66,13 @@ export default function Dashboard() {
         fcl.currentUser().subscribe(async currentUser => {
             setCurrentUserAddr(currentUser.addr ? fcl.withPrefix(currentUser.addr) : null)
             if (currentUser.addr) {
+                console.log('currentUser', currentUser)
                 setLoading(true)
-                const accts = await processUserAccounts(currentUser.addr);
-                console.log('accts', accts);
-                const requests = await lookUpSignableTransactions(accts);
-                setTxs(requests.filter(t => !t.sig).map(t => t.signatureRequestId))
-                setSigned(requests.filter(t => !!t.sig).map(t => t.signatureRequestId))
+                const accountInfos = await processUserAccounts(currentUser.addr);
+                setAccounts(accountInfos)
+                const { pending, signed } = await lookUpSignableTransactions(accountInfos);
+                setTxs(pending)
+                setSigned(signed)
                 setLoading(false)
             }
         })
@@ -69,7 +89,6 @@ export default function Dashboard() {
             const accounts = await GetPublicKeyAccounts(network, publicKey);
             accountInfos = [...accountInfos, ...accounts];
         }
-        setAccounts(accountInfos)
         return accountInfos;
     }
 
@@ -78,9 +97,13 @@ export default function Dashboard() {
         for (let i = 0; i < accounts.length; i++) {
             const { address, keyId } = accounts[i];
             const items = await fetchSignableRequestIds(address, keyId);
-            signableIds = [...signableIds, ...(items?.data || [])]
+            // need to keep track of address and keyId with requestId
+            const requests = items?.data.map(i => ({...i, address, keyId}));
+            signableIds = [...signableIds, ...(requests || [])]
         }
-        return signableIds;
+        const pending = signableIds.filter(t => !t.sig).map(t => t.signatureRequestId);
+        const signed = signableIds.filter(t => !!t.sig).map(t => t.signatureRequestId);
+        return { pending, signed };
     }
 
     const logout = async () => fcl.unauthenticate();
@@ -104,7 +127,7 @@ export default function Dashboard() {
                 templateAreas={`"header header"
                   "nav main"
                   "done main"`}
-                gridTemplateRows={'50px 50% 1fr'}
+                gridTemplateRows={'50px 25% 1fr'}
                 gridTemplateColumns={'1fr 6fr'}
                 gap='1'
                 color='blackAlpha.700'
@@ -116,12 +139,13 @@ export default function Dashboard() {
                             {networks.map(n => (<option key={n} value={n} selected>{n}</option>))}
                         </Select>
                         {!currentUserAddr && <Button size={"sm"} onClick={() => login()}>Log In</Button>}
-                        {currentUserAddr && (<HStack><Button size={"sm"} onClick={() => logout()}>Logout</Button><Text fontSize={"0.75rem"}>{currentUserAddr}</Text></HStack>)}
+                        {currentUserAddr && (<HStack><Button size={"sm"} onClick={() => logout()}>Logout</Button><Text fontSize={"0.75rem"}>{currentUserAddr} ({walletType})</Text></HStack>)}
                     </HStack>
                 </GridItem>
                 <GridItem pl='2' height="95vh" bg='blue.100' area={'nav'}>
-                    <Stack padding={"1rem"}>
-                        <Heading bg="green.100" padding="0.5rem 1rem" size="sm" textAlign={"center"}>PENDING</Heading>
+                    <Stack padding={"1rem"} overflowY="scroll">
+                        <Heading bg="green.100" padding="0 0.25rem" size="sm" textAlign={"center"}>PENDING {loading && <CircularProgress size={"1rem"} isIndeterminate color="green.300" />}</Heading>
+
                         {txs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
                         {txs.length > 0 && txs.map((tx) =>
                             <Stack key={tx}>
@@ -131,14 +155,23 @@ export default function Dashboard() {
                     </Stack>
                 </GridItem>
                 <GridItem pl='2' bg='blue.100' area={'main'} rowSpan={2}>
-                    <Stack>main</Stack>
+                    {selectedTx &&
+                        <Stack>
+                            <Text>{abbrvKey(selectedTx)}</Text>
+                            <ViewTransactionInfo signatureRequestId={selectedTx} />
+                            {selectedTx && txs.includes(selectedTx) && (
+                                <SignOauthGcpTransaction signatureRequestId={selectedTx} />
+                            )}
+                        </Stack>
+                    }
+
                 </GridItem>
-                <GridItem pl='2' bg='blue.100' area={"done"}>
+                <GridItem pl='2' bg='blue.100' area={"done"} overflowY="scroll">
                     <Stack padding={"1rem"}>
-                        <Heading bg="green.100" padding="0.5rem 1rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
+                        <Heading bg="green.100" padding="0 0.25rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
                         {signed.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
                         {signed.length > 0 && signed.map(s =>
-                            <Stack key={s}><Text>{abbrvKey(s, 5)}</Text></Stack>)
+                            <Stack cursor={"pointer"} onClick={() => setSelectedTx(s)} key={s}><Text>{abbrvKey(s, 5)}</Text></Stack>)
                         }
                     </Stack>
                 </GridItem>

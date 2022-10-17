@@ -100,3 +100,12 @@ export const getMatchingAccountKeys = async (address, publicKey) => {
     }
     return keys.sort((a, b) => a.weight > b.weight ? -1 : 1)
 }
+
+export const fetchSignable = async (id) => {
+    const res = await fetch(`/api/${id}/signable`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.json();
+  }
