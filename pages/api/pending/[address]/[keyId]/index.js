@@ -7,11 +7,12 @@ export default async function handler({ body, method, query }, res) {
             // TODO: change query to get signature request ids that don't have signatures and not too old
             const { data, error, status } = await supabase
                 .from("payloadSigs")
-                .select("signatureRequestId, sig")
+                .select("signatureRequestId, sig, created_at")
                 .match({
                     address: fcl.sansPrefix(query.address),
                     keyId: query.keyId,
-                });
+                })
+                .order('created_at', { ascending: false })
 
             if (status === 406) {
                 // try with removing leading "0x"

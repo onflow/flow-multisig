@@ -26,10 +26,11 @@ import {
 import { GCP_WALLET, LOCAL, MAINNET, TESTNET } from "../utils/constants";
 import { GetPublicKeyAccounts, SetupFclConfiguration } from "../utils/configurations";
 import { getPrimaryPublicKeys, getUserAccount } from "../utils/accountHelper";
-import { abbrvKey } from "../utils/formatting";
+import { abbrvKey, formatDate } from "../utils/formatting";
 import { ViewTransactionInfo } from "../components/ViewTransactionInfo";
 import { SignOauthGcpTransaction } from "../components/SignOauthGcpTransaction";
 import { AddressKeyView } from "../components/AddressKeyView";
+import { fetchSignableRequestIds } from "../utils/kmsHelpers";
 
 const networks = [MAINNET, TESTNET, LOCAL];
 
@@ -117,11 +118,7 @@ export default function Dashboard() {
         }
     }
 
-    const fetchSignableRequestIds = async (addr, keyId) => {
-        const res = await fetch(`/api/pending/${addr}/${keyId}`);
-        return res.json();
-    }
-
+    console.log('selectedTx', selectedTx)
     return (
         <Stack margin="0.25rem" height={"99vh"} overflowY="hidden">
             <Grid
@@ -157,7 +154,8 @@ export default function Dashboard() {
                 </GridItem>
                 <GridItem pl='2' bg='blue.100' area={'main'} rowSpan={2}>
                     {currentUserAddr && selectedTx !== null &&
-                        <Stack>
+                        <Stack padding="0.5rem">
+                            <Text padding="0 0.5rem" bg="green.100">{formatDate(selectedTx.created_at)}</Text>
                             <AddressKeyView {...selectedTx} />
                             <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
                             <ViewTransactionInfo {...selectedTx} />

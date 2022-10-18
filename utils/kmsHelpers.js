@@ -128,3 +128,8 @@ export const fetchSignable = async (id) => {
       body: envelope
     });
   }
+
+  export const fetchSignableRequestIds = async (addr, keyId) => {
+    const res = await fetch(`/api/pending/${addr}/${keyId}`);
+    return res.json();
+}
