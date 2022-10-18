@@ -148,7 +148,7 @@ export default function Dashboard() {
                         <Heading bg="green.100" padding="0 0.25rem" size="sm" textAlign={"center"}>PENDING {loading && <CircularProgress size={"1rem"} isIndeterminate color="green.300" />}</Heading>
 
                         {pendingTxs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
-                        {pendingTxs.length > 0 && pendingTxs.map((tx) =>
+                        {currentUserAddr && pendingTxs.length > 0 && pendingTxs.map((tx) =>
                             <Stack key={tx}>
                                 <Button justifyContent={"start"} height="1.5rem" disabled={tx === selectedTx} onClick={() => setSelectedTx(tx)}>{abbrvKey(tx.signatureRequestId, 5)}</Button>
                             </Stack>)
@@ -156,12 +156,12 @@ export default function Dashboard() {
                     </Stack>
                 </GridItem>
                 <GridItem pl='2' bg='blue.100' area={'main'} rowSpan={2}>
-                    {selectedTx &&
+                    {currentUserAddr && selectedTx !== null &&
                         <Stack>
                             <AddressKeyView {...selectedTx} />
                             <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
                             <ViewTransactionInfo {...selectedTx} />
-                            {selectedTx && pendingTxs.includes(selectedTx) && (
+                            {selectedTx && !selectedTx.sig && (
                                 <SignOauthGcpTransaction {...selectedTx} />
                             )}
                         </Stack>
@@ -172,7 +172,7 @@ export default function Dashboard() {
                     <Stack height="50vh" overflow="auto" padding={"1rem"}>
                         <Heading bg="green.100" padding="0 0.25rem" width="100%" size="sm" textAlign={"center"}>SIGNED</Heading>
                         {signedTxs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
-                        {signedTxs.length > 0 && signedTxs.map(s =>
+                        {currentUserAddr && signedTxs.length > 0 && signedTxs.map(s =>
                             <Button cursor={"pointer"} onClick={() => setSelectedTx(s)} key={s}><Text>{abbrvKey(s.signatureRequestId, 5)}</Text></Button>)
                         }
                     </Stack>
