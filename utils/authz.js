@@ -15,7 +15,7 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
     addr: fcl.sansPrefix(account.address),
     address: fcl.sansPrefix(account.address),
     resolve: (account) => {
-      return keys.map(({ index }) => ({
+      return keys.map(({ index, publicKey }) => ({
         ...account,
         addr: fcl.sansPrefix(account.address),
         address: fcl.sansPrefix(account.address),
@@ -28,6 +28,8 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               inFlight: true
             },
           });
+          // set public key to be sent to backend
+          signable.publicKey = publicKey;
           const { id } = await fetch(
             `/api/signatures/${signable.addr}/${signable.keyId}`,
             {
@@ -97,6 +99,11 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
             inFlight: true
           },
         });
+
+        // save public key to backend
+        const publicKey = keys.find(k => k.index === signable.keyId)?.publicKey
+        console.log('publickey', publicKey, keys, signable.keyId)
+        signable.publicKey = publicKey;
         const { id } = await fetch(
           `/api/signatures/${signable.addr}/${signable.keyId}`,
           {

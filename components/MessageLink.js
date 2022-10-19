@@ -2,7 +2,7 @@ import { useCopyToClipboard } from "react-use";
 import { Stack, Link, VStack, Button, HStack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 
-export const MessageLink = ({ link = "", message = "", subMessage = "", disabled = false }) => {
+export const MessageLink = ({ link = "", message = "", subMessage = "", disabled = false, bg = "lightgray" }) => {
     const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
     const [myState, copyToClipboard] = useCopyToClipboard();
     const copyTextToClipboard = (text) => {
@@ -16,7 +16,7 @@ export const MessageLink = ({ link = "", message = "", subMessage = "", disabled
     if (disabled) return null;
 
     return (
-        <Stack backgroundColor="lightgray" padding="0.5rem" width="100%" borderRadius="0.5rem" boxShadow="3px 3px 5px">
+        <Stack backgroundColor={bg} padding="0.5rem" width="100%" borderRadius="0.5rem" boxShadow="3px 3px 5px">
             <VStack align="flex-start">
                 <HStack>
                     <Button boxShadow="1px 1px 5px" size="sm" onClick={() => copyTextToClipboard(link)}>{copyTextFormUrl}</Button>

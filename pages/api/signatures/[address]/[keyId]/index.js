@@ -4,8 +4,6 @@ import {
   getSignatureRequestIdFromRLP,
 } from "../../../../../utils/fclCLI";
 
-const WHITELIST = process.env.WHITELIST_ADDRESSES
-
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "GET":
@@ -33,6 +31,7 @@ export default async function handler({ body, method, query }, res) {
         payloadSigs: [],
       });
 
+      const publicKey = body?.publicKey;
       const signatureRequestId = getSignatureRequestIdFromRLP(cliRLP);
 
       await supabase.from("payloadSigs").upsert({
@@ -40,7 +39,8 @@ export default async function handler({ body, method, query }, res) {
         keyId: query.keyId,
         address: query.address,
         signable: body,
-        rlp: cliRLP
+        rlp: cliRLP,
+        publicKey,
       });
 
       return res.status(200).json({

@@ -103,33 +103,44 @@ export const getMatchingAccountKeys = async (address, publicKey) => {
 
 export const fetchMessage = async (id) => {
     const res = await fetch(`/api/pending/rlp/${id}`, {
-      headers: {
-        'Content-Type': 'application/text'
-      }
+        headers: {
+            'Content-Type': 'application/text'
+        }
     });
     return res.text();
-  }
+}
 
 export const fetchSignable = async (id) => {
     const res = await fetch(`/api/${id}/signable`, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+        headers: {
+            'Content-Type': 'application/json'
+        }
     });
     return res.json();
-  }
+}
 
-  export const postSignatureToApi = async (id, envelope) => {
+export const postSignatureToApi = async (id, envelope) => {
     const res = await fetch(`/api/pending/rlp/${id}`, {
-      method: "post",
-      headers: {
-        'Content-Type': 'application/text'
-      },
-      body: envelope
+        method: "post",
+        headers: {
+            'Content-Type': 'application/text'
+        },
+        body: envelope
     });
-  }
+}
 
-  export const fetchSignableRequestIds = async (addr, keyId) => {
-    const res = await fetch(`/api/pending/${addr}/${keyId}`);
+export const fetchSignableRequestIds = async (publicKey) => {
+    //const res = await fetch(`/api/pending/${addr}/${keyId}`);
+    const res = await fetch(`/api/pending/${publicKey}`);
     return res.json();
+}
+
+export const getCliLink = (signatureRequestId) => {
+    const url = `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
+    return encodeURI(url);
+  };
+
+export const getCliCommand = (signatureRequestId) => {
+    const url = getCliLink(signatureRequestId);
+    return `flow transactions sign --from-remote-url ${url} --signer <account>`
 }

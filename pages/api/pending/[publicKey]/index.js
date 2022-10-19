@@ -1,5 +1,4 @@
-import * as fcl from "@onflow/fcl";
-import { supabase } from "../../../../../utils/supabaseClient";
+import { supabase } from "../../../../utils/supabaseClient";
 
 export default async function handler({ body, method, query }, res) {
     switch (method) {
@@ -7,10 +6,9 @@ export default async function handler({ body, method, query }, res) {
             // TODO: change query to get signature request ids that don't have signatures and not too old
             const { data, error, status } = await supabase
                 .from("payloadSigs")
-                .select("signatureRequestId, sig, created_at")
+                .select("signatureRequestId, sig, created_at, address, keyId")
                 .match({
-                    address: fcl.sansPrefix(query.address),
-                    keyId: query.keyId,
+                    publicKey: query.publicKey,
                 })
                 .order('created_at', { ascending: false })
 

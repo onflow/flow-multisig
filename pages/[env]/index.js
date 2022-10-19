@@ -32,6 +32,7 @@ import { useCopyToClipboard } from "react-use";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
 import { MessageLink } from "../../components/MessageLink";
 import { LedgerCadenceTransactions, LedgerTransactionNames } from "../../utils/payloads";
+import { getCliCommand } from "../../utils/kmsHelpers";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -305,17 +306,6 @@ export default function MainPage() {
   const getFormUrlLink = () => {
     const network = getNetwork();
     const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}&limit=${exeEffort}`;
-    return encodeURI(url);
-  };
-
-  const getCliCommand = (signatureRequestId) => {
-    const url = getCliLink(signatureRequestId);
-    return `flow transactions sign --from-remote-url ${url} --signer <account>`
-
-  }
-
-  const getCliLink = (signatureRequestId) => {
-    const url = `${window.location.origin}/api/pending/rlp/${signatureRequestId}`;
     return encodeURI(url);
   };
 
