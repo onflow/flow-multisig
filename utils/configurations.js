@@ -111,8 +111,8 @@ export const SetupFclConfiguration = async (fcl, network) => {
                 .put("0xUSDCADDRESS", "0xb19436aae4d94622")
                 //.put("discovery.wallet", "https://fcl-discovery.onflow.org/authn")
                 // use gcp as primary
-                .put("discovery.wallet", "https://fcl-gcp-kms-web.vercel.app/mainnet/authn")
-                //.put("discovery.wallet", "http://localhost:3001/mainnet/authn")
+                //.put("discovery.wallet", "https://fcl-gcp-kms-web.vercel.app/mainnet/authn")
+                .put("discovery.wallet", "http://localhost:3001/mainnet/authn")
                 .put("discovery.authn.endpoint", "https://fcl-discovery.onflow.org/authn")
                 .put("accessNode.api", "https://rest-mainnet.onflow.org")
                 .put("env", MAINNET)

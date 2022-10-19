@@ -100,7 +100,7 @@ export default function Dashboard() {
             const { address, keyId } = accounts[i];
             const items = await fetchSignableRequestIds(address, keyId);
             // need to keep track of address and keyId with requestId
-            const requests = items?.data.map(i => ({...i, address, keyId}));
+            const requests = items?.data.map(i => ({ ...i, address, keyId }));
             signableIds = [...signableIds, ...(requests || [])]
         }
         const pending = signableIds.filter(t => !t.sig);
@@ -118,7 +118,6 @@ export default function Dashboard() {
         }
     }
 
-    console.log('selectedTx', selectedTx)
     return (
         <Stack margin="0.25rem" height={"99vh"} overflowY="hidden">
             <Grid
@@ -157,7 +156,10 @@ export default function Dashboard() {
                         <Stack padding="0.5rem">
                             <Text padding="0 0.5rem" bg="green.100">{formatDate(selectedTx.created_at)}</Text>
                             <AddressKeyView {...selectedTx} />
-                            <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
+                            <HStack>
+                                <Text fontSize="12px" paddingRight={"2px"}>RequestId:</Text>
+                                <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
+                            </HStack>
                             <ViewTransactionInfo {...selectedTx} />
                             {selectedTx && !selectedTx.sig && (
                                 <SignOauthGcpTransaction {...selectedTx} />
