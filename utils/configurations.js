@@ -175,7 +175,7 @@ const setupWC = async () => {
 }
 
 export const GetPublicKeyAccounts = async (network, publicKey) => {
-    let url = `https://key-indexer.production.flow.com/key/${publicKey}`
+    let url = `https://key-indexer.staging.flow.com/key/${publicKey}`
     if (network === TESTNET) {
         url = `https://key-indexer.staging.flow.com/key/${publicKey}`
     }

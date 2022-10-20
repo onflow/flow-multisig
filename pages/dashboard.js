@@ -107,7 +107,6 @@ export default function Dashboard() {
         }
     }
 
-    console.log('accounts', accounts)
     return (
         <Stack margin="0.25rem" height={"99vh"} overflowY="hidden">
             <Grid
