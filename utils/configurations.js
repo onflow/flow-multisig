@@ -175,9 +175,9 @@ const setupWC = async () => {
 }
 
 export const GetPublicKeyAccounts = async (network, publicKey) => {
-    let url = `https://key-indexer.staging.flow.com/key/${publicKey}`
+    let url = `${REACT_APP_MAINNET_KEY_INDEXER_SERVICE}/key/${publicKey}`
     if (network === TESTNET) {
-        url = `https://key-indexer.staging.flow.com/key/${publicKey}`
+        url = `${REACT_APP_TESTNET_KEY_INDEXER_SERVICE}/key/${publicKey}`
     }
     const result = await fetch(url).then((r) => r.json());
     return result?.accounts || []
