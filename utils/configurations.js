@@ -175,10 +175,12 @@ const setupWC = async () => {
 }
 
 export const GetPublicKeyAccounts = async (network, publicKey) => {
-    let url = `${process.env.REACT_APP_MAINNET_KEY_INDEXER_SERVICE}/key/${publicKey}`
+    let host = process.env.REACT_APP_MAINNET_KEY_INDEXER_SERVICE;
     if (network === TESTNET) {
-        url = `${process.env.REACT_APP_TESTNET_KEY_INDEXER_SERVICE}/key/${publicKey}`
+        host = process.env.REACT_APP_TESTNET_KEY_INDEXER_SERVICE;
     }
+    let url = `${host}/key/${publicKey}`
+    console.log('get public key', url)
     const result = await fetch(url).then((r) => r.json());
     return result?.accounts || []
 }
