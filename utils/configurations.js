@@ -175,9 +175,9 @@ const setupWC = async () => {
 }
 
 export const GetPublicKeyAccounts = async (network, publicKey) => {
-    let host = process.env.REACT_APP_MAINNET_KEY_INDEXER_SERVICE;
+    let host = process.env.REACT_APP_MAINNET_KEY_INDEXER_SERVICE || "https://key-indexer.production.flow.com";
     if (network === TESTNET) {
-        host = process.env.REACT_APP_TESTNET_KEY_INDEXER_SERVICE;
+        host = process.env.REACT_APP_TESTNET_KEY_INDEXER_SERVICE || "https://key-indexer.staging.flow.com";
     }
     let url = `${host}/key/${publicKey}`
     console.log('get public key', url)
