@@ -21,6 +21,25 @@ pub fun main(account: Address): [UInt64] {
 }
 `;
 
+const NFL_ALLDAY = `
+import AllDay from 0xNFLALLDAY
+
+// Print the NFTs owned by account 0x01.
+pub fun main(account: Address): [UInt64] {
+    let acct = getAccount(account)
+
+    let collectionRef = acct
+      .getCapability<
+        &AllDay.Collection{AllDay.MomentNFTCollectionPublic}
+      >(
+        AllDay.CollectionPublicPath
+      )
+      .borrow() ?? panic("Could not borrow Reference to MomentNFTCollectionPublic for specified Address ")
+
+    return collectionRef.getIDs()
+}
+`;
+
 const mainnet = {
   'accessNode.api': 'https://rest-mainnet.onflow.org',
   'discovery.wallet': 'https://fcl-ledger-multisig.vercel.app/mainnet/authn',
@@ -28,6 +47,7 @@ const mainnet = {
   '0xFUNGIBLETOKENADDRESS': '0xf233dcee88fe0abe',
   '0xFLOWTOKENADDRESS': '0x1654653399040a61',
   '0xTOPSHOT': '0x0b2a3299cc857e29',
+  '0xNFLALLDAY': '0xe4cf4bdc1751c65d',
   'app.detail.icon':
     'https://flow-multisig-git-service-account-onflow.vercel.app/icon.png',
   'app.detail.title': 'Multisig Webapp',
@@ -46,6 +66,7 @@ export default async function handler({ body, method, query }, res) {
       let flow = '0';
       let contracts = '0';
       let topshots = '0';
+      let allday = '0';
       let error = '';
       try {
         const acct = await fcl.account(account);
@@ -70,6 +91,14 @@ export default async function handler({ body, method, query }, res) {
           ]),
         );
         topshots = moments ? moments.length : 0;
+
+        const all_day_moments = await fcl.decode(
+          await fcl.send([
+            fcl.script(NFL_ALLDAY),
+            fcl.args([fcl.arg(account, t.Address)]),
+          ]),
+        );
+        allday = all_day_moments ? all_day_moments.length : 0;
       } catch (e) {
         console.log(e);
         error = String(e);
@@ -79,6 +108,7 @@ export default async function handler({ body, method, query }, res) {
           flow,
           contracts,
           topshots,
+          allday,
         },
       });
 
