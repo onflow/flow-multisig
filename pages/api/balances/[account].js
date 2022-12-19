@@ -1,11 +1,26 @@
 import * as fcl from '@onflow/fcl';
+import * as t from '@onflow/types';
 import { send as httpSent } from '@onflow/transport-http';
 
 const TOP_SHOTS = `
 import TopShot from 0xTOPSHOT
 
+// Print the NFTs owned by account 0x01.
+pub fun main(account: Address): [UInt64] {
+    let acct = getAccount(account)
 
+    let collectionRef = acct
+      .getCapability<
+        &TopShot.Collection{TopShot.MomentCollectionPublic}
+      >(
+        /public/MomentCollection
+      )
+      .borrow() ?? panic("Could not borrow Reference to MomentCollectionPublic for specified Address ")
+
+    return collectionRef.getIDs()
+}
 `;
+
 const mainnet = {
   'accessNode.api': 'https://rest-mainnet.onflow.org',
   'discovery.wallet': 'https://fcl-ledger-multisig.vercel.app/mainnet/authn',
@@ -30,6 +45,8 @@ export default async function handler({ body, method, query }, res) {
       }
       let flow = '0';
       let contracts = '0';
+      let topshots = '0';
+      let error = '';
       try {
         const acct = await fcl.account(account);
         contracts = acct.contracts?.names?.length
@@ -43,14 +60,25 @@ export default async function handler({ body, method, query }, res) {
         flow = String(acct.balance / 1e8);
       } catch (e) {
         console.log(e);
-        return res.status(500).json({
-          error: `${e}`,
-        });
+        error = String(e);
+      }
+      try {
+        const moments = await fcl.decode(
+          await fcl.send([
+            fcl.script(TOP_SHOTS),
+            fcl.args([fcl.arg(account, t.Address)]),
+          ]),
+        );
+        topshots = moments ? moments.length : 0;
+      } catch (e) {
+        console.log(e);
+        error = String(e);
       }
       return res.status(200).json({
         data: {
           flow,
           contracts,
+          topshots,
         },
       });
 
