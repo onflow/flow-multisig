@@ -107,8 +107,8 @@ export default async function handler({ body, method, query }, res) {
         data: {
           flow,
           contracts,
-          topshots,
-          allday,
+          topShotMoments: topshots,
+          allDayMoments: allday,
         },
       });
 
