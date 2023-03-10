@@ -7,7 +7,7 @@ export const KeysTableStatus = ({ keys, account }) => {
     return (
         <Table variant='simple' size='sm' boxShadow="1px 1px 3px">
             <Tbody><Tr><Td>Weight</Td><Td>KeyId</Td><Td>Public Key</Td></Tr>
-                {keys.sort((a, b) => a.keyId > b.keyId ? 1 : -1).map((key, i) => {
+                {[...keys].sort((a, b) => a.keyId > b.keyId ? 1 : -1).map((key, i) => {
                     return (
                         <Tr key={`tr-${key.index}-${i}`} backgroundColor={key?.sig ? 'lightGreen' : 'white'} >
                             <Td key={`${key.weight}-${i}`}>{key.weight}</Td>
