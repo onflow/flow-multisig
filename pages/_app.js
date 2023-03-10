@@ -2,6 +2,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { setupConfig } from "../config";
 import { useEffect } from "react";
+import { ErrorBoundary } from "../components/ErrorBoundary"
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
@@ -12,7 +13,9 @@ function MyApp({ Component, pageProps }) {
   useEffect(() => setupConfig(env, isLedger), [env, isLedger]);
   return (
     <ChakraProvider>
-      <Component {...pageProps} />
+      <ErrorBoundary>
+        <Component {...pageProps} />
+      </ErrorBoundary>
     </ChakraProvider>
   );
 }
