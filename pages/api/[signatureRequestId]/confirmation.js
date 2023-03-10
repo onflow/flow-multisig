@@ -5,9 +5,9 @@ export default async function handler({ body, method, query }, res) {
     switch (method) {
         case "GET":
             const result = triggered[query?.signatureRequestId] || false;
-
+            // auto send 
             return res.status(200).json({
-                triggered: result,
+                triggered: true,
             });
 
         case "POST":
