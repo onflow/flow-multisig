@@ -383,22 +383,28 @@ export default function MainPage() {
   }
 
   const sendTransaction = async () => {
-    setSendButtonText("Sending Transaction")
+    setSendButtonText("Attempting Sending Transaction ...")
     const signatureRequestId = state?.signatureRequestId
-    await fetch(
-      `/api/${signatureRequestId}/confirmation`,
-      {
-        method: "post",
-        body: signatureRequestId,
-      }
-    ).then((r) => r.json());
+    let isSent = false;
+    // attempt to trigger sending transaction
+    while (!isSent) {
+      await fetch(
+        `/api/${signatureRequestId}/confirmation`,
+        {
+          method: "post",
+          body: signatureRequestId,
+        }
+      ).then((r) => r.json());
+  
+      const value = await fetch(
+        `/api/${signatureRequestId}/confirmation`
+      ).then((r) => r.json());
 
-    const value = await fetch(
-      `/api/${signatureRequestId}/confirmation`
-    ).then((r) => r.json());
+      isSent = value.triggered;
+      console.log('Confirmation value', value)
+    }
 
-    console.log('Confirmation value', value)
-    setTimeout(() => setSendButtonText("Transaction Sent"), 1200);
+    setTimeout(() => setSendButtonText("Transaction Sent"), 600);
   }
 
   return (
