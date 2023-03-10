@@ -540,7 +540,7 @@ export default function MainPage() {
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys], i) => (
-                        <Stack key={i}>
+                        <Stack key={signatureRequestId}>
                           {signatureRequestId &&
                             <>
                               <MessageLink key={i} link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
