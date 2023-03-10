@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState, useMemo } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
 import {
@@ -28,7 +28,6 @@ import { CountdownTimer } from "../../components/CountdownTimer";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
 if (typeof window !== "undefined") window.fcl = fcl;
-import { useCopyToClipboard } from "react-use";
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
 import { MessageLink } from "../../components/MessageLink";
 import { LedgerCadenceTransactions, LedgerTransactionNames } from "../../utils/payloads";
@@ -393,6 +392,12 @@ export default function MainPage() {
         body: signatureRequestId,
       }
     ).then((r) => r.json());
+
+    const value = await fetch(
+      `/api/${signatureRequestId}/confirmation`
+    ).then((r) => r.json());
+
+    console.log('Confirmation value', value)
     setTimeout(() => setSendButtonText("Transaction Sent"), 1200);
   }
 
@@ -534,16 +539,16 @@ export default function MainPage() {
                       </HStack>
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
-                      ).map(([signatureRequestId, compositeKeys]) => (
-                        <>
+                      ).map(([signatureRequestId, compositeKeys], i) => (
+                        <Stack key={signatureRequestId}>
                           {signatureRequestId &&
                             <>
-                              <MessageLink link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
+                              <MessageLink key={i} link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
                               {scriptType === LEDGER && <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** only Ledger specific tx are supported **"} />}
                             </>
                           }
                           <Stack
-                            key={signatureRequestId}
+                            key={`${signatureRequestId}-${i}`}
                             flex="1"
                             borderWidth="1px"
                             borderRadius="lg"
@@ -555,12 +560,12 @@ export default function MainPage() {
                               <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
                             </HStack>
 
-                            <MessageLink link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
+                            <MessageLink key={'flow-cli'} link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
 
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction || sendButtonText !== SEND_TX_BUTTON} onClick={() => sendTransaction()}>{sendButtonText}</Button>
+                            <Button disabled={!enoughSignatures(compositeKeys)} onClick={() => sendTransaction()}>{sendButtonText}</Button>
                             {accounts[account].transaction && (
                               <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                             )}
@@ -586,7 +591,7 @@ export default function MainPage() {
                               </>
                             )}
                           </Stack>
-                        </>
+                        </Stack>
                       ))}
                     </Stack>
                   </React.Fragment>
