@@ -560,7 +560,7 @@ export default function MainPage() {
                             <CountdownTimer endTime={countdown} />
                             <Text fontSize='20px'>Incoming Signatures:</Text>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                            <Button disabled={!enoughSignatures(compositeKeys) || !!accounts[account].transaction || sendButtonText !== SEND_TX_BUTTON} onClick={() => sendTransaction()}>{sendButtonText}</Button>
+
                             {accounts[account].transaction && (
                               <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
                             )}
