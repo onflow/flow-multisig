@@ -65,7 +65,7 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
               const doSend = await isTriggerSend(id)
-              console.log('doSend single tx', id.slice(0,5), 'keyId', sigKey.keyId, doSend)
+              console.log('doSend single tx', id.slice(0,5), 'keyId', index, doSend)
 
               if (weights >= 1000 && proposerSigned.sig && doSend) {
                 const sigKey = data.find(d => d.keyId === index);
