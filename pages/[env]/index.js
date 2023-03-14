@@ -400,8 +400,8 @@ export default function MainPage() {
         `/api/${signatureRequestId}/confirmation`
       ).then((r) => r.json());
 
-      isSent = value.triggered;
-      console.log('Confirmation value', value)
+      isSent = value?.triggered || false;
+      console.log('Confirmation value', value?.triggered)
     }
 
     setTimeout(() => setSendButtonText("Transaction Sent"), 600);
