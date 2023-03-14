@@ -1,6 +1,6 @@
 import * as fcl from "@onflow/fcl";
 
-const wait = async (period = 3000) =>
+const wait = async (period = 1000) =>
   new Promise((resolve) => setTimeout(resolve, period));
 
 const isTriggerSend = async (id) => {
@@ -65,6 +65,7 @@ export const authzManyKeyResolver = (account, proposerKeyId, keys, dispatch) => 
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
               const doSend = await isTriggerSend(id)
+              console.log('doSend many tx', id, doSend)
 
               if (weights >= 1000 && proposerSigned.sig && doSend) {
                 const sigKey = data.find(d => d.keyId === index);
@@ -141,6 +142,7 @@ export const buildSinglaAuthz = ({ address, index }, proposerKeyId, keys, dispat
               // has proposer signed
               const proposerSigned = data.find(d => d.keyId === proposerKeyId);
               const doSend = await isTriggerSend(id)
+              console.log('doSend single tx', id, doSend)
 
               if (sigKey && proposerSigned.sig && doSend) {
                 return ({
