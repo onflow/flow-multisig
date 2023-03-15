@@ -62,6 +62,7 @@ export default function Dashboard() {
                 const accts = await processUserAccounts(currentUser.addr);
                 setPublicKey(accts.publicKey)
                 setAccounts(accts.accounts || [])
+                console.log('public key', accts)
                 const { pending, signed } = await lookUpSignableTransactions(accts.publicKey);
                 setPendingTxs(pending)
                 setSignedTxs(signed)
@@ -74,8 +75,10 @@ export default function Dashboard() {
         if (!address) return;
 
         const acct = await getUserAccount(address)
+        console.log('acct with keys', acct)
         let accountInfos = []
         const publicKeys = getPrimaryPublicKeys(acct)
+        console.log('public keys for acct', publicKeys)
         const pk = publicKeys.length === 1 ? publicKeys[0] : null;
         for (let i = 0; i < publicKeys.length; i++) {
             const publicKey = publicKeys[i];
