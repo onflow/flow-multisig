@@ -142,7 +142,7 @@ export default function Dashboard() {
                     </Stack>
                 </GridItem>
                 <GridItem pl='2' bg='blue.100' area={'nav'}>
-                    <Stack padding={"1rem"} height="50vh" overflow="auto">
+                    <Stack padding={"1rem"} height="90%" overflow="auto">
                         <Heading bg="green.100" padding="0 0.25rem" size="sm" textAlign={"center"}>PENDING {loading && <CircularProgress size={"1rem"} isIndeterminate color="green.300" />}</Heading>
 
                         {pendingTxs.length === 0 && <Heading padding="0.5rem 1rem" size="sm"> --- </Heading>}
