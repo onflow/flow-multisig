@@ -4,6 +4,7 @@ import { TRANSACTION_DOMAIN_TAG } from "./fclCLI";
 import * as crypto from "crypto";
 import * as fcl from "@onflow/fcl";
 import Keypairs from "@root/keypairs"
+import keyutils from 'js-crypto-key-utils';
 
 const leftPaddedHexBuffer = (value, pad) => {
     let result = Buffer.from(value, "base64");
@@ -81,7 +82,10 @@ export const prepareSignedEnvelope = (rlp, keyId, signature) => {
     return env;
 }
 export const convertPublicKey = async (kmsPublicKey) => {
-    const jwk = await Keypairs.import({ pem: kmsPublicKey });
+    //const jwk = await Keypairs.import({ pem: kmsPublicKey });
+    const keyObjFromPem = new keyutils.Key('pem', kmsPublicKey);
+    const jwk = await keyObjFromPem.export('jwk');
+
     const xValue = leftPaddedHexBuffer(jwk.x, 32);
     const yValue = leftPaddedHexBuffer(jwk.y, 32);
     const key = Buffer.concat([xValue, yValue]).toString("hex");
