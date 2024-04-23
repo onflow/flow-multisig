@@ -7,7 +7,7 @@ export const getUserAccount = async (address) => {
         return await fcl.account(address);
     } catch (e) {
         console.error(e)
-        setErrorMessage(e)
+       // setErrorMessage(e)
     }
     return result;
 };
@@ -26,9 +26,17 @@ export const filerKeys = (txUser, user, signatures) => {
 }
 
 
-export const getPrimaryPublicKeys = (loggedInUser) => {
-    let keys = [];
-    if (!loggedInUser) return keys;
-    const userPublicKeys = loggedInUser.keys.filter(k => k.weight === 1000).map(m => m.publicKey);
-    return userPublicKeys
+export const getPrimaryPublicKeys = (loggedInUser, keyId) => {
+    if (!loggedInUser) return null;
+    return loggedInUser?.keys[keyId]?.publicKey;
+}
+
+
+export const getUserAccountKeyId = async (user) => {
+    // user has services, look for "fcl-goog-kms-authz" service
+    const service = user.services.find(s => s.uid === "fcl-goog-kms-authz");
+    console.log('service', service, user.services)
+    if (!service) return null;
+
+    return service?.identity?.keyId;
 }
