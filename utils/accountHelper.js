@@ -35,7 +35,6 @@ export const getPrimaryPublicKeys = (loggedInUser, keyId) => {
 export const getUserAccountKeyId = async (user) => {
     // user has services, look for "fcl-goog-kms-authz" service
     const service = user.services.find(s => s.uid === "fcl-goog-kms-authz");
-    console.log('service', service, user.services)
     if (!service) return null;
 
     return service?.identity?.keyId;

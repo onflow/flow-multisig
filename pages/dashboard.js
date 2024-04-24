@@ -61,12 +61,10 @@ export default function Dashboard() {
   useEffect(async () => {
     if (!network || !user?.loggedIn) return;
     if (user?.addr) {
-      console.log("user", network, user.addr);
       setLoadingAccounts(true);
       const accts = await processUserAccounts(user);
       setPublicKey(accts.publicKey);
       setAccounts([...accts.accounts] || []);
-      console.log("public key", accts);
       const { pending, signed } = await lookUpSignableTransactions(
         accts.publicKey
       );
@@ -84,7 +82,6 @@ export default function Dashboard() {
     if (!loggedInUserKeyId) return;
 
     const acctWithKeys = await getUserAccount(address);
-    console.log("acct with keys", acctWithKeys);
     let accountInfos = [];
     const publicKey = getPrimaryPublicKeys(acctWithKeys, loggedInUserKeyId);
     const accounts = await GetPublicKeyAccounts(network, publicKey);
@@ -97,15 +94,24 @@ export default function Dashboard() {
     setLoading(true);
     const items = await fetchSignableRequestIds(publicKey);
     const requests = items?.data.map((i) => ({ ...i }));
+
     signableIds = [...signableIds, ...(requests || [])];
-    const pending = signableIds.filter((t) => !t.sig);
+    const allPending = signableIds.filter((t) => !t.sig);
+    // filter out old pending signables. 15 minutes older than now, time is in UTC
+    // example created_at: "2024-04-23T23:01:54.934342+00:00"
+    const now = new Date();
+    const fifteenMinutes = 15 * 60 * 1000;
+    const fifteenMinutesAgo = new Date(now - fifteenMinutes);
+    const pending = allPending.filter((t) => new Date(t.created_at) > fifteenMinutesAgo);
+
+    console.log("pending", allPending, "valid", pending);
+
     const signed = signableIds.filter((t) => !!t.sig);
     setLoading(false);
     return { pending, signed };
   };
 
   const pickNetwork = async (network) => {
-    console.log("setting network", network);
     setAccounts([]);
     setNetwork(network);
   };
@@ -123,11 +129,10 @@ export default function Dashboard() {
       fcl.unauthenticate();
       fcl.authenticate();
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
-  console.log(accounts);
   return (
     <Stack margin="0.25rem" height={"99vh"} overflowY="hidden">
       <Grid
