@@ -63,6 +63,11 @@ export default function Dashboard() {
     if (user?.addr) {
       setLoadingAccounts(true);
       const accts = await processUserAccounts(user);
+      if (!accts) {
+        setLoadingAccounts(false);
+        console.log("no accounts");
+        return;
+      } 
       setPublicKey(accts.publicKey);
       setAccounts([...accts.accounts] || []);
       const { pending, signed } = await lookUpSignableTransactions(
@@ -79,7 +84,7 @@ export default function Dashboard() {
     if (!address) return;
 
     const loggedInUserKeyId = await getUserAccountKeyId(user);
-    if (!loggedInUserKeyId) return;
+    if (loggedInUserKeyId === "" || loggedInUserKeyId === undefined) return;
 
     const acctWithKeys = await getUserAccount(address);
     let accountInfos = [];
