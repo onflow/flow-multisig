@@ -21,6 +21,7 @@ import {
   CircularProgress,
   VStack,
   Textarea,
+  Tooltip
 } from "@chakra-ui/react";
 import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
@@ -103,7 +104,7 @@ const SEND_TX_BUTTON = "Send Transaction";
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
-
+  const [isOpen, setIsOpen] = useState(false);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
@@ -196,6 +197,7 @@ export default function MainPage() {
   };
 
   const validateAccount = (authAccountAddress) => {
+    setIsOpen(false);
     setAuthAccountAddress(authAccountAddress);
     setError(null);
     if (authAccountAddress !== "") {
@@ -325,12 +327,28 @@ export default function MainPage() {
     return `${flowscanUrls[network]}/${tx}`;
   };
 
+  const getPlaceHolderArgs = (filename) => {
+   // case statement on filename and return string
+    switch (filename) {
+      case "lockedTokenTransfer.cdc":
+      case "unlockTokens.cdc":
+        return `[{"type": "Address","value": "ADDRESS"},{"type": "UFix64","value": "AMOUNT"}]`
+      case "transferFLOW.cdc":
+        return `[{"type": "UFix64","value": "AMOUNT"},{"type": "Address","value": "ADDRESS"}]`
+      default:
+        return "[]"
+    }
+  }
   const fetchServiceAccountFilename = (filename) => {
     setScriptName(filename);
     setScriptType(SERVICE_ACCOUNT);
     setCadencePayload("loading ...")
     getServiceAccountFilename(filename)
-      .then(contents => setCadencePayload(contents));
+      .then(contents => {
+        setCadencePayload(contents);
+        // set placeholder json args
+        setArgumentsValue(getPlaceHolderArgs(filename));
+      });
   }
 
   const fetchFoundationFilename = (filename) => {
@@ -338,7 +356,11 @@ export default function MainPage() {
     setScriptType(FOUNDATION);
     setCadencePayload("loading ...")
     getFoundationFilename(filename)
-      .then(contents => setCadencePayload(contents));
+      .then(contents => {
+        setCadencePayload(contents)
+        // set placeholder json args
+        setArgumentsValue(getPlaceHolderArgs(filename));
+      });
   }
 
   const setLedgerTransaction = (name) => {
@@ -475,19 +497,38 @@ export default function MainPage() {
                   {scriptType === LEDGER && <Text fontSize={"0.65rem"}>{accountBalance ? `${accountBalance} FLOW` : ''}</Text>}
                 </HStack>
                 <HStack spacing={4}>
+                  <Tooltip label="Enter the address of the account you want to use for the transaction">
                   <Button
                     isDisabled={error || !authAccountAddress}
                     onClick={addAuthAccountAddress}
                   >
                     Add Account
                   </Button>
-                  <Input
-                    size="lg"
-                    id="account"
-                    placeholder="Enter Authorized Account"
-                    onChange={(e) => validateAccount(e.target.value)}
-                    value={authAccountAddress}
-                  />
+                  </Tooltip>
+                  <HStack>
+                    <Input
+                      size="lg"
+                      id="account"
+                      placeholder="Enter Authorized Account"
+                      onChange={(e) => validateAccount(e.target.value)}
+                      value={authAccountAddress}
+                    />
+                    {!isOpen && (
+                      <Tooltip label="Select from existing accounts">
+                        <Button onClick={() => setIsOpen(true)}>{`=>`}</Button> 
+                      </Tooltip>
+                      )}
+                    {isOpen && (
+                    <Select
+                      size="lg"
+                      placeholder="Known Accounts"
+                      onChange={(e) => validateAccount(e.target.value)}
+                    >
+                      <option value="0x47fd53250cc3982f">0x47fd53250cc3982f</option>
+                      <option value="0x9178260195652f85">0x9178260195652f85</option>
+                    </Select>
+                    )}
+                  </HStack>
                 </HStack>
                 <FormErrorMessage>{error}</FormErrorMessage>
               </FormControl>
