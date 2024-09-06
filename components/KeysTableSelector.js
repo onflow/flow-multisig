@@ -1,8 +1,6 @@
-import { Table, Tbody, Td, Tr } from "@chakra-ui/react";
 import { abbrvKey } from "../utils/formatting";
 
 export const KeysTableSelector = ({ keys, selectedKey, setKey }) => {
-
     const selectKey = (keyId) => {
         if (setKey) setKey(keyId)
     }
@@ -11,16 +9,27 @@ export const KeysTableSelector = ({ keys, selectedKey, setKey }) => {
     }
 
     return (
-        <Table variant='simple' size='sm'>
-            <Tbody><Tr><Td>KeyId</Td><Td>Weight</Td><Td>Public Key</Td></Tr>
-            {keys.map((key, i) => {
-                return (<Tr cursor={"pointer"} backgroundColor={selectedKey === key.index ? 'lightGreen' : 'white'} key={`tr-${key.index}-${i}`} onClick={() => selectKey(key.index)} >
-                    <Td key={key.index}>{key.index}</Td>
-                    <Td>{key.weight}</Td>
-                    <Td>{abbrvKey(key.publicKey)}</Td>
-                </Tr>)
-            })}
-            </Tbody>
-        </Table>
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+                <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KeyId</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Public Key</th>
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+                {keys.map((key, i) => (
+                    <tr 
+                        key={`tr-${key.index}-${i}`}
+                        className={`cursor-pointer ${selectedKey === key.index ? 'bg-green-100' : 'hover:bg-gray-50'}`}
+                        onClick={() => selectKey(key.index)}
+                    >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{key.index}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{key.weight}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{abbrvKey(key.publicKey)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     )
 }

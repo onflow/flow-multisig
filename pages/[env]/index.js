@@ -1,38 +1,15 @@
 import React, { useEffect, useReducer, useState } from "react";
 import * as fcl from "@onflow/fcl";
 import { useRouter } from 'next/router'
-import {
-  Tab,
-  Tabs,
-  TabPanel,
-  TabPanels,
-  TabList,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  HStack,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  Select,
-  CircularProgress,
-  VStack,
-  Textarea,
-  Tooltip
-} from "@chakra-ui/react";
-import { KeysTableSelector } from "../../components/KeysTableSelector";
-import { KeysTableStatus } from "../../components/KeysTableStatus";
-import { CountdownTimer } from "../../components/CountdownTimer";
-import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
-import { MessageLink } from "../../components/MessageLink";
 import { LedgerCadenceTransactions, LedgerTransactionNames } from "../../utils/payloads";
 import { getCliCommand } from "../../utils/kmsHelpers";
+import {CountdownTimer} from "../../components/CountdownTimer";
+import {MessageLink} from "../../components/MessageLink";
+import {KeysTableStatus} from "../../components/KeysTableStatus";
+import {KeysTableSelector} from "../../components/KeysTableSelector";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -430,224 +407,261 @@ export default function MainPage() {
   }
 
   return (
-    <Stack minH={"100vh"} margin={"50"}>
-      <Stack>
-        <Stack spacing="24px">
-          <Stack>
-            <VStack align="start">
-              <Heading size="lg">Multisig Webapp</Heading>
-            </VStack>
-          </Stack>
-          <Tabs variant='enclosed' size="md" colorScheme='blue' onChange={(index) => setScriptType(TAB_NAMES[index])} index={TAB_NAMES.indexOf(scriptType) || 0} >
-            <TabList>
-              <Tab>Service Account</Tab>
-              <Tab>Foundation</Tab>
-              <Tab>Ledger (v0.11.0)</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                <HStack>
-                  <FormLabel width="20%" size="sm" htmlFor="serviceAccount">From Service Account</FormLabel>
-                  <Select id="serviceAccount" placeholder='Select Cadence' onChange={(e) => fetchServiceAccountFilename(e.target.value)}>
-                    {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
-                  </Select>
-                </HStack>
-              </TabPanel>
-              <TabPanel>
-                <HStack>
-                  <FormLabel width="20%" size="sm" htmlFor="foundation">From Foundation</FormLabel>
-                  <Select id="foundation" placeholder='Select Cadence' onChange={(e) => fetchFoundationFilename(e.target.value)}>
-                    {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
-                  </Select>
-                </HStack>
-              </TabPanel>
-              <TabPanel>
-              <HStack>
-                  <FormLabel width="20%" size="sm" htmlFor="ledger">From Ledger</FormLabel>
-                  <Select id="ledger" placeholder='Select Cadence' onChange={(e) => setLedgerTransaction(e.target.value)}>
-                    {getDropdownOptions(LedgerTransactionNames, scriptName, scriptType === LEDGER)}
-                  </Select>
-                </HStack>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-          <Stack><Heading size="md">Cadence</Heading></Stack>          
-          <Stack>            
-            <Textarea size="lg"
-              placeholder='Cadence Script'
-              resize={'vertical'}
-              value={cadencePayload}
-              onChange={(e) => setCadencePayload(e.target.value)} />
-          </Stack>
-          <Stack>
-            <Input
-              size="lg"
+    <div className="min-h-screen m-12">
+      <div>
+        <div className="space-y-6">
+          <div>
+            <div className="flex flex-col items-start">
+              <h1 className="text-2xl font-bold">Multisig Webapp</h1>
+            </div>
+          </div>
+          <div className="mt-8 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              {TAB_NAMES.map((name, index) => (
+                <button
+                  key={name}
+                  className={`${
+                    TAB_NAMES.indexOf(scriptType) === index
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition duration-150 ease-in-out`}
+                  onClick={() => setScriptType(name)}
+                >
+                  {name === SERVICE_ACCOUNT ? 'Service Account' : name === FOUNDATION ? 'Foundation' : 'Ledger (v0.11.0)'}
+                </button>
+              ))}
+            </nav>
+          </div>
+          <div>
+            {scriptType === SERVICE_ACCOUNT && (
+              <div className="flex items-center">
+                <label className="w-1/5 text-sm" htmlFor="serviceAccount">From Service Account</label>
+                <select
+                  id="serviceAccount"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  onChange={(e) => fetchServiceAccountFilename(e.target.value)}
+                >
+                  <option value="">Select Cadence</option>
+                  {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
+                </select>
+              </div>
+            )}
+            {scriptType === FOUNDATION && (
+              <div className="flex items-center">
+                <label className="w-1/5 text-sm" htmlFor="foundation">From Foundation</label>
+                <select
+                  id="foundation"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  onChange={(e) => fetchFoundationFilename(e.target.value)}
+                >
+                  <option value="">Select Cadence</option>
+                  {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
+                </select>
+              </div>
+            )}
+            {scriptType === LEDGER && (
+              <div className="flex items-center">
+                <label className="w-1/5 text-sm" htmlFor="ledger">From Ledger</label>
+                <select
+                  id="ledger"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  onChange={(e) => setLedgerTransaction(e.target.value)}
+                >
+                  <option value="">Select Cadence</option>
+                  {getDropdownOptions(LedgerTransactionNames, scriptName, scriptType === LEDGER)}
+                </select>
+              </div>
+            )}
+          </div>
+          <div>
+            <div>
+              <label htmlFor="cadenceScript" className="block text-sm font-medium text-gray-700">Cadence Script</label>
+              <textarea
+                id="cadenceScript"
+                className="mt-1 w-full h-32 p-2 border border-gray-300 rounded-md resize-vertical bg-white text-black"
+                placeholder="Enter your Cadence script here"
+                value={cadencePayload}
+                onChange={(e) => setCadencePayload(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <input
+              className="w-full p-2 border border-gray-300 rounded-md"
               id="arguments"
               placeholder="Enter json arguments"
               onChange={(e) => setArgumentsValue(e.target.value)}
               value={jsonArgs}
             />
-            <Text color='tomato'>{jsonError}</Text>
-          </Stack>
-          <Stack spacing="24px">
-            <Stack>
-              <FormControl isInvalid={error}>
-                <HStack alignItems={"baseline"}>
-                  <Text fontWeight={"600"}>Multisig Account Address</Text>
-                  {scriptType === LEDGER && <Text fontSize={"0.65rem"}>{accountBalance ? `${accountBalance} FLOW` : ''}</Text>}
-                </HStack>
-                <HStack spacing={4}>
-                  <Tooltip label="Enter the address of the account you want to use for the transaction">
-                  <Button
-                    isDisabled={error || !authAccountAddress}
+            <p className="text-red-500">{jsonError}</p>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <div className={`${error ? 'border-red-500' : 'border-gray-300'} border rounded-md p-4`}>
+                <div className="flex items-baseline">
+                  <p className="font-semibold">Multisig Account Address</p>
+                  {scriptType === LEDGER && <p className="text-sm">{accountBalance ? `${accountBalance} FLOW` : ''}</p>}
+                </div>
+                <div className="flex items-center space-x-4">
+                  <button
+                    className={`${error || !authAccountAddress ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
                     onClick={addAuthAccountAddress}
+                    disabled={error || !authAccountAddress}
                   >
                     Add Account
-                  </Button>
-                  </Tooltip>
-                  <HStack>
-                    <Input
-                      size="lg"
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      className="w-full p-2 border border-gray-300 rounded-md"
                       id="account"
                       placeholder="Enter Authorized Account"
                       onChange={(e) => validateAccount(e.target.value)}
                       value={authAccountAddress}
                     />
                     {!isOpen && (
-                      <Tooltip label="Select from existing accounts">
-                        <Button onClick={() => setIsOpen(true)}>{`=>`}</Button> 
-                      </Tooltip>
-                      )}
-                    {isOpen && (
-                    <Select
-                      size="lg"
-                      placeholder="Known Accounts"
-                      onChange={(e) => validateAccount(e.target.value)}
-                    >
-                      <option value="0x47fd53250cc3982f">0x47fd53250cc3982f</option>
-                      <option value="0x9178260195652f85">0x9178260195652f85</option>
-                    </Select>
+                      <button
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+                        onClick={() => setIsOpen(true)}
+                      >
+                        {'=>'}
+                      </button>
                     )}
-                  </HStack>
-                </HStack>
-                <FormErrorMessage>{error}</FormErrorMessage>
-              </FormControl>
-            </Stack>
-            <Stack>
+                    {isOpen && (
+                      <select
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        placeholder="Known Accounts"
+                        onChange={(e) => validateAccount(e.target.value)}
+                      >
+                        <option value="0x47fd53250cc3982f">0x47fd53250cc3982f</option>
+                        <option value="0x9178260195652f85">0x9178260195652f85</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+                {error && <p className="text-red-500">{error}</p>}
+              </div>
+            </div>
+            <div>
               {Object.keys(accounts).map((account) => {
                 return (
                   <React.Fragment key={account}>
-                    <FormControl>
-                      <HStack align="baseline">
-                        <FormLabel>Select Proposal Key</FormLabel>
-                        <Text>{account}</Text>
-                      </HStack>
-                      <Stack>
+                    <div>
+                      <div className="flex items-baseline">
+                        <label className="font-semibold">Select Proposal Key</label>
+                        <p>{account}</p>
+                      </div>
+                      <div>
                         <KeysTableSelector keys={accounts[account].keys} selectedKey={selectedProposalKey} setKey={setProposalKey} />
-                      </Stack>
-                    </FormControl>
-                    <Stack>
-                      <HStack>
-                        <FormControl>
-                          <FormLabel htmlFor="executeLimit">Execution Limit:</FormLabel>
-                          <Input
-                            size="sm"
-                            id="executeLimit"
-                            placeholder="Enter Execute Limit"
-                            onChange={((e) => setExeEffort(e.target.value))}
-                            value={exeEffort}
-                          />
-                        </FormControl>
-                      </HStack>
-                    </Stack>
-                    <Stack spacing={4} align="start">
-
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center">
+                        <label className="font-semibold" htmlFor="executeLimit">Execution Limit:</label>
+                        <input
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          id="executeLimit"
+                          placeholder="Enter Execute Limit"
+                          onChange={((e) => setExeEffort(e.target.value))}
+                          value={exeEffort}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
                       <MessageLink link={getFormUrlLink()} message={"Page URL"} />
-
-                      <HStack>
-                        <Button disabled={generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]} onClick={() => onSubmit(account)}>
+                      <div className="flex items-center space-x-4">
+                        <button
+                          className={`${generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
+                          onClick={() => onSubmit(account)}
+                          disabled={generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]}
+                        >
                           Generate Link
-                        </Button>
+                        </button>
                         {accounts[account].transaction && (
-                          <Link
-                            isExternal
-                            href={getFlowscanLink(
-                              accounts[account].transaction
-                            )}
+                          <a
+                            href={getFlowscanLink(accounts[account].transaction)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${txWaiting ? 'bg-pink-500' : 'bg-blue-500 hover:bg-blue-700'} text-white font-semibold py-2 px-4 rounded`}
                           >
-                            <Button disabled={txWaiting} colorScheme='pink'>{txWaiting ? "TX Processing" : "Transaction"}</Button>
-                          </Link>
-
+                            {txWaiting ? "TX Processing" : "Transaction"}
+                          </a>
                         )}
                         {!state.inFlightRequests?.[cleanAddress(account)] &&
                           state.inFlight && (
-                            <CircularProgress size={"2rem"} isIndeterminate color="green.300" />
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-900"></div>
                           )}
-                      </HStack>
+                      </div>
                       {Object.entries(
                         state.inFlightRequests?.[cleanAddress(account)] || {}
                       ).map(([signatureRequestId, compositeKeys], i) => (
-                        <Stack key={signatureRequestId}>
+                        <div key={signatureRequestId}>
                           {signatureRequestId &&
                             <>
                               <MessageLink key={i} link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
                               {scriptType === LEDGER && <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** only Ledger specific tx are supported **"} />}
                             </>
                           }
-                          <Stack
+                          <div
                             key={`${signatureRequestId}-${i}`}
-                            flex="1"
-                            borderWidth="1px"
-                            borderRadius="lg"
-                            overflow="hidden"
-                            padding="4"
+                            className="border border-gray-300 rounded-md p-4"
                           >
-                            <HStack width="100%">
-                              <Text fontSize='20px' color='black'>Signature Request Id:</Text>
-                              <Text align={"center"} fontSize='15px' >{signatureRequestId}</Text>
-                            </HStack>
-
+                            <div className="flex items-center">
+                              <p className="text-lg font-semibold">Signature Request Id:</p>
+                              <p className="text-sm">{signatureRequestId}</p>
+                            </div>
                             <MessageLink key={'flow-cli'} link={getCliCommand(signatureRequestId)} message={"FLOW CLI"} />
-
                             <CountdownTimer endTime={countdown} />
-                            <Text fontSize='20px'>Incoming Signatures:</Text>
+                            <p className="text-lg font-semibold">Incoming Signatures:</p>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
-                            <Button disabled={!enoughSignatures(compositeKeys)} onClick={() => sendTransaction()}>{sendButtonText}</Button>
+                            <button
+                              className={`${!enoughSignatures(compositeKeys) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
+                              onClick={() => sendTransaction()}
+                              disabled={!enoughSignatures(compositeKeys)}
+                            >
+                              {sendButtonText}
+                            </button>
                             {accounts[account].transaction && (
-                              <HStack><Text>Tx Id:</Text><Text fontSize={"15px"}>{accounts[account].transaction}</Text></HStack>
+                              <div className="flex items-center">
+                                <p>Tx Id:</p>
+                                <p className="text-sm">{accounts[account].transaction}</p>
+                              </div>
                             )}
                             {txWaiting && (
-                              <Text>Waiting for Transaction to be sealed</Text>
+                              <p>Waiting for Transaction to be sealed</p>
                             )}
                             {transactionErrorMessage &&
-                              <Text color={"red"}>{transactionErrorMessage}</Text>
+                              <p className="text-red-500">{transactionErrorMessage}</p>
                             }
                             {transaction && (
                               <>
-                                <Text>{transaction?.statusString}</Text>
-
-                                <HStack>
-                                  <Text>Events</Text><Button size="sm" onClick={showHideEvents}>{eventButtonText}</Button>
-                                </HStack>
-                                <VStack alignItems={"flex-start"}>
+                                <p>{transaction?.statusString}</p>
+                                <div className="flex items-center">
+                                  <p>Events</p>
+                                  <button
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded text-sm"
+                                    onClick={showHideEvents}
+                                  >
+                                    {eventButtonText}
+                                  </button>
+                                </div>
+                                <div className="flex flex-col items-start">
                                   {eventButtonText === "hide" && transaction.events.map((e, i) => {
-                                    return (<><Text key={i}>{e.type}</Text><Text key={i}>{JSON.stringify(e.data)}</Text></>)
+                                    return (<><p key={i}>{e.type}</p><p key={i}>{JSON.stringify(e.data)}</p></>)
                                   })}
-                                </VStack>
-
+                                </div>
                               </>
                             )}
-                          </Stack>
-                        </Stack>
+                          </div>
+                        </div>
                       ))}
-                    </Stack>
+                    </div>
                   </React.Fragment>
                 );
               })}
-            </Stack>
-          </Stack>
-        </Stack>
-      </Stack>
-    </Stack>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
