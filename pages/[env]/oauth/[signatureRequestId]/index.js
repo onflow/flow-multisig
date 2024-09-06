@@ -1,14 +1,3 @@
-import {
-  Flex,
-  Text,
-  Stack,
-  Input,
-  Button,
-  FormLabel,
-  HStack,
-  CircularProgress
-} from "@chakra-ui/react";
-import Helmet from 'react-helmet';
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
@@ -259,20 +248,14 @@ export default function SignatureRequestPage() {
   // Deal with dat flash and/or bad sig request id.
   if (signatures && signatures.length === 0) {
     return (
-      <Stack margin={"50"}>
-        <Flex
-          flex="1"
-          borderWidth="1px"
-          borderRadius="lg"
-          overflow="hidden"
-          padding="4"
-        >
-          <Text>
+      <div className="m-4 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p>
             There does not appear to be an active signature request id
             {signatureRequestId}
-          </Text>
-        </Flex>
-      </Stack>
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -287,111 +270,119 @@ export default function SignatureRequestPage() {
   const canSign = !!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId));
 
   return (
-    <>
-      <Helmet>
-        <meta name="google-signin-client_id" content={CLIENT_ID} />
-      </Helmet>
-
-      <Stack margin="4" alignContent="left">
-        <Stack>
-          <Stack>
-            {!accessToken && <Text color={"blue"}>*** Make sure to allow pop ups for this site ***</Text>}
-            {!accessToken && <Button onClick={gGsiSignIn}>Google Login</Button>}
-            {accessToken && <Text>You are logged in</Text>}
-            {loginError && <Text color={"red"}>{loginError}</Text>}
-            <FormLabel>Full Key Path</FormLabel>
-            <Input
-              size="sm"
-              id="full-key-path"
-              placeholder="Full key Path"
-              onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
-              value={full_key_path}
-            />
-            <HStack alignItems={"baseline"}>
-              <FormLabel fontSize={"12px"}>Signing Account</FormLabel>
-              <Text
-                size="sm"
-              >{signing_account}</Text>
-            </HStack>
-            <HStack alignItems={"baseline"}>
-              <FormLabel fontSize={"12px"}>Using KeyId</FormLabel>
-              <Text size="sm">{signing_keyId}</Text>
-            </HStack>
-            {publicKeyStatus !== null && <Text color={"red"}>{publicKeyStatus}</Text>}
-            <HStack>
-              {loadingKeys && <CircularProgress size={"2rem"} isIndeterminate color="green.300" />}
-              {!loadingKeys && (
-                signableKeys.map(k => {
-                  return (
-                    <Button onClick={() => handleKeyInfoUpdate(k.keyId, SIGN_KEYID)} disabled={signing_keyId === k.keyId} key={k.keyId}>
-                      <AddressKeyView keyId={k.keyId} weight={k.weight} />
-                    </Button>
-                  )
-                })
-              )}
-            </HStack>
-
-            <Stack>
-              <Button size="sm" onClick={() => setTogglePath(!togglePath)}>{togglePath ? `Hide Advanced` : `Advanced`}</Button>
-            </Stack>
-            {togglePath && <Stack>
-              <FormLabel>Project Id</FormLabel>
-              <Input
-                size="sm"
-                id="project-id"
+    <div className="m-4 space-y-4">
+      <div className="space-y-2">
+        {!accessToken && <p className="text-blue-600">*** Make sure to allow pop ups for this site ***</p>}
+        {!accessToken && <button onClick={gGsiSignIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Google Login</button>}
+        {accessToken && <p>You are logged in</p>}
+        {loginError && <p className="text-red-500">{loginError}</p>}
+        <label className="block">
+          <span className="text-gray-700">Full Key Path</span>
+          <input
+            type="text"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Full key Path"
+            onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
+            value={full_key_path}
+          />
+        </label>
+        <div className="flex items-baseline space-x-2">
+          <span className="text-sm">Signing Account:</span>
+          <span>{signing_account}</span>
+        </div>
+        <div className="flex items-baseline space-x-2">
+          <span className="text-sm">Using KeyId:</span>
+          <span>{signing_keyId}</span>
+        </div>
+        {publicKeyStatus !== null && <p className="text-red-500">{publicKeyStatus}</p>}
+        <div className="flex space-x-2">
+          {loadingKeys && <div className="w-8 h-8 border-t-2 border-blue-500 rounded-full animate-spin"></div>}
+          {!loadingKeys && signableKeys.map(k => (
+            <button 
+              onClick={() => handleKeyInfoUpdate(k.keyId, SIGN_KEYID)} 
+              disabled={signing_keyId === k.keyId} 
+              key={k.keyId}
+              className={`px-2 py-1 rounded ${signing_keyId === k.keyId ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+            >
+              <AddressKeyView keyId={k.keyId} weight={k.weight} />
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setTogglePath(!togglePath)} className="text-blue-500 hover:underline">
+          {togglePath ? `Hide Advanced` : `Advanced`}
+        </button>
+        {togglePath && (
+          <div className="space-y-2">
+            <label className="block">
+              <span className="text-gray-700">Project Id</span>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 placeholder="Enter ProjectId"
                 onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_PROJECT_ID)}
                 value={project_id}
               />
-              <FormLabel>Loction</FormLabel>
-              <Input
-                size="sm"
-                id="location"
+            </label>
+            <label className="block">
+              <span className="text-gray-700">Loction</span>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 placeholder="Enter Location"
                 onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_LOCATION)}
                 value={key_location}
               />
-              <FormLabel>Key Ring</FormLabel>
-              <Input
-                size="sm"
-                id="key-ring"
+            </label>
+            <label className="block">
+              <span className="text-gray-700">Key Ring</span>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 placeholder="Enter Key Ring Name"
                 onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_RING)}
                 value={key_ring}
               />
-              <FormLabel>Key Name</FormLabel>
-              <Input
-                size="sm"
-                id="key-name"
+            </label>
+            <label className="block">
+              <span className="text-gray-700">Key Name</span>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 placeholder="Enter Key Name"
                 onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_NAME)}
                 value={key_name}
               />
-              <FormLabel>Key Version</FormLabel>
-              <Input
-                size="sm"
-                id="key-version"
+            </label>
+            <label className="block">
+              <span className="text-gray-700">Key Version</span>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 placeholder="Enter Key Version"
                 onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_VERSION)}
                 value={key_version}
               />
-              <FormLabel>Full Key Path <Text display={"inline-block"} color="orange">(only used if Full Key Path input is empty)</Text></FormLabel>
-              <FormLabel>{getKeyPath(userKeyInfo, true)}</FormLabel>
-            </Stack>}
-          </Stack>
-        </Stack>
-        <CadenceViewer code={cadencePayload} args={signatures[0]?.signable.voucher.arguments} />
-        <Button
-          disabled={!canSign || !accessToken}
-          onClick={signPayload}
-        >
-          Sign Payload
-        </Button>
-        <Stack>
-          <Text>{signingStatus}</Text>
-          <Text>{signingMessage}</Text>
-        </Stack>
-      </Stack>
-    </>
+            </label>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-gray-700">Full Key Path</span>
+              <span className="text-orange-500">(only used if Full Key Path input is empty)</span>
+            </div>
+            <p>{getKeyPath(userKeyInfo, true)}</p>
+          </div>
+        )}
+      </div>
+      <CadenceViewer code={cadencePayload} args={signatures[0]?.signable.voucher.arguments} />
+      <button
+        disabled={!canSign || !accessToken}
+        onClick={signPayload}
+        className={`px-4 py-2 rounded ${!canSign || !accessToken ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+      >
+        Sign Payload
+      </button>
+      <div>
+        <p>{signingStatus}</p>
+        <p>{signingMessage}</p>
+      </div>
+    </div>
   );
 }

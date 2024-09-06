@@ -23,7 +23,7 @@ const envSettings = {
 };
 
 export const setupConfig = (env) => {
-  console.log('env', env)
+  console.log('Setup Config for env', env)
   if (!env) return;
   if (envSettings[env]) {
     config({ ...envSettings[env] })

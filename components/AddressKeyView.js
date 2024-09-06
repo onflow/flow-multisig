@@ -1,23 +1,19 @@
 import React from "react";
 import * as fcl from "@onflow/fcl";
-import { HStack, Text } from "@chakra-ui/react";
 
 export const AddressKeyView = ({ address, keyId, weight }) => {
-
   return (
-    <HStack alignItems={"baseline"}>
+    <div className="flex items-baseline">
       {address && (
         <>
-          <Text fontSize="12px" paddingRight={"2px"}>Addr:</Text>
-          <Text>{`${fcl.withPrefix(
-            address
-          )}`}</Text>
+          <span className="text-xs pr-0.5">Addr:</span>
+          <span>{fcl.withPrefix(address)}</span>
         </>
       )}
-      <Text fontSize="12px" paddingLeft={"10px"} paddingRight={"2px"}>KeyId:</Text>
-      <Text>{`${keyId} `}</Text>
-      {weight && <Text fontSize="12px" paddingLeft={"10px"} paddingRight={"2px"}>Weight:</Text>}
-      <Text>{`${weight || ""} `}</Text>
-    </HStack>
+      <span className="text-xs pl-2.5 pr-0.5">KeyId:</span>
+      <span>{keyId}</span>
+      {weight && <span className="text-xs pl-2.5 pr-0.5">Weight:</span>}
+      <span>{weight || ""}</span>
+    </div>
   );
 }

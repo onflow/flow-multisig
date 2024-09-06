@@ -10,6 +10,7 @@ import {CountdownTimer} from "../../components/CountdownTimer";
 import {MessageLink} from "../../components/MessageLink";
 import {KeysTableStatus} from "../../components/KeysTableStatus";
 import {KeysTableSelector} from "../../components/KeysTableSelector";
+import {authzManyKeyResolver, buildSinglaAuthz} from "../../utils/authz";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.org/transaction",
@@ -80,6 +81,8 @@ const SECONDS_PER_BLOCK = 1;
 const SEND_TX_BUTTON = "Send Transaction";
 
 export default function MainPage() {
+  const router = useRouter();
+
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [authAccountAddress, setAuthAccountAddress] = useState("");
@@ -103,15 +106,35 @@ export default function MainPage() {
   const [sendButtonText, setSendButtonText] = useState(SEND_TX_BUTTON);
   const [generating, setGenerating] = useState(false)
 
-  useEffect(() => getServiceAccountFileList().then(result => setServiceAccountFilenames(result)), [])
-  useEffect(() => getFoundationFileList().then(result => setFoundationFilenames(result)), [])
+  useEffect(() => {
+    console.log('Effect running for service account file list');
+    getServiceAccountFileList().then(result => {
+      console.log('Service account file list received', result);
+      setServiceAccountFilenames(result);
+    }).catch(error => {
+      console.error('Error fetching service account file list', error);
+    });
+    return () => {
+    };
+  }, []);
+
+  useEffect(() => {
+    getFoundationFileList().then(result => {
+      console.log('Foundation file list received', result);
+      setFoundationFilenames(result);
+    }).catch(error => {
+      console.error('Error fetching foundation file list', error);
+    });
+    return () => {
+    };
+  }, []);
 
   const { query } = useRouter()
   const qp = new URLSearchParams(query)
   const isLedgerDisabled = false;
 
   useEffect(() => {
-
+    console.log('Effect running for query changes', query);
     const fromScript = qp.get("type");
     const namedScript = qp.get("name");
     const jsonParam = qp.get("param");
@@ -150,6 +173,8 @@ export default function MainPage() {
       validateAccount(userAccount);
       addAuthAccountAddress();
     }
+    return () => {
+    };
   }, [query])
 
   const addAuthAccountAddress = () => {
@@ -235,6 +260,8 @@ export default function MainPage() {
       ]).catch(e => {
         console.log('transaction error', e)
         setTransactionErrorMessage(e)
+        setGenerating(false);
+      }).finally(() => {
         setGenerating(false);
       });
 
@@ -406,6 +433,8 @@ export default function MainPage() {
     setTimeout(() => setSendButtonText("Transaction Sent"), 600);
   }
 
+
+  console.log("selectedProposalKey", selectedProposalKey, generating)
   return (
     <div className="min-h-screen m-12">
       <div>
@@ -504,7 +533,7 @@ export default function MainPage() {
                 </div>
                 <div className="flex items-center space-x-4">
                   <button
-                    className={`${error || !authAccountAddress ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
+                    className={`p-2 rounded ${error || !authAccountAddress ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold rounded'}`}
                     onClick={addAuthAccountAddress}
                     disabled={error || !authAccountAddress}
                   >
@@ -570,7 +599,7 @@ export default function MainPage() {
                       <MessageLink link={getFormUrlLink()} message={"Page URL"} />
                       <div className="flex items-center space-x-4">
                         <button
-                          className={`${generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
+                          className={`text-white font-semibold rounded p-2 ${generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700'}`}
                           onClick={() => onSubmit(account)}
                           disabled={generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(account)]}
                         >
@@ -614,7 +643,7 @@ export default function MainPage() {
                             <p className="text-lg font-semibold">Incoming Signatures:</p>
                             <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
                             <button
-                              className={`${!enoughSignatures(compositeKeys) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded'}`}
+                              className={`w-1/2 p-2 my-4 text-white font-semibold rounded ${!enoughSignatures(compositeKeys) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700'}`}
                               onClick={() => sendTransaction()}
                               disabled={!enoughSignatures(compositeKeys)}
                             >

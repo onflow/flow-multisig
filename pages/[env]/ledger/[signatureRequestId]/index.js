@@ -1,15 +1,4 @@
-import {
-    Box,
-    Button,
-    CircularProgress,
-    Flex,
-    Heading,
-    HStack,
-    Icon,
-    Stack,
-    Text,
-    VStack,
-} from "@chakra-ui/react";
+
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -19,21 +8,6 @@ import { CadenceViewer } from "../../../../components/CadenceViewer";
 import { filerKeys, getUserAccount } from "../../../../utils/accountHelper";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
-
-const iconFn = (color) =>
-    function CustomIcon() {
-        return (
-            <Icon viewBox="0 0 200 200" color={color}>
-                <path
-                    fill="currentColor"
-                    d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
-                />
-            </Icon>
-        );
-    };
-
-const GreenDot = iconFn("green.500");
-const RedDot = iconFn("red.500");
 
 export default function SignatureRequestPage() {
     const router = useRouter();
@@ -100,20 +74,36 @@ export default function SignatureRequestPage() {
     // Deal with dat flash and/or bad sig request id.
     if (!signatures || signatures.length === 0) {
         return (
-            <Stack margin={"50"}>
-                <Flex
-                    flex="1"
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    overflow="hidden"
-                    padding="4"
-                >
-                    <Text>
-                        There does not appear to be an active signature request id
-                        {signatureRequestId}
-                    </Text>
-                </Flex>
-            </Stack>
+            <div className="m-4 space-y-4">
+                <div className="max-w-4xl">
+                    <div>
+                        <h2 className="text-xl font-semibold">Sign with Ledger (v0.9.12)</h2>
+                    </div>
+                    <div className="max-w-4xl">
+                        User Address:
+                        {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
+                    </div>
+                </div>
+                <CadenceViewer code={signableItems[0]?.signable.voucher.cadence} args={signableItems[0]?.signable.voucher.arguments} />
+                <div className="py-4">
+                    <h3 className="text-lg font-semibold">Signing Keys</h3>
+                    {loading && <div className="w-8 h-8 border-t-2 border-blue-500 rounded-full animate-spin"></div>}
+                    {!currentUser.loggedIn && <p className="text-red-500 text-lg">Log in to get started</p>}
+                    {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId, weight }) => (
+                        <div key={address + keyId} className="flex items-center border rounded-lg p-1 my-1">
+                            <button 
+                                disabled={!currentUser.loggedIn || sig} 
+                                className={`w-48 px-2 py-1 text-sm rounded ${sig ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                onClick={signTheMessage(signableItems[0]?.signable, keyId)}
+                            >
+                                {sig ? `Signed` : `Sign the message!`}
+                            </button>
+                            <AddressKeyView address={address} keyId={keyId} weight={weight} />
+                        </div>
+                    ))}
+                </div>
+                {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+            </div>
         );
     }
 
@@ -139,63 +129,52 @@ export default function SignatureRequestPage() {
         }).then((r) => r.json());
     };
 
-    const AuthedState = () => {
-        return (
-            <VStack>
-                <Stack>Hello</Stack>
-                <Stack direction="row" spacing={4} align="center">
-                    <div>Address: {currentUser?.addr ?? "No Address"}</div>
-                    <Button onClick={fcl.currentUser.unauthenticate}>Log Out</Button>
-                </Stack>
-            </VStack>
-        );
-    };
+    const AuthedState = () => (
+        <div className="space-y-2">
+            <div>Hello</div>
+            <div className="flex items-center space-x-4">
+                <div>Address: {currentUser?.addr ?? "No Address"}</div>
+                <button onClick={fcl.currentUser.unauthenticate} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Log Out</button>
+            </div>
+        </div>
+    );
 
-    const UnauthenticatedState = () => {
-        return (
-            <VStack>
-                <Stack direction="row" spacing={4} align="center">
-                    <Button onClick={fcl.logIn}>Log In</Button>
-                </Stack>
-            </VStack>
-        );
-    };
+    const UnauthenticatedState = () => (
+        <div>
+            <button onClick={fcl.logIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Log In</button>
+        </div>
+    );
 
     return (
-        <Stack margin="4" alignContent="left">
-            <Stack maxW="container.xl" align="start">
-                <Stack>
-                    <Heading size="md">Sign with Ledger (v0.9.12)</Heading>
-                </Stack>
-                <Stack maxW="container.xl">
+        <div className="m-4 space-y-4">
+            <div className="max-w-4xl">
+                <div>
+                    <h2 className="text-xl font-semibold">Sign with Ledger (v0.9.12)</h2>
+                </div>
+                <div className="max-w-4xl">
                     User Address:
                     {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
-                </Stack>
-            </Stack>
+                </div>
+            </div>
             <CadenceViewer code={signableItems[0]?.signable.voucher.cadence} args={signableItems[0]?.signable.voucher.arguments} />
-            <Stack padding="1rem 0">
-                <Heading size="sm">Signing Keys</Heading>
-                {loading && <CircularProgress size="2rem" isIndeterminate color="green.300" />}
-                {!currentUser.loggedIn && <Text color={"red.400"} fontSize="lg">Log in to get started</Text>}
-                {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId, weight }) => {
-                    return (
-                        <HStack
-                            flex="1"
-                            borderWidth="1px"
-                            borderRadius="lg"
-                            overflow="hidden"
-                            padding="0.25rem"
-                            key={address + keyId}
+            <div className="py-4">
+                <h3 className="text-lg font-semibold">Signing Keys</h3>
+                {loading && <div className="w-8 h-8 border-t-2 border-blue-500 rounded-full animate-spin"></div>}
+                {!currentUser.loggedIn && <p className="text-red-500 text-lg">Log in to get started</p>}
+                {currentUser.loggedIn && !loading && signableKeys.map(({ address, sig, keyId, weight }) => (
+                    <div key={address + keyId} className="flex items-center border rounded-lg p-1 my-1">
+                        <button 
+                            disabled={!currentUser.loggedIn || sig} 
+                            className={`w-48 px-2 py-1 text-sm rounded ${sig ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                            onClick={signTheMessage(signableItems[0]?.signable, keyId)}
                         >
-                            <Button disabled={!currentUser.loggedIn || sig} size="sm" width="200px" onClick={signTheMessage(signableItems[0]?.signable, keyId)}>
-                                {sig ? `Signed` : `Sign the message!`}
-                            </Button>
-                            <AddressKeyView address={address} keyId={keyId} weight={weight} />
-                        </HStack>
-                    );
-                })}
-            </Stack>
-            <Stack><Text color={"red"}>{errorMessage}</Text></Stack>
-        </Stack>
+                            {sig ? `Signed` : `Sign the message!`}
+                        </button>
+                        <AddressKeyView address={address} keyId={keyId} weight={weight} />
+                    </div>
+                ))}
+            </div>
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+        </div>
     );
 }

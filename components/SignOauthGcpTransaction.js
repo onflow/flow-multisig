@@ -1,10 +1,4 @@
 import * as fcl from "@onflow/fcl"
-import {
-  Text,
-  Stack,
-  Button,
-  CircularProgress
-} from "@chakra-ui/react";
 import { useState } from "react";
 import { fetchMessage, getPayload, postSignatureToApi, prepareSignedEnvelope } from "../utils/kmsHelpers";
 
@@ -49,21 +43,23 @@ export const SignOauthGcpTransaction = ({ signatureRequestId, keyId, address }) 
     }
   }
 
-
   return (
-    <>
-      <Stack>
-        <Button
-          onClick={signPayload}
-        >
-          Sign Payload
-        </Button>
-        <Stack>
-          <Text>{signingStatus}</Text>
-          <Text>{signingMessage}</Text>
-        </Stack>
-        {isSigning && <CircularProgress size={"2rem"} isIndeterminate color="green.300" />}
-      </Stack>
-    </>
+    <div className="flex flex-col space-y-4">
+      <button
+        onClick={signPayload}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Sign Payload
+      </button>
+      <div className="space-y-2">
+        <p>{signingStatus}</p>
+        <p>{signingMessage}</p>
+      </div>
+      {isSigning && (
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        </div>
+      )}
+    </div>
   );
 }

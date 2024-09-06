@@ -1,10 +1,9 @@
 import { useCopyToClipboard } from "react-use";
-import { Stack, Link, VStack, Button, HStack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 
-export const MessageLink = ({ link = "", message = "", subMessage = "", disabled = false, bg = "lightgray" }) => {
+export const MessageLink = ({ link = "", message = "", subMessage = "", disabled = false, bg = "bg-gray-200" }) => {
     const [copyTextFormUrl, setCopyTextFormUrl] = useState("Copy");
-    const [myState, copyToClipboard] = useCopyToClipboard();
+    const [, copyToClipboard] = useCopyToClipboard();
     const copyTextToClipboard = (text) => {
         setCopyTextFormUrl("Copied!")
         copyToClipboard(text);
@@ -16,16 +15,27 @@ export const MessageLink = ({ link = "", message = "", subMessage = "", disabled
     if (disabled) return null;
 
     return (
-        <Stack backgroundColor={bg} padding="0.5rem" width="100%" borderRadius="0.5rem" boxShadow="3px 3px 5px">
-            <VStack align="flex-start">
-                <HStack>
-                    <Button boxShadow="1px 1px 5px" size="sm" onClick={() => copyTextToClipboard(link)}>{copyTextFormUrl}</Button>
-                    <Text fontSize='15px'>{message}</Text><Text color="blue">{subMessage}</Text>
-                </HStack>
-                <Link isExternal href={link}>
+        <div className={`${bg} p-2 w-full rounded-lg shadow-md`}>
+            <div className="flex flex-col items-start">
+                <div className="flex items-center">
+                    <button 
+                        className="shadow-sm text-sm px-2 py-1 bg-blue-500 text-white rounded mr-2"
+                        onClick={() => copyTextToClipboard(link)}
+                    >
+                        {copyTextFormUrl}
+                    </button>
+                    <span className="text-sm">{message}</span>
+                    <span className="text-sm text-blue-500 ml-1">{subMessage}</span>
+                </div>
+                <a 
+                    className="text-blue-600 hover:underline mt-1" 
+                    href={link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                >
                     {link.substring(0, 90)}...
-                </Link>
-            </VStack>
-        </Stack>
+                </a>
+            </div>
+        </div>
     )
 }

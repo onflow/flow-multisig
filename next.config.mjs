@@ -3,8 +3,9 @@
  */
  const nextConfig = {
   reactStrictMode: true,
-  minimizer: [],
-
+  sassOptions: {
+    includePaths: ['./styles'],
+  },
 }
 
 export default nextConfig

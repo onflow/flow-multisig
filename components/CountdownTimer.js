@@ -1,4 +1,3 @@
-import { HStack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 
 export const CountdownTimer = ({ endTime }) => {
@@ -18,16 +17,23 @@ export const CountdownTimer = ({ endTime }) => {
             setMinutes(min);
             setSeconds(sec);
         }
-    }, [1000]) // update every second
+    }, 1000) // update every second
 
     return (
-        <HStack backgroundColor="lightyellow">
-            {endTime !== 0 && !done &&
-                (<><Text>Countdown: </Text><Text>{minutes} minutes</Text><Text>{seconds} seconds</Text></>
-                )}
-            {done &&
-                (<><Text>Countdown: </Text><Text>Done</Text></>
-                )}
-        </HStack>
+        <div className="flex flex-row items-center bg-yellow-100 p-2 rounded">
+            {endTime !== 0 && !done && (
+                <>
+                    <span className="mr-2">Countdown:</span>
+                    <span className="mr-2">{minutes} minutes</span>
+                    <span>{seconds} seconds</span>
+                </>
+            )}
+            {done && (
+                <>
+                    <span className="mr-2">Countdown:</span>
+                    <span>Done</span>
+                </>
+            )}
+        </div>
     )
 }

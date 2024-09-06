@@ -1,17 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import * as fcl from "@onflow/fcl";
-import {
-  Button,
-  HStack,
-  Heading,
-  Stack,
-  Text,
-  Select,
-  CircularProgress,
-  Grid,
-  GridItem,
-} from "@chakra-ui/react";
-import { GCP_WALLET, LOCAL, MAINNET, TESTNET } from "../utils/constants";
 import {
   GetPublicKeyAccounts,
   SetupFclConfiguration,
@@ -27,6 +15,7 @@ import { SignOauthGcpTransaction } from "../components/SignOauthGcpTransaction";
 import { AddressKeyView } from "../components/AddressKeyView";
 import { fetchSignableRequestIds, getCliCommand } from "../utils/kmsHelpers";
 import { MessageLink } from "../components/MessageLink";
+import { LOCAL, MAINNET, TESTNET, GCP_WALLET } from "../utils/constants";
 
 const networks = [MAINNET, TESTNET, LOCAL];
 
@@ -42,59 +31,22 @@ export default function Dashboard() {
   const [walletType, setWalletType] = useState(GCP_WALLET);
   const [user, setUser] = useState({ loggedIn: null });
 
-  useEffect(() => SetupFclConfiguration(fcl, network), [network]); // sets the configuration for FCL
-  useEffect(() => fcl.currentUser.subscribe(setUser), []); // sets the callback for FCL to use
   useEffect(() => {
-    const polling = setInterval(() => {
-      if (publicKey) {
-        lookUpSignableTransactions(publicKey).then(({ pending, signed }) => {
-          // filter out already fetched
-          setPendingTxs(pending);
-          setSignedTxs(signed);
-        });
-      }
-    }, 5000);
-    return () => clearInterval(polling);
-  }, [publicKey]);
+    console.log('Setting up FCL configuration');
+    SetupFclConfiguration(fcl, network);
+  }, [network]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(async () => {
-    if (!network || !user?.loggedIn) return;
-    if (user?.addr) {
-      setLoadingAccounts(true);
-      const accts = await processUserAccounts(user);
-      if (!accts) {
-        setLoadingAccounts(false);
-        console.log("no accounts");
-        return;
-      } 
-      setPublicKey(accts.publicKey);
-      setAccounts([...accts.accounts] || []);
-      const { pending, signed } = await lookUpSignableTransactions(
-        accts.publicKey
-      );
-      setPendingTxs(pending);
-      setSignedTxs(signed);
-      setLoadingAccounts(false);
-    }
-  }, [user?.loggedIn, network]);
+  useEffect(() => {
+    console.log('Subscribing to current user');
+    const unsubscribe = fcl.currentUser.subscribe(setUser);
+    return () => {
+      console.log('Unsubscribing from current user');
+      unsubscribe();
+    };
+  }, []);
+ 
 
-  const processUserAccounts = async (user) => {
-    const address = user.addr;
-    if (!address) return;
-
-    const loggedInUserKeyId = await getUserAccountKeyId(user);
-    if (loggedInUserKeyId === "" || loggedInUserKeyId === undefined) return;
-
-    const acctWithKeys = await getUserAccount(address);
-    let accountInfos = [];
-    const publicKey = getPrimaryPublicKeys(acctWithKeys, loggedInUserKeyId);
-    const accounts = await GetPublicKeyAccounts(network, publicKey);
-    accountInfos = [...accountInfos, ...accounts];
-    return { accounts: accountInfos, publicKey };
-  };
-
-  const lookUpSignableTransactions = async (publicKey) => {
+  const lookUpSignableTransactions = useCallback(async (publicKey) => {
     let signableIds = [];
     setLoading(true);
     const items = await fetchSignableRequestIds(publicKey);
@@ -114,7 +66,65 @@ export default function Dashboard() {
     const signed = signableIds.filter((t) => !!t.sig);
     setLoading(false);
     return { pending, signed };
-  };
+  }, []);
+
+  
+  useEffect(() => {
+    console.log('Setting up polling interval');
+    const polling = setInterval(() => {
+      if (publicKey) {
+        console.log('Polling for signable transactions');
+        lookUpSignableTransactions(publicKey).then(({ pending, signed }) => {
+          setPendingTxs(pending);
+          setSignedTxs(signed);
+        });
+      }
+    }, 5000);
+    return () => {
+      console.log('Clearing polling interval');
+      clearInterval(polling);
+    };
+  }, [publicKey, lookUpSignableTransactions]);
+
+  const processUserAccounts = useCallback(async (user) => {
+    const address = user.addr;
+    if (!address) return;
+
+    const loggedInUserKeyId = await getUserAccountKeyId(user);
+    if (loggedInUserKeyId === "" || loggedInUserKeyId === undefined) return;
+
+    const acctWithKeys = await getUserAccount(address);
+    let accountInfos = [];
+    const publicKey = getPrimaryPublicKeys(acctWithKeys, loggedInUserKeyId);
+    const accounts = await GetPublicKeyAccounts(network, publicKey);
+    accountInfos = [...accountInfos, ...accounts];
+    return { accounts: accountInfos, publicKey };
+  }, [user, network]);
+
+  useEffect(() => {
+    console.log('Fetching accounts');
+    const fetchAccounts = async () => {
+      if (!network || !user?.loggedIn) return;
+      if (user?.addr) {
+        setLoadingAccounts(true);
+        const accts = await processUserAccounts(user);
+        if (!accts) {
+          setLoadingAccounts(false);
+          console.log("no accounts");
+          return;
+        } 
+        setPublicKey(accts.publicKey);
+        setAccounts([...accts.accounts] || []);
+        const { pending, signed } = await lookUpSignableTransactions(
+          accts.publicKey
+        );
+        setPendingTxs(pending);
+        setSignedTxs(signed);
+        setLoadingAccounts(false);
+      }
+    };
+    fetchAccounts();
+  }, [user, network, processUserAccounts, lookUpSignableTransactions]);
 
   const pickNetwork = async (network) => {
     setAccounts([]);
@@ -139,142 +149,76 @@ export default function Dashboard() {
   };
 
   return (
-    <Stack margin="0.25rem" height={"99vh"} overflowY="hidden">
-      <Grid
-        templateAreas={`"header header"
-                  "accts main"
-                  "nav main"
-                  "done main"`}
-        gridTemplateRows={"50px 10% 30% 1fr"}
-        gridTemplateColumns={"1fr 6fr"}
-        gap="1"
-        color="blackAlpha.700"
-        fontWeight="bold"
-        height={"100%"}
-      >
-        <GridItem bg="blue.100" pl="2" area={"header"} padding=".5rem">
-          <HStack>
-            <Select
-              size={"sm"}
-              width="120px"
-              id="network"
+    <div className="m-1 h-[99vh] overflow-y-hidden">
+      <div className="grid grid-rows-[50px_10%_30%_1fr] grid-cols-[1fr_6fr] gap-1 h-full text-gray-700 font-bold">
+        <div className="bg-blue-100 p-2 col-span-2">
+          <div className="flex items-center">
+            <select
+              className="w-32 text-sm p-1 mr-2"
               value={network}
               onChange={(e) => pickNetwork(e.target.value)}
             >
               {networks.map((n) => (
-                <option key={n} value={n} selected>
-                  {n}
-                </option>
+                <option key={n} value={n}>{n}</option>
               ))}
-            </Select>
-            {!publicKey && (
-              <Button size={"sm"} onClick={() => login()}>
+            </select>
+            {!publicKey ? (
+              <button className="text-sm px-2 py-1 bg-blue-500 text-white rounded" onClick={() => login()}>
                 Log In
-              </Button>
-            )}
-            {publicKey && (
-              <HStack>
-                <Button size={"sm"} onClick={() => logout()}>
+              </button>
+            ) : (
+              <div className="flex items-center">
+                <button className="text-sm px-2 py-1 bg-blue-500 text-white rounded mr-2" onClick={() => logout()}>
                   Logout
-                </Button>
-                <Text fontSize={"0.75rem"}>
+                </button>
+                <p className="text-xs">
                   Public Key: {abbrvKey(publicKey)} ({walletType})
-                </Text>
-              </HStack>
+                </p>
+              </div>
             )}
-          </HStack>
-        </GridItem>
-        <GridItem pl="2" bg="blue.100" area={"accts"}>
-          <Stack padding={"1rem"} height="100%" overflow="auto">
-            <Heading
-              bg="green.100"
-              padding="0 0.25rem"
-              size="sm"
-              textAlign={"center"}
-            >
-              ACCOUNTS{" "}
-              {loadingAccounts && (
-                <CircularProgress
-                  size={"1rem"}
-                  isIndeterminate
-                  color="green.300"
-                />
-              )}
-            </Heading>
-            {accounts.length === 0 && (
-              <Heading padding="0.5rem 1rem" size="sm">
-                {" "}
-                ---{" "}
-              </Heading>
-            )}
-            {accounts.length > 0 &&
-              accounts.map((acct) => (
-                <Stack key={`${acct.address}${acct.keyId}`}>
-                  <HStack justifyContent={"space-between"}>
-                    <Text justifyContent={"start"} height="1rem">
-                      {abbrvKey(acct.address, 6)}{" "}
-                    </Text>
-                    <Text justifyContent={"start"} height="1rem">
-                      {acct.keyId}{" "}
-                    </Text>
-                  </HStack>
-                </Stack>
-              ))}
-          </Stack>
-        </GridItem>
-        <GridItem pl="2" bg="blue.100" area={"nav"}>
-          <Stack padding={"1rem"} height="90%" overflow="auto">
-            <Heading
-              bg="green.100"
-              padding="0 0.25rem"
-              size="sm"
-              textAlign={"center"}
-            >
-              PENDING{" "}
-              {loading && (
-                <CircularProgress
-                  size={"1rem"}
-                  isIndeterminate
-                  color="green.300"
-                />
-              )}
-            </Heading>
-
-            {pendingTxs.length === 0 && (
-              <Heading padding="0.5rem 1rem" size="sm">
-                {" "}
-                ---{" "}
-              </Heading>
-            )}
-            {publicKey &&
-              pendingTxs.length > 0 &&
-              pendingTxs.map((tx) => (
-                <Stack key={tx}>
-                  <Button
-                    justifyContent={"start"}
-                    height="1.5rem"
-                    disabled={tx === selectedTx}
-                    onClick={() => setSelectedTx(tx)}
-                  >
-                    {abbrvKey(tx.signatureRequestId, 5)}
-                  </Button>
-                </Stack>
-              ))}
-          </Stack>
-        </GridItem>
-        <GridItem pl="2" bg="blue.100" area={"main"} rowSpan={3}>
+          </div>
+        </div>
+        <div className="bg-blue-100 p-2">
+          <div className="p-4 h-full overflow-auto">
+            <h2 className="bg-green-100 p-1 text-sm text-center">
+              ACCOUNTS {loadingAccounts && <span className="animate-spin">⟳</span>}
+            </h2>
+            {accounts.length === 0 && <p className="p-2 text-sm">---</p>}
+            {accounts.map((acct) => (
+              <div key={`${acct.address}${acct.keyId}`} className="flex justify-between">
+                <span className="text-sm">{abbrvKey(acct.address, 6)}</span>
+                <span className="text-sm">{acct.keyId}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-blue-100 p-2">
+          <div className="p-4 h-full overflow-auto">
+            <h2 className="bg-green-100 p-1 text-sm text-center">
+              PENDING {loading && <span className="animate-spin">⟳</span>}
+            </h2>
+            {pendingTxs.length === 0 && <p className="p-2 text-sm">---</p>}
+            {publicKey && pendingTxs.length > 0 && pendingTxs.map((tx) => (
+              <button
+                key={tx}
+                className={`w-full text-left py-1 ${tx === selectedTx ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100'}`}
+                disabled={tx === selectedTx}
+                onClick={() => setSelectedTx(tx)}
+              >
+                {abbrvKey(tx.signatureRequestId, 5)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="bg-blue-100 p-2 row-span-3">
           {user?.addr && selectedTx !== null && (
-            <Stack padding="0.5rem">
-              <Text padding="0 0.5rem" bg="green.100">
-                {formatDate(selectedTx.created_at)}
-              </Text>
+            <div className="p-2 space-y-2">
+              <p className="bg-green-100 p-1">{formatDate(selectedTx.created_at)}</p>
               <AddressKeyView {...selectedTx} />
-              <HStack>
-                <Text fontSize="12px" paddingRight={"2px"}>
-                  RequestId:
-                </Text>
-                <Text>{abbrvKey(selectedTx.signatureRequestId)}</Text>
-              </HStack>
+              <div className="flex items-baseline">
+                <span className="text-xs pr-0.5">RequestId:</span>
+                <span>{abbrvKey(selectedTx.signatureRequestId)}</span>
+              </div>
               <MessageLink
                 link={getCliCommand(selectedTx.signatureRequestId)}
                 message={"FLOW CLI"}
@@ -284,40 +228,25 @@ export default function Dashboard() {
               {selectedTx && !selectedTx.sig && (
                 <SignOauthGcpTransaction {...selectedTx} />
               )}
-            </Stack>
+            </div>
           )}
-        </GridItem>
-        <GridItem pl="2" bg="blue.100" area={"done"} overflowY="scroll">
-          <Stack height="50vh" overflow="auto" padding={"1rem"}>
-            <Heading
-              bg="green.100"
-              padding="0 0.25rem"
-              width="100%"
-              size="sm"
-              textAlign={"center"}
-            >
-              SIGNED
-            </Heading>
-            {signedTxs.length === 0 && (
-              <Heading padding="0.5rem 1rem" size="sm">
-                {" "}
-                ---{" "}
-              </Heading>
-            )}
-            {user?.addr &&
-              signedTxs.length > 0 &&
-              signedTxs.map((s) => (
-                <Button
-                  cursor={"pointer"}
-                  onClick={() => setSelectedTx(s)}
-                  key={s}
-                >
-                  <Text>{abbrvKey(s.signatureRequestId, 5)}</Text>
-                </Button>
-              ))}
-          </Stack>
-        </GridItem>
-      </Grid>
-    </Stack>
+        </div>
+        <div className="bg-blue-100 p-2 overflow-y-scroll">
+          <div className="h-[50vh] overflow-auto p-4">
+            <h2 className="bg-green-100 p-1 text-sm text-center">SIGNED</h2>
+            {signedTxs.length === 0 && <p className="p-2 text-sm">---</p>}
+            {user?.addr && signedTxs.length > 0 && signedTxs.map((s) => (
+              <button
+                key={s}
+                className="w-full text-left py-1 bg-white hover:bg-gray-100"
+                onClick={() => setSelectedTx(s)}
+              >
+                {abbrvKey(s.signatureRequestId, 5)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
