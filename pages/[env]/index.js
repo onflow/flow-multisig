@@ -456,7 +456,7 @@ export default function MainPage() {
                   } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition duration-150 ease-in-out`}
                   onClick={() => setScriptType(name)}
                 >
-                  {name === SERVICE_ACCOUNT ? 'Service Account' : name === FOUNDATION ? 'Foundation' : 'Ledger (v0.11.0)'}
+                  {name === SERVICE_ACCOUNT ? 'Service Account' : name === FOUNDATION ? 'Foundation' : 'Ledger (v0.13.0)'}
                 </button>
               ))}
             </nav>
@@ -585,7 +585,7 @@ export default function MainPage() {
                     </div>
                     <div>
                       <div className="flex items-center">
-                        <label className="font-semibold" htmlFor="executeLimit">Execution Limit:</label>
+                        <label className="whitespace-nowrap py-4 font-semibold" htmlFor="executeLimit">Execution Limit:</label>
                         <input
                           className="w-full p-2 border border-gray-300 rounded-md"
                           id="executeLimit"
@@ -626,7 +626,7 @@ export default function MainPage() {
                         <div key={signatureRequestId}>
                           {signatureRequestId &&
                             <>
-                              <MessageLink key={i} link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={"** In testing **"} />
+                              <MessageLink key={i} link={getOauthPageLink(signatureRequestId)} message={"OAuth page URL"} subMessage={""} />
                               {scriptType === LEDGER && <MessageLink disabled={isLedgerDisabled} link={getLedgerPageLink(signatureRequestId)} message={"Ledger page URL"} subMessage={"** only Ledger specific tx are supported **"} />}
                             </>
                           }

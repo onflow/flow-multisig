@@ -71,13 +71,20 @@ export default function SignatureRequestPage() {
         }
     }, [signatures, user]);
 
+
+    const UnauthenticatedState = () => (
+        <div>
+            <button onClick={fcl.logIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Log In</button>
+        </div>
+    );
+
     // Deal with dat flash and/or bad sig request id.
     if (!signatures || signatures.length === 0) {
         return (
             <div className="m-4 space-y-4">
                 <div className="max-w-4xl">
                     <div>
-                        <h2 className="text-xl font-semibold">Sign with Ledger (v0.9.12)</h2>
+                        <h2 className="text-xl font-semibold">Sign with Ledger (v0.13.0)</h2>
                     </div>
                     <div className="max-w-4xl">
                         User Address:
@@ -139,17 +146,11 @@ export default function SignatureRequestPage() {
         </div>
     );
 
-    const UnauthenticatedState = () => (
-        <div>
-            <button onClick={fcl.logIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Log In</button>
-        </div>
-    );
-
     return (
         <div className="m-4 space-y-4">
             <div className="max-w-4xl">
                 <div>
-                    <h2 className="text-xl font-semibold">Sign with Ledger (v0.9.12)</h2>
+                    <h2 className="text-xl font-semibold">Sign with Ledger (v0.13.0)</h2>
                 </div>
                 <div className="max-w-4xl">
                     User Address:
@@ -165,7 +166,7 @@ export default function SignatureRequestPage() {
                     <div key={address + keyId} className="flex items-center border rounded-lg p-1 my-1">
                         <button 
                             disabled={!currentUser.loggedIn || sig} 
-                            className={`w-48 px-2 py-1 text-sm rounded ${sig ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                            className={`mx-2 w-48 px-2 py-1 text-sm rounded ${sig ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                             onClick={signTheMessage(signableItems[0]?.signable, keyId)}
                         >
                             {sig ? `Signed` : `Sign the message!`}
