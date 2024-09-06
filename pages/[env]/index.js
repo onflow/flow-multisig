@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 
 if (typeof window !== "undefined") window.fcl = fcl;
 import { getServiceAccountFileList, getFoundationFileList, getServiceAccountFilename, getFoundationFilename } from "../../utils/cadenceLoader";
-import { LedgerCadenceTransactions, LedgerTransactionNames } from "../../utils/payloads";
+import { LedgerCadenceTransactions, LedgerTransactionNames, TRANSFERESCROW } from "../../utils/payloads";
 import { getCliCommand } from "../../utils/kmsHelpers";
 import {CountdownTimer} from "../../components/CountdownTimer";
 import {MessageLink} from "../../components/MessageLink";
@@ -107,7 +107,6 @@ export default function MainPage() {
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
-    console.log('Effect running for service account file list');
     getServiceAccountFileList().then(result => {
       console.log('Service account file list received', result);
       setServiceAccountFilenames(result);
@@ -226,7 +225,6 @@ export default function MainPage() {
     const account = accounts[accountKey];
     const keys = account.keys;
     if (selectedProposalKey === null) {
-      console.log('selectedProposalKey is null, exiting')
       return;
     }
     // selected key is proposer
@@ -332,6 +330,7 @@ export default function MainPage() {
   };
 
   const getPlaceHolderArgs = (filename) => {
+    console.log('filename', filename)
    // case statement on filename and return string
     switch (filename) {
       case "lockedTokenTransfer.cdc":
@@ -339,6 +338,8 @@ export default function MainPage() {
         return `[{"type": "Address","value": "ADDRESS"},{"type": "UFix64","value": "AMOUNT"}]`
       case "transferFLOW.cdc":
         return `[{"type": "UFix64","value": "AMOUNT"},{"type": "Address","value": "ADDRESS"}]`
+      case TRANSFERESCROW:
+        return `[{"type": "UFix64","value": "AMOUNT"}, {"type": "Address", "value": "TO"}, {"type": "Address","value": "CONTRACT_ADDRESS"}, {"type": "Address","value": "CONTRACT_NAME"}]`
       default:
         return "[]"
     }
@@ -371,6 +372,7 @@ export default function MainPage() {
     setScriptName(name);
     setScriptType(LEDGER);
     setCadencePayload(LedgerCadenceTransactions[name])
+    setArgumentsValue(getPlaceHolderArgs(name))
   }
 
   const setArgumentsValue = (value) => {
@@ -433,8 +435,6 @@ export default function MainPage() {
     setTimeout(() => setSendButtonText("Transaction Sent"), 600);
   }
 
-
-  console.log("selectedProposalKey", selectedProposalKey, generating)
   return (
     <div className="min-h-screen m-12">
       <div>

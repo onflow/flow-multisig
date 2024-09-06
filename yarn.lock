@@ -963,10 +963,10 @@
     sha3 "^2.1.4"
     uuid "^9.0.1"
 
-"@onflow/six-transfer-tokens@^0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@onflow/six-transfer-tokens/-/six-transfer-tokens-0.0.8.tgz#ca34a3d68109f6c5345584c7f6b6b4c41beab7cb"
-  integrity sha512-SQvTDFB4qk3/ObfvnzDS6jArN3Nw/1k+QtQ5+fJ+8nFpT0RGGL3tH3x2zH44YzDqlIe4yKW3bYPR93yxbdo3OA==
+"@onflow/six-transfer-tokens-with-address@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@onflow/six-transfer-tokens-with-address/-/six-transfer-tokens-with-address-0.2.0.tgz#5a0eb9209f48ea90770d23d78c8199563edf476c"
+  integrity sha512-RrUaoAT2FYAMqGcj/vIVFRPxD/xD2Kb1oVyRYRKMjd/siwYGaWHkF9+apFcXupXqbdCmU6rBW5mc39fUInvqVQ==
 
 "@onflow/transport-http@1.10.1":
   version "1.10.1"

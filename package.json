@@ -20,7 +20,7 @@
     "@onflow/fcl-wc": "5.2.0",
     "@onflow/rlp": "^1.2.2",
     "@onflow/sdk": "1.5.1",
-    "@onflow/six-transfer-tokens": "^0.0.8",
+    "@onflow/six-transfer-tokens-with-address": "^0.2.0",
     "@onflow/transport-http": "1.4.0",
     "@root/keypairs": "^0.10.3",
     "@supabase/supabase-js": "^1.29.0",
