@@ -59,7 +59,6 @@ export default function SignatureRequestPage() {
       });
   }
   const gAPILoaded = () => {
-    console.log('loaded', GOOGLE_API_URL);
     if (typeof window !== 'undefined') {
       window?.gapi.load('client', gapiInit)
     }
@@ -72,16 +71,13 @@ export default function SignatureRequestPage() {
 
   // --- account configuration --- //
   function gGsiSignIn() {
-    console.log('loaded', GOOGLE_CLIENT_URL)
     google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: KEY_SCOPE,
       prompt: 'consent',
       callback: (tokenResponse) => {
-        console.log(tokenResponse, tokenResponse?.access_token)
         if (google.accounts.oauth2.hasGrantedAllScopes(tokenResponse,
           KEY_SCOPE)) {
-          console.log('user has scope, saving access token')
           setAccessToken(tokenResponse.access_token)
           getKeyId(tokenResponse.access_token)
         } else {
@@ -232,10 +228,7 @@ export default function SignatureRequestPage() {
     if (response?.status === 200) {
       const { pem } = await response.json();
       const flowPublicKey = await convertPublicKey(pem);
-      console.log('flow public key', flowPublicKey)
-      console.log('userKeyInfo', userKeyInfo)
       let keys = await getMatchingAccountKeys(account, flowPublicKey)
-      console.log('keys', keys)
       if (!keys || keys.length === 0) {
         setPublicKeyStatus("No signing keys found for this account");
         handleKeyInfoUpdate(0, SIGN_KEYID)

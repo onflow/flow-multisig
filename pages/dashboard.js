@@ -32,15 +32,12 @@ export default function Dashboard() {
   const [user, setUser] = useState({ loggedIn: null });
 
   useEffect(() => {
-    console.log('Setting up FCL configuration');
     SetupFclConfiguration(fcl, network);
   }, [network]);
 
   useEffect(() => {
-    console.log('Subscribing to current user');
     const unsubscribe = fcl.currentUser.subscribe(setUser);
     return () => {
-      console.log('Unsubscribing from current user');
       unsubscribe();
     };
   }, []);
@@ -61,19 +58,16 @@ export default function Dashboard() {
     const fifteenMinutesAgo = new Date(now - fifteenMinutes);
     const pending = allPending.filter((t) => new Date(t.created_at) > fifteenMinutesAgo);
 
-    console.log("pending", allPending, "valid", pending);
 
     const signed = signableIds.filter((t) => !!t.sig);
     setLoading(false);
     return { pending, signed };
   }, []);
 
-  
+
   useEffect(() => {
-    console.log('Setting up polling interval');
     const polling = setInterval(() => {
       if (publicKey) {
-        console.log('Polling for signable transactions');
         lookUpSignableTransactions(publicKey).then(({ pending, signed }) => {
           setPendingTxs(pending);
           setSignedTxs(signed);
@@ -81,7 +75,6 @@ export default function Dashboard() {
       }
     }, 5000);
     return () => {
-      console.log('Clearing polling interval');
       clearInterval(polling);
     };
   }, [publicKey, lookUpSignableTransactions]);
@@ -102,7 +95,6 @@ export default function Dashboard() {
   }, [user, network]);
 
   useEffect(() => {
-    console.log('Fetching accounts');
     const fetchAccounts = async () => {
       if (!network || !user?.loggedIn) return;
       if (user?.addr) {
@@ -110,7 +102,6 @@ export default function Dashboard() {
         const accts = await processUserAccounts(user);
         if (!accts) {
           setLoadingAccounts(false);
-          console.log("no accounts");
           return;
         } 
         setPublicKey(accts.publicKey);

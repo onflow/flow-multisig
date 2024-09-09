@@ -122,7 +122,6 @@ export default function MainPage() {
   useEffect(() => {
     getServiceAccountFileList()
       .then((result) => {
-        console.log("Service account file list received", result);
         setServiceAccountFilenames(result);
       })
       .catch((error) => {
@@ -134,7 +133,6 @@ export default function MainPage() {
   useEffect(() => {
     getFoundationFileList()
       .then((result) => {
-        console.log("Foundation file list received", result);
         setFoundationFilenames(result);
       })
       .catch((error) => {
@@ -147,7 +145,6 @@ export default function MainPage() {
   const qp = new URLSearchParams(query);
 
   useEffect(() => {
-    console.log("Effect running for query changes", query);
     const fromScript = qp.get("type");
     const namedScript = qp.get("name");
     const jsonParam = qp.get("param");
@@ -219,7 +216,6 @@ export default function MainPage() {
         .account(authAccountAddress)
         .then((acct) => {
           // used to test account validity get account balance
-          console.log("acct", acct);
           if (acct) {
             const bal = acct.balance / 1e8;
             setAccountBalance(bal);
@@ -245,7 +241,6 @@ export default function MainPage() {
       (k) => k.index === selectedProposalKey
     );
     if (!proposalKey) {
-      console.log("proposalKey is null, exiting");
       return;
     }
 
@@ -365,7 +360,6 @@ export default function MainPage() {
   };
 
   const getPlaceHolderArgs = (filename) => {
-    console.log("filename", filename);
     // case statement on filename and return string
     switch (filename) {
       case "lockedTokenTransfer.cdc":
@@ -468,7 +462,6 @@ export default function MainPage() {
       );
 
       isSent = value?.triggered || false;
-      console.log("Confirmation value", value?.triggered);
     }
 
     setTimeout(() => setSendButtonText("Transaction Sent"), 600);

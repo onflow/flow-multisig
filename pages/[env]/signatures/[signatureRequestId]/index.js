@@ -6,6 +6,7 @@ import useSWR from "swr";
 import QRCode from "react-qr-code";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
 import * as fcl from "@onflow/fcl";
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
@@ -61,7 +62,7 @@ export default function SignatureRequestPage() {
     })
     : "";
 
-  const { hasCopied, onCopy } = useClipboard(cliRLP);
+  const [copiedText, setCopiedText] = useState("");
 
   const onRLPChange = async (e) => {
     setRLPStatusMessage("");
@@ -194,12 +195,11 @@ export default function SignatureRequestPage() {
       <div className="mt-4">
         <div className="flex items-center mb-2">
           <h2 className="text-2xl font-bold mr-4">CLI Entry</h2>
-          <button
-            onClick={onCopy}
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            {hasCopied ? "Copied!" : "Copy"}
-          </button>
+          <CopyToClipboard text={cliRLP} onCopy={() => setCopiedText("cliRLP")}>
+            <button className="px-4 py-2 bg-blue-500 text-white rounded">
+              {copiedText === "cliRLP" ? "Copied!" : "Copy"}
+            </button>
+          </CopyToClipboard>
         </div>
         <p>{cliRLP}</p>
       </div>
