@@ -1,19 +1,3 @@
-import {
-  Box,
-  Heading,
-  Flex,
-  Icon,
-  Text,
-  Stack,
-  FormControl,
-  Input,
-  FormErrorMessage,
-  Button,
-  VStack,
-  HStack,
-  useClipboard,
-  Link,
-} from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { encodeVoucherToEnvelope } from "../../../../utils/fclCLI";
@@ -21,25 +5,25 @@ import { decode } from "rlp";
 import useSWR from "swr";
 import QRCode from "react-qr-code";
 import { AddressKeyView } from "../../../../components/AddressKeyView";
-
 import * as fcl from "@onflow/fcl";
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 const iconFn = (color) =>
   function CustomIcon() {
     return (
-      <Icon viewBox="0 0 200 200" color={color}>
+      <svg viewBox="0 0 200 200" className={`w-4 h-4 ${color}`}>
         <path
           fill="currentColor"
           d="M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0"
         />
-      </Icon>
+      </svg>
     );
   };
 
-const GreenDot = iconFn("green.500");
-const RedDot = iconFn("red.500");
+const GreenDot = iconFn("text-green-500");
+const RedDot = iconFn("text-red-500");
 
 export default function SignatureRequestPage() {
   const [rlpStatusMessage, setRLPStatusMessage] = useState("");
@@ -53,32 +37,32 @@ export default function SignatureRequestPage() {
     fcl.currentUser.subscribe((currentUser) => setCurrentUser(currentUser));
   }, []);
 
-  const { data } = useSWR(`/api/${signatureRequestId}`, fetcher, {
+  console.log('signatureRequestId', signatureRequestId)
+  const { data } = useSWR(`/api/${signatureRequestId}/signable`, fetcher, {
     refreshInterval: 3,
   });
 
+  console.log('data', data);
   const signatures = data ? data.data : [];
 
+  console.log('sign', signatures)
   // Get the keys
-  useEffect(
-    () => async () => {
-      if (currentUser && signatures?.length > 0) {
-        console.log("currentUser", currentUser, signatures?.length);
-      }
-    },
-    [currentUser, signatures]
-  );
+  useEffect(() => {
+    if (currentUser && signatures?.length > 0) {
+      console.log("currentUser", currentUser, signatures?.length);
+    }
+  }, [currentUser, signatures]);
 
   // The voucher is the same for all these. Doesn't matter which we pick here.
   const cliRLP = signatures.length
     ? encodeVoucherToEnvelope({
-        ...signatures[0].signable.voucher,
-        envelopeSigs: [],
-        payloadSigs: [],
-      })
+      ...signatures[0].signable.voucher,
+      envelopeSigs: [],
+      payloadSigs: [],
+    })
     : "";
 
-  const { hasCopied, onCopy } = useClipboard(cliRLP);
+  const [copiedText, setCopiedText] = useState("");
 
   const onRLPChange = async (e) => {
     setRLPStatusMessage("");
@@ -142,13 +126,13 @@ export default function SignatureRequestPage() {
 
   const AuthedState = () => {
     return (
-      <VStack>
-        <Stack>Hello</Stack>
-        <Stack direction="row" spacing={4} align="center">
+      <div className="space-y-4">
+        <div>Hello</div>
+        <div className="flex items-center space-x-4">
           <div>Address: {currentUser?.addr ?? "No Address"}</div>
-          <Button onClick={fcl.unauthenticate}>Log Out</Button>
-        </Stack>
-      </VStack>
+          <button onClick={fcl.unauthenticate} className="px-4 py-2 bg-blue-500 text-white rounded">Log Out</button>
+        </div>
+      </div>
     );
   };
 
@@ -158,101 +142,83 @@ export default function SignatureRequestPage() {
     return network;
   };
 
-  const LedgerRedirectUrl = (signatureRequestId) => {
+  const BloctoRedirectUrl = (signatureRequestId) => {
     const network = getNetwork();
-    return `${window.location.origin}/${network}/ledger/${signatureRequestId}`;
+    return `${window.location.origin}/${network}/blocto/${signatureRequestId}`;
   };
 
   const UnauthenticatedState = () => {
     return (
-      <VStack>
-        <Stack direction="row" spacing={4} align="center">
-          <Button onClick={fcl.logIn}>Log In</Button>
-          <Button onClick={fcl.signUp}>Sign Up</Button>
-          <Link href={LedgerRedirectUrl(signatureRequestId)}>
-            Sign with Ledger
-          </Link>
-        </Stack>
-      </VStack>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-4">
+          <button onClick={fcl.logIn} className="px-4 py-2 bg-blue-500 text-white rounded">Log In</button>
+          <button onClick={fcl.signUp} className="px-4 py-2 bg-blue-500 text-white rounded">Sign Up</button>
+          <a href={BloctoRedirectUrl(signatureRequestId)} className="px-4 py-2 bg-blue-500 text-white rounded">
+            Sign with Blocto
+          </a>
+        </div>
+      </div>
     );
   };
 
   // Deal with dat flash and/or bad sig request id.
   if (!cliRLP) {
     return (
-      <Stack margin={"50"}>
-        <Flex
-          flex="1"
-          borderWidth="1px"
-          borderRadius="lg"
-          overflow="hidden"
-          padding="4"
-        >
-          <Text>
+      <div className="m-12">
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p>
             There does not appear to be an active signature request id
             {signatureRequestId}
-          </Text>
-        </Flex>
-      </Stack>
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Stack margin="4" alignContent="left">
-      <Stack>
-        <Heading>Key status</Heading>
-        {signatures.map(({ address, sig, keyId, signable }) => {
-          return (
-            <HStack
-              flex="1"
-              borderWidth="1px"
-              borderRadius="lg"
-              overflow="hidden"
-              padding="4"
-              key={address + keyId}
-            >
-              <HStack>
-                <Box>{sig ? <GreenDot /> : <RedDot />} </Box>
-                <AddressKeyView address={address} keyId={keyId} />
-              </HStack>
-            </HStack>
-          );
-        })}
-      </Stack>
-      <Stack paddingTop="4">
-        <HStack>
-          <Heading>CLI Entry</Heading>
-          <Button onClick={onCopy}>{hasCopied ? "Copied!" : "Copy"}</Button>
-        </HStack>
-        <Text>{cliRLP}</Text>
-      </Stack>
-      <Stack paddingTop={"20px"}>
-                <Heading>CLI Command for signing</Heading>   
-                <Stack>
-                  <Text>1. Paste the above rlp in file sign-cli.rlp in the same directory as flow.json </Text>
-                  <Text>{`2. replace ####### with the account entry in your flow.json that will be signing. The account address needs to be 0x${signatures[0].address}.`} </Text>
-                  <Stack>
-                    <Text>3. Cli command: </Text>
-                    <pre>
-                    flow transactions sign ./sign-cli.rlp --signer ####### --filter payload --yes --save ./sign-cli-signed.rlp
-                    </pre>
-                    <Text>4. paste the contents in sign-cli-signed.rlp to the text field below</Text>
-                    </Stack>
-                </Stack>
-            </Stack>
-            <Stack paddingTop="4">
-        <FormControl id="selected-account-payload">
-          <Heading>Paste signed rlp here</Heading>
-          <Input size="lg" onChange={onRLPChange} />
-          {rlpStatusMessage}
-          {!!rlpStatusMessage ? (
-            <FormErrorMessage>{rlpStatusMessage}</FormErrorMessage>
-          ) : (
-            <div> </div>
-          )}
-        </FormControl>
-      </Stack>
+    <div className="m-4">
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Key status</h2>
+        {signatures.map(({ address, sig, keyId, signable }) => (
+          <div
+            key={address + keyId}
+            className="flex items-center p-4 border rounded-lg mb-2"
+          >
+            <div className="flex items-center">
+              <div>{sig ? <GreenDot /> : <RedDot />}</div>
+              <AddressKeyView address={address} keyId={keyId} />
+            </div>
+          </div>
+        ))}
+      </div>
 
-    </Stack>
+      <div className="mt-4">
+        <div className="flex items-center mb-2">
+          <h2 className="text-2xl font-bold mr-4">CLI Entry</h2>
+          <CopyToClipboard text={cliRLP} onCopy={() => setCopiedText("cliRLP")}>
+            <button className="px-4 py-2 bg-blue-500 text-white rounded">
+              {copiedText === "cliRLP" ? "Copied!" : "Copy"}
+            </button>
+          </CopyToClipboard>
+        </div>
+        <p>{cliRLP}</p>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">CLI Command for signing</h2>
+        {/* ... keep existing content ... */}
+      </div>
+
+      <div className="mt-4">
+        <h2 className="text-2xl font-bold mb-2">Paste signed rlp here</h2>
+        <input
+          className="w-full p-2 border rounded"
+          onChange={onRLPChange}
+        />
+        <p className="text-red-500">{rlpStatusMessage}</p>
+      </div>
+
+      {currentUser.loggedIn ? <AuthedState /> : <UnauthenticatedState />}
+    </div>
   );
 }

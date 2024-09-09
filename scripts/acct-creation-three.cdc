@@ -6,7 +6,7 @@ import FlowToken from 0x7e60df042a9c0868
 transaction(
     partialAdminPublicKey: String,
     partialUserPublicKey: String,
-    amount: UFix64, // bonus amount
+    partialUser2PublicKey: String
 )  {
 
     // The Vault resource that holds the tokens that are being transferred
@@ -29,6 +29,11 @@ transaction(
             signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
         )
 
+        let UserKey2 = PublicKey(
+            publicKey: partialUser2PublicKey.decodeHex(),
+            signatureAlgorithm: SignatureAlgorithm.ECDSA_P256
+        )
+
         bonusAccount.keys.add(
             publicKey: AdminKey,
             hashAlgorithm: HashAlgorithm.SHA2_256,
@@ -41,12 +46,18 @@ transaction(
             weight: 500.0
         )
 
+        bonusAccount.keys.add(
+            publicKey: UserKey2,
+            hashAlgorithm: HashAlgorithm.SHA2_256,
+            weight: 500.0
+        )
+
         // Get a reference to the signers stored vault
         let vaultRef = signer.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)
 			?? panic("Could not borrow reference to the owner's Vault!")
 
         // Withdraw tokens from the signers stored vault
-        self.sentVault <- vaultRef.withdraw(amount: amount)
+        self.sentVault <- vaultRef.withdraw(amount: 1.000000)
 
         // Get a reference to the recipients Receiver
         self.bonusReceiver = bonusAccount
