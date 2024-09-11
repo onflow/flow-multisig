@@ -87,7 +87,7 @@ const SERVICE_ACCOUNT = "serviceAccount";
 const LEDGER = "ledger";
 const TAB_NAMES = [SERVICE_ACCOUNT, FOUNDATION]; // remove LEDGER from tab names
 const MAX_ALLOWED_BLOCKS = 600;
-const SECONDS_PER_BLOCK = 1;
+const SECONDS_PER_BLOCK = 0.75;
 const SEND_TX_BUTTON = "Send Transaction";
 
 export default function MainPage() {
