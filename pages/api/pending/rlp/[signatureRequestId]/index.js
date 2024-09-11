@@ -28,6 +28,16 @@ export const decodedEnvelopeSignature = (envelopeRLP) => {
   });
 };
 
+
+// Configure the API route to accept larger payloads (e.g., 10MB)
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Set the size limit to 10MB or higher if needed
+    },
+  },
+};
+
 export default async function handler({ body, method, query }, res) {
   switch (method) {
     case "GET":
