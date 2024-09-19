@@ -1,19 +1,54 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { setupConfig } from './config';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { setupConfig } from "./config";
+import { config } from "@onflow/fcl";
 
 export default function Layout({ children }) {
   const router = useRouter();
+  const [inputValue, setInputValue] = useState("");
+  const [savedValue, setSavedValue] = useState("");
 
-
+  const env = router.query.env || router.pathname.split("/")[1];
   useEffect(() => {
-    const env = router.query.env || router.pathname.split('/')[1];
-    if (['mainnet', 'testnet'].includes(env)) {
+    const getAccessNode = async () => {
+      const accessNode = await config().get("accessNode.api");
+      setInputValue(accessNode);
+      setSavedValue(accessNode);
+    };
+    if (["mainnet", "testnet"].includes(env)) {
       setupConfig(env);
+      getAccessNode();
     } else {
-      console.log('No valid environment detected for FCL setup');
+      console.log("No valid environment detected for FCL setup");
     }
-  }, [router.pathname, router.query.env]);
+  }, [env]);
 
-  return <>{children}</>;
+  const handleSave = () => {
+    console.log("Saving:", inputValue);
+    config().put("accessNode.api", inputValue);
+    setSavedValue(inputValue);
+  };
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex flex-row">
+        <input
+          className="border border-gray-300 rounded-md px-2 py-0 my-2"
+          size="60"
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="Enter Access Node API URL"
+        />
+        <button
+          className="bg-blue-500 text-white mx-2 px-2 py-0 my-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleSave}
+          disabled={inputValue === savedValue}
+        >
+          Save
+        </button>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
 }
