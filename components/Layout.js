@@ -25,7 +25,8 @@ export default function Layout({ children }) {
   }, [env]);
 
   const handleSave = () => {
-    const newUrl = `${PROXY_URL}${inputValue}`;
+    // if input is http then need to route through proxy
+    const newUrl = inputValue.startsWith("http://") ? `${PROXY_URL}${inputValue}` : inputValue;
     console.log("Saving:", newUrl);
     config().put("accessNode.api", newUrl);
     setSavedValue(inputValue);

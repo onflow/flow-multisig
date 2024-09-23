@@ -23,8 +23,8 @@ import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 
 const flowscanUrls = {
-  mainnet: "https://flowscan.org/transaction",
-  testnet: "https://testnet.flowscan.org/transaction",
+  mainnet: "https://flowscan.io/transaction",
+  testnet: "https://testnet.flowscan.io/transaction",
 };
 const cleanAddress = (address) => address.replace("0x", "");
 

@@ -3,12 +3,15 @@ import { send as httpSent } from "@onflow/transport-http";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 export const PROXY_URL = `${BASE_URL}/api/proxy?url=`;
+
+/** Only need a proxy if access node is not https */
 const defaultURL_mainnet ="https://rest-mainnet.onflow.org" 
 const defaultURL_testnet ="https://rest-testnet.onflow.org" 
 
+
 const envSettings = {
   mainnet: {
-    "accessNode.api": `${PROXY_URL}${defaultURL_mainnet}`, //"https://rest-mainnet.onflow.org",
+    "accessNode.api": `${defaultURL_mainnet}`, 
     "discovery.wallet": "https://fcl-ledger-multisig.vercel.app/mainnet/authn",
     "sdk.transport": httpSent,
     "0xFUNGIBLETOKENADDRESS": "0xf233dcee88fe0abe",
@@ -18,7 +21,7 @@ const envSettings = {
     "app.detail.title": "Multisig Webapp",
   },
   testnet: {
-    "accessNode.api": `${PROXY_URL}${defaultURL_testnet}`,
+    "accessNode.api": `${defaultURL_testnet}`,
     "discovery.wallet": "https://fcl-ledger-multisig.vercel.app/testnet/authn",
     "sdk.transport": httpSent,
     "0xFUNGIBLETOKENADDRESS": "0x9a0766d93b6608b7",
