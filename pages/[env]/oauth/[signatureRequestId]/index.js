@@ -263,119 +263,124 @@ export default function SignatureRequestPage() {
   const canSign = !!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId));
 
   return (
-    <div className="m-4 space-y-4">
-      <div className="space-y-2">
-        {!accessToken && <p className="text-blue-600">*** Make sure to allow pop ups for this site ***</p>}
-        {!accessToken && <button onClick={gGsiSignIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Google Login</button>}
-        {accessToken && <p>You are logged in</p>}
-        {loginError && <p className="text-red-500">{loginError}</p>}
-        <label className="block">
-          <span className="text-gray-700">Full Key Path</span>
+    <div className="container mx-auto p-4 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-4">Signature Request</h1>
+      
+      {/* Authentication Section */}
+      <section className="mb-8 p-4 bg-gray-100 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Authentication</h2>
+        {!accessToken ? (
+          <>
+            <p className="text-blue-600 mb-2">*** Make sure to allow pop ups for this site ***</p>
+            <button onClick={gGsiSignIn} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              Google Login
+            </button>
+          </>
+        ) : (
+          <p className="text-green-600">You are logged in</p>
+        )}
+        {loginError && <p className="text-red-500 mt-2">{loginError}</p>}
+      </section>
+
+      {/* Key Configuration Section */}
+      <section className="mb-8 p-4 bg-gray-100 rounded-lg">
+        <h2 className="text-xl font-semibold mb-4">Key Configuration</h2>
+        <label className="block mb-4">
+          <span className="text-gray-700 font-medium">Full Key Path</span>
           <input
             type="text"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            placeholder="Full key Path"
+            className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-3 py-2 text-gray-900 placeholder-gray-400"
+            placeholder="Enter full key path"
             onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_FULL_PATH)}
             value={full_key_path}
           />
         </label>
-        <div className="flex items-baseline space-x-2">
-          <span className="text-sm">Signing Account:</span>
-          <span>{signing_account}</span>
+        <div className="mb-4">
+          <div className="flex items-baseline space-x-2 mb-2">
+            <span className="text-gray-700 font-medium">Signing Account:</span>
+            <span className="text-gray-900">{signing_account || 'Not set'}</span>
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-gray-700 font-medium">Using KeyId:</span>
+            <span className="text-gray-900">{signing_keyId || 'Not set'}</span>
+          </div>
         </div>
-        <div className="flex items-baseline space-x-2">
-          <span className="text-sm">Using KeyId:</span>
-          <span>{signing_keyId}</span>
-        </div>
-        {publicKeyStatus !== null && <p className="text-red-500">{publicKeyStatus}</p>}
-        <div className="flex space-x-2">
+        {publicKeyStatus !== null && <p className="text-red-500 mb-4">{publicKeyStatus}</p>}
+        <div className="flex space-x-2 mb-4">
           {loadingKeys && <div className="w-8 h-8 border-t-2 border-blue-500 rounded-full animate-spin"></div>}
           {!loadingKeys && signableKeys.map(k => (
             <button 
               onClick={() => handleKeyInfoUpdate(k.keyId, SIGN_KEYID)} 
               disabled={signing_keyId === k.keyId} 
               key={k.keyId}
-              className={`px-2 py-1 rounded ${signing_keyId === k.keyId ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+              className={`px-3 py-2 rounded ${signing_keyId === k.keyId ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
             >
               <AddressKeyView keyId={k.keyId} weight={k.weight} />
             </button>
           ))}
         </div>
-        <button onClick={() => setTogglePath(!togglePath)} className="text-blue-500 hover:underline">
-          {togglePath ? `Hide Advanced` : `Advanced`}
+        <button 
+          onClick={() => setTogglePath(!togglePath)} 
+          className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+        >
+          {togglePath ? `Hide Advanced Options` : `Show Advanced Options`}
         </button>
         {togglePath && (
-          <div className="space-y-2">
-            <label className="block">
-              <span className="text-gray-700">Project Id</span>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                placeholder="Enter ProjectId"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_PROJECT_ID)}
-                value={project_id}
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Loction</span>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                placeholder="Enter Location"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_LOCATION)}
-                value={key_location}
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Key Ring</span>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                placeholder="Enter Key Ring Name"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_RING)}
-                value={key_ring}
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Key Name</span>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                placeholder="Enter Key Name"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_NAME)}
-                value={key_name}
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Key Version</span>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                placeholder="Enter Key Version"
-                onChange={(e) => handleKeyInfoUpdate(e.target.value, KEY_VERSION)}
-                value={key_version}
-              />
-            </label>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-gray-700">Full Key Path</span>
-              <span className="text-orange-500">(only used if Full Key Path input is empty)</span>
+          <div className="mt-4 space-y-4">
+            {[
+              { label: 'Project Id', key: KEY_PROJECT_ID, value: project_id },
+              { label: 'Location', key: KEY_LOCATION, value: key_location },
+              { label: 'Key Ring', key: KEY_RING, value: key_ring },
+              { label: 'Key Name', key: KEY_NAME, value: key_name },
+              { label: 'Key Version', key: KEY_VERSION, value: key_version },
+            ].map(({ label, key, value }) => (
+              <label key={key} className="block">
+                <span className="text-gray-700 font-medium">{label}</span>
+                <input
+                  type="text"
+                  className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-3 py-2 text-gray-900 placeholder-gray-400"
+                  placeholder={`Enter ${label}`}
+                  onChange={(e) => handleKeyInfoUpdate(e.target.value, key)}
+                  value={value}
+                />
+              </label>
+            ))}
+            <div className="mt-4">
+              <span className="text-gray-700 font-medium">Generated Full Key Path:</span>
+              <p className="mt-1 text-gray-900 bg-gray-200 p-2 rounded">{getKeyPath(userKeyInfo, true)}</p>
             </div>
-            <p>{getKeyPath(userKeyInfo, true)}</p>
           </div>
         )}
-      </div>
-      <CadenceViewer code={cadencePayload} args={signatures[0]?.signable.voucher.arguments} />
-      <button
-        disabled={!canSign || !accessToken}
-        onClick={signPayload}
-        className={`px-4 py-2 rounded ${!canSign || !accessToken ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-      >
-        Sign Payload
-      </button>
-      <div>
-        <p>{signingStatus}</p>
-        <p>{signingMessage}</p>
-      </div>
+      </section>
+
+      {/* Signable Keys Section */}
+      <section className="mb-8 p-4 bg-gray-100 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Signable Keys</h2>
+        {/* Loading indicator and signable keys buttons */}
+        {publicKeyStatus && <p className="text-red-500 mt-2">{publicKeyStatus}</p>}
+      </section>
+
+      {/* Cadence Viewer Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-2">Transaction Details</h2>
+        <CadenceViewer code={cadencePayload} args={signatures[0]?.signable.voucher.arguments} />
+      </section>
+
+      {/* Signing Action Section */}
+      <section className="mb-8 p-4 bg-gray-100 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Sign Transaction</h2>
+        <button
+          disabled={!canSign || !accessToken}
+          onClick={signPayload}
+          className={`px-4 py-2 rounded ${!canSign || !accessToken ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+        >
+          Sign Payload
+        </button>
+        <div className="mt-4">
+          <p>{signingStatus}</p>
+          <p>{signingMessage}</p>
+        </div>
+      </section>
     </div>
   );
 }
