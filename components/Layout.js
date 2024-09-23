@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { setupConfig } from "./config";
+import { PROXY_URL, setupConfig } from "./config";
 import { config } from "@onflow/fcl";
 
 export default function Layout({ children }) {
@@ -12,8 +12,9 @@ export default function Layout({ children }) {
   useEffect(() => {
     const getAccessNode = async () => {
       const accessNode = await config().get("accessNode.api");
-      setInputValue(accessNode);
-      setSavedValue(accessNode);
+      const url = accessNode.replace(PROXY_URL, "")
+      setInputValue(url);
+      setSavedValue(url);
     };
     if (["mainnet", "testnet"].includes(env)) {
       setupConfig(env);
@@ -24,8 +25,9 @@ export default function Layout({ children }) {
   }, [env]);
 
   const handleSave = () => {
-    console.log("Saving:", inputValue);
-    config().put("accessNode.api", inputValue);
+    const newUrl = `${PROXY_URL}${inputValue}`;
+    console.log("Saving:", newUrl);
+    config().put("accessNode.api", newUrl);
     setSavedValue(inputValue);
   };
 

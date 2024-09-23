@@ -25,6 +25,7 @@
     "@root/keypairs": "^0.10.3",
     "@supabase/supabase-js": "^1.29.0",
     "asn1js": "^3.0.5",
+    "axios": "^1.7.7",
     "bn.js": "^5.2.1",
     "crc-32": "^1.2.2",
     "crypto": "^1.0.1",
