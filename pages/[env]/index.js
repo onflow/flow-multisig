@@ -215,16 +215,14 @@ export default function MainPage() {
       fcl
         .account(authAccountAddress)
         .then((acct) => {
-          // used to test account validity get account balance
           if (acct) {
             const bal = acct.balance / 1e8;
             setAccountBalance(bal);
           }
         })
         .catch((e) => {
-          // only log out error
           console.log(e);
-          setError("Invalid Account Address");
+          setError(e.message || "Invalid Account Address");
         });
     }
   };
@@ -288,7 +286,7 @@ export default function MainPage() {
         ])
         .catch((e) => {
           console.log("transaction error", e);
-          setTransactionErrorMessage(e);
+          setTransactionErrorMessage(e.message || "An error occurred during the transaction");
           setGenerating(false);
         })
         .finally(() => {
@@ -305,7 +303,7 @@ export default function MainPage() {
       });
     } catch (e) {
       console.log("transaction error", e);
-      setTransactionErrorMessage(e);
+      setTransactionErrorMessage(e.message || "An error occurred during the transaction");
       setGenerating(false);
     }
 
@@ -320,7 +318,7 @@ export default function MainPage() {
       }
     } catch (e) {
       console.error(e);
-      setTransactionErrorMessage(e);
+      setTransactionErrorMessage(e.message || "An error occurred during the transaction");
       setSendButtonText(SEND_TX_BUTTON); // revert button text on error
       setGenerating(false);
     } finally {
@@ -409,7 +407,7 @@ export default function MainPage() {
     try {
       JSON.parse(value);
     } catch (e) {
-      errorString = e.toString();
+      errorString = e.message || "Invalid JSON";
     }
     setJsonError(errorString);
   };
@@ -841,7 +839,9 @@ export default function MainPage() {
                             )}
                             {transactionErrorMessage && (
                               <p className="text-red-500">
-                                {transactionErrorMessage}
+                                {typeof transactionErrorMessage === 'string' 
+                                  ? transactionErrorMessage 
+                                  : 'An error occurred during the transaction'}
                               </p>
                             )}
                             {transaction && (

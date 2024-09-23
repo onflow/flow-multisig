@@ -259,8 +259,9 @@ export default function SignatureRequestPage() {
   const key_version = userKeyInfo?.[KEY_VERSION];
   const signing_account = decodedAccount;
   const signing_keyId = userKeyInfo?.[SIGN_KEYID];
+  const isValidKeyId = signing_keyId && signing_keyId !== "-";
   const full_key_path = userKeyInfo?.[KEY_FULL_PATH]
-  const canSign = !!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account && !!String(signing_keyId));
+  const canSign = (!!full_key_path || (project_id && key_location && key_ring && key_name && key_version && signing_account)) && isValidKeyId;
 
   return (
     <div className="container mx-auto p-4 max-w-3xl">
@@ -302,8 +303,15 @@ export default function SignatureRequestPage() {
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-gray-700 font-medium">Using KeyId:</span>
-            <span className="text-gray-900">{signing_keyId || 'Not set'}</span>
+            <span className={`${isValidKeyId ? 'text-gray-900' : 'text-red-500'}`}>
+              {isValidKeyId ? signing_keyId : 'Invalid Key ID'}
+            </span>
           </div>
+          {!isValidKeyId && (
+            <p className="text-red-500 mt-2">
+              Please select a valid signing key before attempting to sign.
+            </p>
+          )}
         </div>
         {publicKeyStatus !== null && <p className="text-red-500 mb-4">{publicKeyStatus}</p>}
         <div className="flex space-x-2 mb-4">
@@ -372,10 +380,15 @@ export default function SignatureRequestPage() {
         <button
           disabled={!canSign || !accessToken}
           onClick={signPayload}
-          className={`px-4 py-2 rounded ${!canSign || !accessToken ? 'bg-gray-300' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          className={`px-4 py-2 rounded ${!canSign || !accessToken ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
         >
           Sign Payload
         </button>
+        {!isValidKeyId && (
+          <p className="text-red-500 mt-2">
+            You cannot sign with an invalid key ID. Please select a valid key.
+          </p>
+        )}
         <div className="mt-4">
           <p>{signingStatus}</p>
           <p>{signingMessage}</p>
