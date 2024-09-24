@@ -15,6 +15,12 @@ export default function MainPage() {
         >
           Testnet
         </a>
+        <a
+          href="./dashboard/"
+          className="text-blue-600 hover:text-blue-800 underline"
+        >
+         Dashboard 
+        </a>
       </div>
     </div>
   );
