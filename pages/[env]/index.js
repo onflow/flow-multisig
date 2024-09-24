@@ -727,7 +727,6 @@ export default function MainPage() {
                   Generate Link
                 </button>
 
-                {/* Copy Links */}
                 <div className="mt-4">
                   <CopyLink text={getFormUrlLink()} label="Page URL" />
                 </div>
@@ -747,6 +746,13 @@ export default function MainPage() {
                       <CopyLink
                         text={getOauthPageLink(signatureRequestId)}
                         label="OAuth Page URL"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <CopyLink
+                        text={getCliCommand(signatureRequestId)}
+                        label="CLI Command"
+                        isUrl={false}
                       />
                     </div>
                     <KeysTableStatus
