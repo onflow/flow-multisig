@@ -31,7 +31,7 @@ export const SignOauthGcpTransaction = ({ signatureRequestId, keyId, address }) 
           setSigningStatus(`addr: ${address} keyId: ${keyId} Signed Successfully`);
         } else {
           setSigningStatus(SIGNING_ERROR);
-          setSigningMessage(`KMS Service returned error ${response}`)
+          setSigningMessage(`KMS Service returned error ${response}, try logging out and in again`)
         }
       } catch (e) {
         console.log('error', e)

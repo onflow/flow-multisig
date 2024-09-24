@@ -16,61 +16,11 @@ import { AddressKeyView } from "../components/AddressKeyView";
 import { fetchSignableRequestIds, getCliCommand } from "../utils/kmsHelpers";
 import { MessageLink } from "../components/MessageLink";
 import { LOCAL, MAINNET, TESTNET, GCP_WALLET } from "../utils/constants";
+import { format } from 'date-fns'; // Make sure to install and import date-fns
+import { AccountItem } from "../components/AccountItem";
+import { TransactionItem } from "../components/TransactionItem";
 
 const networks = [MAINNET, TESTNET, LOCAL];
-
-const AccountItem = ({ account, getFlowscanUrl }) => {
-  const [copiedAddress, setCopiedAddress] = useState(null);
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedAddress(text);
-      setTimeout(() => setCopiedAddress(null), 500); // Reset after 500ms
-    }).catch(err => {
-      console.error('Failed to copy: ', err);
-    });
-  };
-
-  return (
-    <div className="text-sm mb-2 flex flex-col">
-      <div className="flex justify-between items-center group">
-        <div className="flex items-center">
-          {copiedAddress === account.address ? (
-            <span className="text-green-600 font-medium">Copied!</span>
-          ) : (
-            <a 
-              href={getFlowscanUrl(account.address)} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
-            >
-              {abbrvKey(account.address, 6)}
-            </a>
-          )}
-          <button 
-            onClick={(e) => {
-              e.preventDefault(); // Prevent the link from being followed
-              copyToClipboard(account.address);
-            }}
-            className="ml-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Copy full address"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 text-gray-400 hover:text-gray-600" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </button>
-        </div>
-        <span className="text-xs bg-gray-200 rounded px-1 py-0.5">Weight: {account.weight}</span>
-      </div>
-      <div className="text-xs text-gray-500">Key ID: {account.keyId}</div>
-    </div>
-  );
-};
 
 export default function Dashboard() {
   const [pendingTxs, setPendingTxs] = useState([]);
@@ -189,26 +139,19 @@ export default function Dashboard() {
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedAddress(text);
-      setTimeout(() => setCopiedAddress(null), 500); // Reset after 500ms
-    }).catch(err => {
-      console.error('Failed to copy: ', err);
-    });
+
+  const handleTxSelect = useCallback((tx) => {
+    setSelectedTx(tx);
+    // Here you would typically fetch more details about the transaction if needed
+  }, []);
+
+  const formatDate = (dateString) => {
+    return format(new Date(dateString), 'MMM-dd-yyyy');
   };
 
-  // determine the flowscan url based on the network
-  const getFlowscanUrl = (address) => {
-    if (network === MAINNET) {
-      return `https://www.flowscan.io/account/${address}`;
-    } else if (network === TESTNET) {
-      return `https://testnet.flowscan.io/account/${address}`;
-    } else {
-      return `https://www.flowscan.io/account/${address}`;
-    }
-  };
-
+  console.log("signedTxs", signedTxs);
+  console.log("pendingTxs", pendingTxs);
+  
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
@@ -258,7 +201,7 @@ export default function Dashboard() {
                   <AccountItem 
                     key={`${acct.address}${acct.keyId}`}
                     account={acct}
-                    getFlowscanUrl={getFlowscanUrl}
+                    network={network}
                   />
                 ))
               )}
@@ -266,40 +209,54 @@ export default function Dashboard() {
           </div>
 
           {/* Pending Transactions */}
-          <div className="mb-6 flex-grow">
+          <div className="mb-6">
             <h2 className="text-lg font-semibold mb-2">Pending</h2>
-            <div className="bg-white rounded shadow p-2 h-full overflow-y-auto">
-              {loading ? (
-                <p className="text-gray-500 text-sm">Loading...</p>
-              ) : pendingTxs.length === 0 ? (
-                <p className="text-gray-500 text-sm">No pending</p>
+            <div className="bg-white rounded shadow p-2 h-36 overflow-y-auto">
+              {pendingTxs.length === 0 && !loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500 text-sm">No pending transactions</p>
+                </div>
               ) : (
-                pendingTxs.map((tx) => (
-                  <button
-                    key={tx.signatureRequestId}
-                    className={`w-full text-left p-1 mb-1 rounded text-sm ${
-                      tx === selectedTx ? 'bg-blue-100' : 'hover:bg-gray-100'
-                    }`}
-                    onClick={() => setSelectedTx(tx)}
-                  >
-                    {abbrvKey(tx.signatureRequestId, 4)}
-                  </button>
-                ))
+                <>
+                  {pendingTxs.map((tx) => (
+                    <TransactionItem
+                      key={tx.signatureRequestId}
+                      transaction={tx}
+                      selectedTx={selectedTx}
+                      handleTxSelect={handleTxSelect}
+                      network={network}
+                      className={`w-full text-left p-2 mb-2 rounded text-sm ${
+                        tx === selectedTx ? 'bg-blue-100' : 'hover:bg-gray-100'
+                      }`}
+                    />
+                  ))}
+                  {loading && (
+                    <div className="text-center py-2">
+                      <p className="text-gray-500 text-sm">Loading...</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           {/* Signed Transactions */}
-          <div>
+          <div className="flex-grow">
             <h2 className="text-lg font-semibold mb-2">Signed</h2>
-            <div className="bg-white rounded shadow p-2 max-h-32 overflow-y-auto">
+            <div className="bg-white rounded shadow p-2 h-full overflow-y-auto">
               {signedTxs.length === 0 ? (
-                <p className="text-gray-500 text-sm">No signed</p>
+                <p className="text-gray-500 text-sm">No signed transactions</p>
               ) : (
                 signedTxs.map((s) => (
-                  <div key={s.signatureRequestId} className="text-sm mb-1">
-                    {abbrvKey(s.signatureRequestId, 8)}
-                  </div>
+                  <TransactionItem
+                    key={s.signatureRequestId}
+                    transaction={s}
+                    selectedTx={selectedTx}
+                    handleTxSelect={handleTxSelect}
+                    className={`w-full text-left p-2 mb-2 rounded text-sm ${
+                      s === selectedTx ? 'bg-blue-100' : 'hover:bg-gray-100'
+                    }`}
+                  />
                 ))
               )}
             </div>
@@ -311,6 +268,9 @@ export default function Dashboard() {
           {selectedTx ? (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Transaction Details</h2>
+              <p className="mb-2">Signature Request ID: {selectedTx.signatureRequestId}</p>
+              <p className="mb-2">Address: {selectedTx.address}</p>
+              <p className="mb-2">Key ID: {selectedTx.keyId}</p>
               <p className="mb-2">Created: {formatDate(selectedTx.created_at)}</p>
               <AddressKeyView {...selectedTx} />
               <div className="mb-4">
@@ -327,7 +287,7 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            <p className="text-gray-500 text-center mt-10">Select a pending transaction to view details</p>
+            <p className="text-gray-500 text-center mt-10">Select a transaction to view details</p>
           )}
         </div>
       </div>
