@@ -490,397 +490,194 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen m-12">
-      <div>
-        <div className="space-y-6">
-          <div>
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">Multisig Webapp</h1>
+      <h1 className="text-2xl font-bold mb-8">Multisig Webapp</h1>
+
+      <div className="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+        {/* Transaction Creation Section */}
+        <section className="w-full md:w-1/2">
+          <h2 className="text-xl font-semibold mb-4">Transaction Creation</h2>
+          <div className="space-y-4">
+            {/* Tab navigation */}
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                {TAB_NAMES.map((name, index) => (
+                  <button
+                    key={name}
+                    className={`${
+                      TAB_NAMES.indexOf(scriptType) === index
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    } whitespace-nowrap py-2 px-3 border-b-2 font-medium text-sm transition duration-150 ease-in-out ${
+                      name === LEDGER && isLedgerDisabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      name !== LEDGER || !isLedgerDisabled
+                        ? setScriptType(name)
+                        : null
+                    }
+                    disabled={name === LEDGER && isLedgerDisabled}
+                  >
+                    {name === SERVICE_ACCOUNT
+                      ? "Service Account"
+                      : name === FOUNDATION
+                      ? "Foundation"
+                      : "Ledger (v0.13.0)"}
+                  </button>
+                ))}
+              </nav>
             </div>
-          </div>
-          <div className="mt-8 border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-              {TAB_NAMES.map((name, index) => (
-                <button
-                  key={name}
-                  className={`${
-                    TAB_NAMES.indexOf(scriptType) === index
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition duration-150 ease-in-out ${
-                    name === LEDGER && isLedgerDisabled
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    name !== LEDGER || !isLedgerDisabled
-                      ? setScriptType(name)
-                      : null
-                  }
-                  disabled={name === LEDGER && isLedgerDisabled}
-                >
-                  {name === SERVICE_ACCOUNT
-                    ? "Service Account"
-                    : name === FOUNDATION
-                    ? "Foundation"
-                    : "Ledger (v0.13.0)"}
-                </button>
-              ))}
-            </nav>
-          </div>
-          <div>
-            {scriptType === SERVICE_ACCOUNT && (
-              <div className="flex items-center">
-                <label className="w-1/5 text-sm" htmlFor="serviceAccount">
-                  From Service Account
-                </label>
+
+            {/* Script selection dropdown */}
+            <div>
+              {scriptType === SERVICE_ACCOUNT && (
                 <select
-                  id="serviceAccount"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                   onChange={(e) => fetchServiceAccountFilename(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    serviceAccountFilenames,
-                    scriptName,
-                    scriptType === SERVICE_ACCOUNT
-                  )}
+                  {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
                 </select>
-              </div>
-            )}
-            {scriptType === FOUNDATION && (
-              <div className="flex items-center">
-                <label className="w-1/5 text-sm" htmlFor="foundation">
-                  From Foundation
-                </label>
+              )}
+              {scriptType === FOUNDATION && (
                 <select
-                  id="foundation"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                   onChange={(e) => fetchFoundationFilename(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    foundationFilenames,
-                    scriptName,
-                    scriptType === FOUNDATION
-                  )}
+                  {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
                 </select>
-              </div>
-            )}
-            {scriptType === LEDGER && (
-              <div className="flex items-center">
-                <label className="w-1/5 text-sm" htmlFor="ledger">
-                  From Ledger
-                </label>
+              )}
+              {scriptType === LEDGER && (
                 <select
-                  id="ledger"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                   onChange={(e) => setLedgerTransaction(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    LedgerTransactionNames,
-                    scriptName,
-                    scriptType === LEDGER
-                  )}
+                  {getDropdownOptions(LedgerTransactionNames, scriptName, scriptType === LEDGER)}
                 </select>
-              </div>
-            )}
-          </div>
-          <div>
-            <div>
-              <label
-                htmlFor="cadenceScript"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Cadence Script
-              </label>
-              <textarea
-                id="cadenceScript"
-                className="mt-1 w-full h-32 p-2 border border-gray-300 rounded-md resize-vertical bg-white text-black"
-                placeholder="Enter your Cadence script here"
-                value={cadencePayload}
-                onChange={(e) => setCadencePayload(e.target.value)}
-              />
+              )}
             </div>
-          </div>
-          <div>
+
+            {/* Cadence Script textarea */}
+            <textarea
+              className="w-full h-32 p-2 border border-gray-300 rounded-md resize-vertical bg-white text-black"
+              placeholder="Enter your Cadence script here"
+              value={cadencePayload}
+              onChange={(e) => setCadencePayload(e.target.value)}
+            />
+
+            {/* JSON Arguments input */}
             <input
               className="w-full p-2 border border-gray-300 rounded-md"
-              id="arguments"
               placeholder="Enter json arguments"
               onChange={(e) => setArgumentsValue(e.target.value)}
               value={jsonArgs}
             />
-            <p className="text-red-500">{jsonError}</p>
+            {jsonError && <p className="text-red-500 text-sm">{jsonError}</p>}
+
+            {/* Multisig Account Address input */}
+            <div className={`${error ? "border-red-500" : "border-gray-300"} border rounded-md p-2`}>
+              <div className="flex items-center space-x-2">
+                <input
+                  className="flex-grow p-2 border border-gray-300 rounded-md"
+                  placeholder="Enter Authorized Account"
+                  onChange={(e) => validateAccount(e.target.value)}
+                  value={authAccountAddress}
+                />
+                <button
+                  className={`p-2 rounded ${
+                    error || !authAccountAddress
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-700 text-white font-semibold"
+                  }`}
+                  onClick={addAuthAccountAddress}
+                  disabled={error || !authAccountAddress}
+                >
+                  Add
+                </button>
+              </div>
+              {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            </div>
+
+            {/* Execution Limit input */}
+            <div className="flex items-center space-x-2">
+              <label className="whitespace-nowrap font-semibold">Execution Limit:</label>
+              <input
+                className="flex-grow p-2 border border-gray-300 rounded-md"
+                placeholder="Enter Execute Limit"
+                onChange={(e) => setExeEffort(e.target.value)}
+                value={exeEffort}
+              />
+            </div>
+
+            {/* Generate Link button */}
+            <button
+              className={`w-full p-2 text-white font-semibold rounded ${
+                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(authAccountAddress)]
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-700"
+              }`}
+              onClick={() => onSubmit(authAccountAddress)}
+              disabled={
+                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(authAccountAddress)]
+              }
+            >
+              Generate Link
+            </button>
           </div>
-          <div className="space-y-6">
-            <div>
-              <div
-                className={`${
-                  error ? "border-red-500" : "border-gray-300"
-                } border rounded-md p-4`}
-              >
-                <div className="flex items-baseline">
-                  <p className="font-semibold">Multisig Account Address</p>
-                  {scriptType === LEDGER && (
-                    <p className="text-sm">
-                      {accountBalance ? `${accountBalance} FLOW` : ""}
-                    </p>
-                  )}
+        </section>
+
+        {/* Transaction Submission Section */}
+        <section className="w-full md:w-1/2">
+          <h2 className="text-xl font-semibold mb-4">Transaction Submission</h2>
+          <div className="space-y-4">
+            {Object.keys(accounts).map((account) => (
+              <div key={account} className="border border-gray-300 rounded-md p-4">
+                <h3 className="font-semibold mb-2">Account: {account}</h3>
+                
+                {/* Select Proposal Key */}
+                <KeysTableSelector
+                  keys={accounts[account].keys}
+                  selectedKey={selectedProposalKey}
+                  setKey={setProposalKey}
+                />
+
+                {/* Copy Links */}
+                <div className="mt-2">
+                  <CopyLink text={getFormUrlLink()} label="Page URL" />
                 </div>
-                <div className="flex items-center space-x-4">
-                  <button
-                    className={`p-2 rounded ${
-                      error || !authAccountAddress
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-700 text-white font-semibold rounded"
-                    }`}
-                    onClick={addAuthAccountAddress}
-                    disabled={error || !authAccountAddress}
-                  >
-                    Add Account
-                  </button>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      id="account"
-                      placeholder="Enter Authorized Account"
-                      onChange={(e) => validateAccount(e.target.value)}
-                      value={authAccountAddress}
-                    />
-                    {!isOpen && (
-                      <button
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
-                        onClick={() => setIsOpen(true)}
-                      >
-                        {"=>"}
-                      </button>
-                    )}
-                    {isOpen && (
-                      <select
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        placeholder="Known Accounts"
-                        onChange={(e) => validateAccount(e.target.value)}
-                      >
-                        <option value="0x47fd53250cc3982f">
-                          0x47fd53250cc3982f
-                        </option>
-                        <option value="0x9178260195652f85">
-                          0x9178260195652f85
-                        </option>
-                      </select>
+
+                {/* Signature Requests */}
+                {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(([signatureRequestId, compositeKeys]) => (
+                  <div key={signatureRequestId} className="mt-4 p-2 bg-gray-100 rounded-md">
+                    <p className="font-semibold">Signature Request ID: {signatureRequestId}</p>
+                    <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
+                    <button
+                      className={`w-full p-2 mt-2 text-white font-semibold rounded ${
+                        !enoughSignatures(compositeKeys)
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-700"
+                      }`}
+                      onClick={() => sendTransaction()}
+                      disabled={!enoughSignatures(compositeKeys)}
+                    >
+                      {sendButtonText}
+                    </button>
+                    {transactionErrorMessage && (
+                      <p className="text-red-500 mt-2">
+                        {typeof transactionErrorMessage === 'string' 
+                          ? transactionErrorMessage 
+                          : 'An error occurred during the transaction'}
+                      </p>
                     )}
                   </div>
-                </div>
-                {error && <p className="text-red-500">{error}</p>}
+                ))}
               </div>
-            </div>
-            <div>
-              {Object.keys(accounts).map((account) => {
-                return (
-                  <React.Fragment key={account}>
-                    <div>
-                      <div className="flex items-baseline">
-                        <label className="font-semibold">
-                          Select Proposal Key
-                        </label>
-                        <p>{account}</p>
-                      </div>
-                      <div>
-                        <KeysTableSelector
-                          keys={accounts[account].keys}
-                          selectedKey={selectedProposalKey}
-                          setKey={setProposalKey}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center">
-                        <label
-                          className="whitespace-nowrap py-4 font-semibold"
-                          htmlFor="executeLimit"
-                        >
-                          Execution Limit:
-                        </label>
-                        <input
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                          id="executeLimit"
-                          placeholder="Enter Execute Limit"
-                          onChange={(e) => setExeEffort(e.target.value)}
-                          value={exeEffort}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="bg-gray-100 p-4 rounded-md">
-                        <CopyLink text={getFormUrlLink()} label="Page URL" />
-                        {state.inFlightRequests?.[cleanAddress(account)] &&
-                          Object.entries(
-                            state.inFlightRequests[cleanAddress(account)]
-                          ).map(([signatureRequestId]) => (
-                            <React.Fragment key={signatureRequestId}>
-                              {scriptType === LEDGER && !isLedgerDisabled && (
-                                <CopyLink
-                                  text={getLedgerPageLink(signatureRequestId)}
-                                  label="Ledger URL"
-                                />
-                              )}
-                            </React.Fragment>
-                          ))}
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <button
-                          className={`text-white font-semibold rounded p-2 ${
-                            generating ||
-                            selectedProposalKey === null ||
-                            state.inFlightRequests?.[cleanAddress(account)]
-                              ? "bg-gray-300 cursor-not-allowed"
-                              : "bg-blue-500 hover:bg-blue-700"
-                          }`}
-                          onClick={() => onSubmit(account)}
-                          disabled={
-                            generating ||
-                            selectedProposalKey === null ||
-                            state.inFlightRequests?.[cleanAddress(account)]
-                          }
-                        >
-                          Generate Link
-                        </button>
-                        {accounts[account].transaction && (
-                          <a
-                            href={getFlowscanLink(
-                              accounts[account].transaction
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`${
-                              txWaiting
-                                ? "bg-pink-500"
-                                : "bg-blue-500 hover:bg-blue-700"
-                            } text-white font-semibold py-2 px-4 rounded`}
-                          >
-                            {txWaiting ? "TX Processing" : "Transaction"}
-                          </a>
-                        )}
-                        {!state.inFlightRequests?.[cleanAddress(account)] &&
-                          state.inFlight && (
-                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-900"></div>
-                          )}
-                      </div>
-                      {Object.entries(
-                        state.inFlightRequests?.[cleanAddress(account)] || {}
-                      ).map(([signatureRequestId, compositeKeys], i) => (
-                        <div key={signatureRequestId}>
-                          {signatureRequestId && (
-                            <div className="bg-gray-100 p-4 rounded-md">
-                              <CopyLink
-                                text={getOauthPageLink(signatureRequestId)}
-                                label="OAuth URL"
-                              />
-                              {scriptType === LEDGER && (
-                                <MessageLink
-                                  disabled={isLedgerDisabled}
-                                  link={getLedgerPageLink(signatureRequestId)}
-                                  message={"Ledger page URL"}
-                                  subMessage={
-                                    "** only Ledger specific tx are supported **"
-                                  }
-                                />
-                              )}
-                            </div>
-                          )}
-                          <div
-                            key={`${signatureRequestId}-${i}`}
-                            className="border border-gray-300 rounded-md p-4"
-                          >
-                            <div className="flex items-center">
-                              <p className="text-lg font-semibold">
-                                Signature Request Id:
-                              </p>
-                              <p className="text-sm">{signatureRequestId}</p>
-                            </div>
-
-                            <div className="bg-gray-100 p-4 rounded-md">
-                              <CopyLink
-                                text={getCliCommand(signatureRequestId)}
-                                label="FLOW CLI Command"
-                                isUrl={false}
-                              />
-                            </div>
-                            <CountdownTimer endTime={countdown} />
-                            <p className="text-lg font-semibold">
-                              Incoming Signatures:
-                            </p>
-                            <KeysTableStatus
-                              keys={compositeKeys}
-                              account={accounts[account]}
-                            />
-                            <button
-                              className={`w-1/2 p-2 my-4 text-white font-semibold rounded ${
-                                !enoughSignatures(compositeKeys)
-                                  ? "bg-gray-300 cursor-not-allowed"
-                                  : "bg-blue-500 hover:bg-blue-700"
-                              }`}
-                              onClick={() => sendTransaction()}
-                              disabled={!enoughSignatures(compositeKeys)}
-                            >
-                              {sendButtonText}
-                            </button>
-                            {accounts[account].transaction && (
-                              <div className="flex items-center">
-                                <p>Tx Id:</p>
-                                <p className="text-sm">
-                                  {accounts[account].transaction}
-                                </p>
-                              </div>
-                            )}
-                            {txWaiting && (
-                              <p>Waiting for Transaction to be sealed</p>
-                            )}
-                            {transactionErrorMessage && (
-                              <p className="text-red-500">
-                                {typeof transactionErrorMessage === 'string' 
-                                  ? transactionErrorMessage 
-                                  : 'An error occurred during the transaction'}
-                              </p>
-                            )}
-                            {transaction && (
-                              <>
-                                <p>{transaction?.statusString}</p>
-                                <div className="flex items-center">
-                                  <p>Events</p>
-                                  <button
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded text-sm"
-                                    onClick={showHideEvents}
-                                  >
-                                    {eventButtonText}
-                                  </button>
-                                </div>
-                                <div className="flex flex-col items-start">
-                                  {eventButtonText === "hide" &&
-                                    transaction.events.map((e, i) => {
-                                      return (
-                                        <>
-                                          <p key={i}>{e.type}</p>
-                                          <p key={i}>
-                                            {JSON.stringify(e.data)}
-                                          </p>
-                                        </>
-                                      );
-                                    })}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+            ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
