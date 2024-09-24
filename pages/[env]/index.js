@@ -304,7 +304,9 @@ export default function MainPage() {
         ])
         .catch((e) => {
           console.log("transaction error", e);
-          setTransactionErrorMessage(e.message || "An error occurred during the transaction");
+          setTransactionErrorMessage(
+            e.message || "An error occurred during the transaction"
+          );
           setGenerating(false);
         })
         .finally(() => {
@@ -321,7 +323,9 @@ export default function MainPage() {
       });
     } catch (e) {
       console.log("transaction error", e);
-      setTransactionErrorMessage(e.message || "An error occurred during the transaction");
+      setTransactionErrorMessage(
+        e.message || "An error occurred during the transaction"
+      );
       setGenerating(false);
     }
 
@@ -336,7 +340,9 @@ export default function MainPage() {
       }
     } catch (e) {
       console.error(e);
-      setTransactionErrorMessage(e.message || "An error occurred during the transaction");
+      setTransactionErrorMessage(
+        e.message || "An error occurred during the transaction"
+      );
       setSendButtonText(SEND_TX_BUTTON); // revert button text on error
       setGenerating(false);
     } finally {
@@ -354,7 +360,11 @@ export default function MainPage() {
 
   const getFormUrlLink = () => {
     const network = getNetwork();
-    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${customAccountInput || selectedAccount}&limit=${exeEffort}`;
+    const url = `${
+      window.location.origin
+    }/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${
+      customAccountInput || selectedAccount
+    }&limit=${exeEffort}`;
     return encodeURI(url);
   };
 
@@ -511,9 +521,10 @@ export default function MainPage() {
     console.log("transactionId", transactionId);
     console.log("network", network);
     const network = router.query.env || MAINNET; // Assuming 'env' in the URL indicates the network
-    const baseUrl = network === TESTNET 
-      ? 'https://testnet.flowscan.io'
-      : 'https://flowscan.io';
+    const baseUrl =
+      network === TESTNET
+        ? "https://testnet.flowscan.io"
+        : "https://flowscan.io";
     return `${baseUrl}/transaction/${transactionId}`;
   };
 
@@ -566,7 +577,11 @@ export default function MainPage() {
                   onChange={(e) => fetchServiceAccountFilename(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(serviceAccountFilenames, scriptName, scriptType === SERVICE_ACCOUNT)}
+                  {getDropdownOptions(
+                    serviceAccountFilenames,
+                    scriptName,
+                    scriptType === SERVICE_ACCOUNT
+                  )}
                 </select>
               )}
               {scriptType === FOUNDATION && (
@@ -575,7 +590,11 @@ export default function MainPage() {
                   onChange={(e) => fetchFoundationFilename(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(foundationFilenames, scriptName, scriptType === FOUNDATION)}
+                  {getDropdownOptions(
+                    foundationFilenames,
+                    scriptName,
+                    scriptType === FOUNDATION
+                  )}
                 </select>
               )}
               {scriptType === LEDGER && (
@@ -584,7 +603,11 @@ export default function MainPage() {
                   onChange={(e) => setLedgerTransaction(e.target.value)}
                 >
                   <option value="">Select Cadence</option>
-                  {getDropdownOptions(LedgerTransactionNames, scriptName, scriptType === LEDGER)}
+                  {getDropdownOptions(
+                    LedgerTransactionNames,
+                    scriptName,
+                    scriptType === LEDGER
+                  )}
                 </select>
               )}
             </div>
@@ -606,7 +629,11 @@ export default function MainPage() {
             {jsonError && <p className="text-red-500 text-sm">{jsonError}</p>}
 
             {/* Authorized Account Select */}
-            <div className={`${error ? "border-red-500" : "border-gray-300"} border rounded-md p-4`}>
+            <div
+              className={`${
+                error ? "border-red-500" : "border-gray-300"
+              } border rounded-md p-4`}
+            >
               <div className="flex space-x-2 mb-2">
                 <input
                   className="flex-grow p-2 border border-gray-300 rounded-md"
@@ -619,12 +646,13 @@ export default function MainPage() {
                   value={selectedAccount}
                   onChange={handleAccountChange}
                 >
-                  <option value="">Pick existing account</option>
+                  <option value="">Select an account</option>
                   {predefinedAccounts.map((account) => (
                     <option key={account} value={account}>
                       {account}
                     </option>
                   ))}
+                  <option value="custom">Enter custom address</option>
                 </select>
               </div>
               <button
@@ -643,7 +671,9 @@ export default function MainPage() {
 
             {/* Execution Limit input */}
             <div className="flex items-center space-x-2">
-              <label className="whitespace-nowrap font-semibold">Execution Limit:</label>
+              <label className="whitespace-nowrap font-semibold">
+                Execution Limit:
+              </label>
               <input
                 className="flex-grow p-2 border border-gray-300 rounded-md"
                 placeholder="Enter Execute Limit"
@@ -651,21 +681,6 @@ export default function MainPage() {
                 value={exeEffort}
               />
             </div>
-
-            {/* Generate Link button */}
-            <button
-              className={`w-full p-2 text-white font-semibold rounded ${
-                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-700"
-              }`}
-              onClick={() => onSubmit(customAccountInput || selectedAccount)}
-              disabled={
-                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
-              }
-            >
-              Generate Link
-            </button>
           </div>
         </section>
 
@@ -674,9 +689,12 @@ export default function MainPage() {
           <h2 className="text-xl font-semibold mb-4">Transaction Submission</h2>
           <div className="space-y-4">
             {Object.keys(accounts).map((account) => (
-              <div key={account} className="border border-gray-300 rounded-md p-4">
+              <div
+                key={account}
+                className="border border-gray-300 rounded-md p-4"
+              >
                 <h3 className="font-semibold mb-2">Select Proposal Key</h3>
-                
+
                 {/* Select Proposal Key */}
                 <KeysTableSelector
                   keys={accounts[account].keys}
@@ -684,16 +702,57 @@ export default function MainPage() {
                   setKey={setProposalKey}
                 />
 
+                {/* Generate Link button */}
+                <button
+                  className={`w-full p-2 mt-4 text-white font-semibold rounded ${
+                    generating ||
+                    selectedProposalKey === null ||
+                    state.inFlightRequests?.[
+                      cleanAddress(customAccountInput || selectedAccount)
+                    ]
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-700"
+                  }`}
+                  onClick={() =>
+                    onSubmit(customAccountInput || selectedAccount)
+                  }
+                  disabled={
+                    generating ||
+                    selectedProposalKey === null ||
+                    state.inFlightRequests?.[
+                      cleanAddress(customAccountInput || selectedAccount)
+                    ]
+                  }
+                >
+                  Generate Link
+                </button>
+
                 {/* Copy Links */}
-                <div className="mt-2">
+                <div className="mt-4">
                   <CopyLink text={getFormUrlLink()} label="Page URL" />
                 </div>
 
                 {/* Signature Requests */}
-                {Object.entries(state.inFlightRequests?.[cleanAddress(account)] || {}).map(([signatureRequestId, compositeKeys]) => (
-                  <div key={signatureRequestId} className="mt-4 p-2 bg-gray-100 rounded-md">
-                    <p className="font-semibold">Signature Request ID: {signatureRequestId}</p>
-                    <KeysTableStatus keys={compositeKeys} account={accounts[account]} />
+                {Object.entries(
+                  state.inFlightRequests?.[cleanAddress(account)] || {}
+                ).map(([signatureRequestId, compositeKeys]) => (
+                  <div
+                    key={signatureRequestId}
+                    className="mt-4 p-2 bg-gray-100 rounded-md"
+                  >
+                    <p className="font-semibold">
+                      Signature Request ID: {signatureRequestId}
+                    </p>
+                    <div className="mt-4">
+                      <CopyLink
+                        text={getOauthPageLink(signatureRequestId)}
+                        label="OAuth Page URL"
+                      />
+                    </div>
+                    <KeysTableStatus
+                      keys={compositeKeys}
+                      account={accounts[account]}
+                    />
                     <button
                       className={`w-full p-2 mt-2 text-white font-semibold rounded ${
                         !enoughSignatures(compositeKeys)
@@ -707,9 +766,9 @@ export default function MainPage() {
                     </button>
                     {transactionErrorMessage && (
                       <p className="text-red-500 mt-2">
-                        {typeof transactionErrorMessage === 'string' 
-                          ? transactionErrorMessage 
-                          : 'An error occurred during the transaction'}
+                        {typeof transactionErrorMessage === "string"
+                          ? transactionErrorMessage
+                          : "An error occurred during the transaction"}
                       </p>
                     )}
                   </div>
@@ -718,7 +777,7 @@ export default function MainPage() {
             ))}
           </div>
 
-          {/* Add this block to display the Flowscan button when there's a transaction */}
+          {/* Flowscan button */}
           {transaction && transaction.id && (
             <div className="mt-4">
               <a
