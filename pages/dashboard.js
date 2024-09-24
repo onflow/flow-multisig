@@ -19,6 +19,59 @@ import { LOCAL, MAINNET, TESTNET, GCP_WALLET } from "../utils/constants";
 
 const networks = [MAINNET, TESTNET, LOCAL];
 
+const AccountItem = ({ account, getFlowscanUrl }) => {
+  const [copiedAddress, setCopiedAddress] = useState(null);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 500); // Reset after 500ms
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  return (
+    <div className="text-sm mb-2 flex flex-col">
+      <div className="flex justify-between items-center group">
+        <div className="flex items-center">
+          {copiedAddress === account.address ? (
+            <span className="text-green-600 font-medium">Copied!</span>
+          ) : (
+            <a 
+              href={getFlowscanUrl(account.address)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {abbrvKey(account.address, 6)}
+            </a>
+          )}
+          <button 
+            onClick={(e) => {
+              e.preventDefault(); // Prevent the link from being followed
+              copyToClipboard(account.address);
+            }}
+            className="ml-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Copy full address"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4 text-gray-400 hover:text-gray-600" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+        </div>
+        <span className="text-xs bg-gray-200 rounded px-1 py-0.5">Weight: {account.weight}</span>
+      </div>
+      <div className="text-xs text-gray-500">Key ID: {account.keyId}</div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [pendingTxs, setPendingTxs] = useState([]);
   const [signedTxs, setSignedTxs] = useState([]);
@@ -30,6 +83,7 @@ export default function Dashboard() {
   const [publicKey, setPublicKey] = useState(null);
   const [walletType, setWalletType] = useState(GCP_WALLET);
   const [user, setUser] = useState({ loggedIn: null });
+  const [copiedAddress, setCopiedAddress] = useState(null);
 
   useEffect(() => {
     SetupFclConfiguration(fcl, network);
@@ -86,7 +140,6 @@ export default function Dashboard() {
     const publicKey = getPrimaryPublicKeys(acctWithKeys, loggedInUserKeyId);
     const accounts = await GetPublicKeyAccounts(network, publicKey);
 
-    console.log('accounts', accounts)
     accountInfos = [...accountInfos, ...accounts];
     return { accounts: accountInfos, publicKey };
   }, [user, network]);
@@ -136,6 +189,26 @@ export default function Dashboard() {
     }
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 500); // Reset after 500ms
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  // determine the flowscan url based on the network
+  const getFlowscanUrl = (address) => {
+    if (network === MAINNET) {
+      return `https://www.flowscan.io/account/${address}`;
+    } else if (network === TESTNET) {
+      return `https://testnet.flowscan.io/account/${address}`;
+    } else {
+      return `https://www.flowscan.io/account/${address}`;
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
@@ -171,7 +244,7 @@ export default function Dashboard() {
       {/* Main content */}
       <div className="flex-grow flex overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-1/6 bg-gray-100 p-4 flex flex-col overflow-y-auto">
+        <div className="w-1/4 bg-gray-100 p-4 flex flex-col overflow-y-auto">
           {/* Accounts */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-2">Accounts</h2>
@@ -182,13 +255,11 @@ export default function Dashboard() {
                 <p className="text-gray-500 text-sm">No accounts</p>
               ) : (
                 accounts.map((acct) => (
-                  <div key={`${acct.address}${acct.keyId}`} className="text-sm mb-2 flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{abbrvKey(acct.address, 6)}</span>
-                      <span className="text-xs bg-gray-200 rounded px-1 py-0.5">Weight: {acct.weight}</span>
-                    </div>
-                    <div className="text-xs text-gray-500">Key ID: {acct.keyId}</div>
-                  </div>
+                  <AccountItem 
+                    key={`${acct.address}${acct.keyId}`}
+                    account={acct}
+                    getFlowscanUrl={getFlowscanUrl}
+                  />
                 ))
               )}
             </div>
@@ -227,7 +298,7 @@ export default function Dashboard() {
               ) : (
                 signedTxs.map((s) => (
                   <div key={s.signatureRequestId} className="text-sm mb-1">
-                    {abbrvKey(s.signatureRequestId, 4)}
+                    {abbrvKey(s.signatureRequestId, 8)}
                   </div>
                 ))
               )}
@@ -236,7 +307,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right content area */}
-        <div className="w-5/6 bg-white p-6 overflow-y-auto">
+        <div className="w-3/4 bg-white p-6 overflow-y-auto">
           {selectedTx ? (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Transaction Details</h2>
