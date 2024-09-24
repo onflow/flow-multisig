@@ -112,6 +112,7 @@ export default function MainPage() {
   const [selectedProposalKey, setProposalKey] = useState(null);
   const [countdown, setCountdown] = useState(0);
   const [transaction, setTransaction] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
   const [txWaiting, setTxWaiting] = useState(false);
   const [eventButtonText, setEventButtonText] = useState("show");
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
@@ -315,6 +316,7 @@ export default function MainPage() {
 
       console.log("transactionId", tx?.transactionId);
       account.transaction = tx?.transactionId;
+      setTransactionId(tx?.transactionId);
       if (tx?.transactionId) setCountdown(0);
 
       setAccounts({
@@ -518,14 +520,27 @@ export default function MainPage() {
 
   // Add this function to get the correct Flowscan URL based on the network
   const getFlowscanUrl = (transactionId) => {
-    console.log("transactionId", transactionId);
-    console.log("network", network);
     const network = router.query.env || MAINNET; // Assuming 'env' in the URL indicates the network
     const baseUrl =
       network === TESTNET
         ? "https://testnet.flowscan.io"
         : "https://flowscan.io";
     return `${baseUrl}/transaction/${transactionId}`;
+  };
+
+  const getTransactionStatus = (statusId) => {
+    switch (statusId) {
+      case 1:
+        return "Pending";
+      case 2:
+        return "Expired";
+      case 3:
+        return "Executed";
+      case 4:
+        return "Sealed";
+      default:
+        return "Unknown";
+    }
   };
 
   return (
@@ -784,16 +799,23 @@ export default function MainPage() {
           </div>
 
           {/* Flowscan button */}
-          {transaction && transaction.id && (
+          {transactionId && (
+            <div className="mt-4 flex justify-between flex-col">
+              <CopyLink
+                text={getFlowscanUrl(transactionId)}
+                label={ `Flowscan`}
+              />
+              <div className="text-sm text-gray-500">
+                {transactionId}
+              </div>
+            </div>
+          )}
+
+          {/* Transaction Status */}
+          {transaction && (
             <div className="mt-4">
-              <a
-                href={getFlowscanUrl(transaction.id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                View on Flowscan
-              </a>
+              <span className="font-semibold mb-2">Transaction Status: {" "}</span>
+              <span>{getTransactionStatus(transaction.status)}</span>
             </div>
           )}
         </section>
