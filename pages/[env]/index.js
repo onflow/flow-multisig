@@ -21,6 +21,7 @@ import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 import { CopyToClipboard } from "react-copy-to-clipboard";
+import { MAINNET, TESTNET } from "../../utils/constants";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.io/transaction",
@@ -95,7 +96,8 @@ export default function MainPage() {
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isOpen, setIsOpen] = useState(false);
-  const [authAccountAddress, setAuthAccountAddress] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const [customAccountInput, setCustomAccountInput] = useState("");
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState({});
   const [serviceAccountFilenames, setServiceAccountFilenames] = useState([]);
@@ -118,6 +120,44 @@ export default function MainPage() {
   const [copiedText, setCopiedText] = useState("");
 
   const isLedgerDisabled = true; // Set this to true to disable the Ledger tab
+
+  const predefinedAccounts = ["0x9178260195652f85", "0x47fd53250cc3982f"];
+
+  const handleAccountChange = (e) => {
+    const value = e.target.value;
+    setSelectedAccount(value);
+    if (value !== "custom") {
+      setCustomAccountInput(value);
+    }
+  };
+
+  const handleCustomInputChange = (e) => {
+    setCustomAccountInput(e.target.value);
+    setSelectedAccount("custom");
+  };
+
+  const addAuthAccountAddress = () => {
+    const accountToAdd = customAccountInput || selectedAccount;
+    if (accountToAdd) {
+      fcl
+        .account(accountToAdd)
+        .then(({ keys }) => {
+          setAccounts({
+            ...accounts,
+            [accountToAdd]: {
+              keys: keys.filter((k) => !k.revoked),
+              enabledKeys: [],
+              link: null,
+              flowScanUrl: null,
+            },
+          });
+        })
+        .catch((err) => {
+          console.log("unexpected error occurred", err);
+          setError("Failed to add account: " + err.message);
+        });
+    }
+  };
 
   useEffect(() => {
     getServiceAccountFileList()
@@ -186,30 +226,8 @@ export default function MainPage() {
     return () => {};
   }, [query]);
 
-  const addAuthAccountAddress = () => {
-    if (authAccountAddress) {
-      fcl
-        .account(authAccountAddress)
-        .then(({ keys }) => {
-          setAccounts({
-            ...accounts,
-            [authAccountAddress]: {
-              keys: keys.filter((k) => !k.revoked),
-              enabledKeys: [],
-              link: null,
-              flowScanUrl: null,
-            },
-          });
-        })
-        .catch((err) => {
-          console.log("unexpected error occured", err);
-        });
-    }
-  };
-
   const validateAccount = (authAccountAddress) => {
     setIsOpen(false);
-    setAuthAccountAddress(authAccountAddress);
     setError(null);
     if (authAccountAddress !== "") {
       fcl
@@ -336,7 +354,7 @@ export default function MainPage() {
 
   const getFormUrlLink = () => {
     const network = getNetwork();
-    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${authAccountAddress}&limit=${exeEffort}`;
+    const url = `${window.location.origin}/${network}?type=${scriptType}&name=${scriptName}&param=${jsonArgs}&acct=${customAccountInput || selectedAccount}&limit=${exeEffort}`;
     return encodeURI(url);
   };
 
@@ -488,6 +506,17 @@ export default function MainPage() {
     </div>
   );
 
+  // Add this function to get the correct Flowscan URL based on the network
+  const getFlowscanUrl = (transactionId) => {
+    console.log("transactionId", transactionId);
+    console.log("network", network);
+    const network = router.query.env || MAINNET; // Assuming 'env' in the URL indicates the network
+    const baseUrl = network === TESTNET 
+      ? 'https://testnet.flowscan.io'
+      : 'https://flowscan.io';
+    return `${baseUrl}/transaction/${transactionId}`;
+  };
+
   return (
     <div className="min-h-screen m-12">
       <h1 className="text-2xl font-bold mb-8">Multisig Webapp</h1>
@@ -560,7 +589,6 @@ export default function MainPage() {
               )}
             </div>
 
-            {/* Cadence Script textarea */}
             <textarea
               className="w-full h-32 p-2 border border-gray-300 rounded-md resize-vertical bg-white text-black"
               placeholder="Enter your Cadence script here"
@@ -577,27 +605,39 @@ export default function MainPage() {
             />
             {jsonError && <p className="text-red-500 text-sm">{jsonError}</p>}
 
-            {/* Multisig Account Address input */}
-            <div className={`${error ? "border-red-500" : "border-gray-300"} border rounded-md p-2`}>
-              <div className="flex items-center space-x-2">
+            {/* Authorized Account Select */}
+            <div className={`${error ? "border-red-500" : "border-gray-300"} border rounded-md p-4`}>
+              <div className="flex space-x-2 mb-2">
                 <input
                   className="flex-grow p-2 border border-gray-300 rounded-md"
-                  placeholder="Enter Authorized Account"
-                  onChange={(e) => validateAccount(e.target.value)}
-                  value={authAccountAddress}
+                  placeholder="Enter account address"
+                  value={customAccountInput}
+                  onChange={handleCustomInputChange}
                 />
-                <button
-                  className={`p-2 rounded ${
-                    error || !authAccountAddress
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-700 text-white font-semibold"
-                  }`}
-                  onClick={addAuthAccountAddress}
-                  disabled={error || !authAccountAddress}
+                <select
+                  className="w-1/3 p-2 border border-gray-300 rounded-md"
+                  value={selectedAccount}
+                  onChange={handleAccountChange}
                 >
-                  Add
-                </button>
+                  <option value="">Pick existing account</option>
+                  {predefinedAccounts.map((account) => (
+                    <option key={account} value={account}>
+                      {account}
+                    </option>
+                  ))}
+                </select>
               </div>
+              <button
+                className={`w-full p-2 text-white font-semibold rounded ${
+                  !customAccountInput
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-700"
+                }`}
+                onClick={addAuthAccountAddress}
+                disabled={!customAccountInput}
+              >
+                Add
+              </button>
               {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
             </div>
 
@@ -615,13 +655,13 @@ export default function MainPage() {
             {/* Generate Link button */}
             <button
               className={`w-full p-2 text-white font-semibold rounded ${
-                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(authAccountAddress)]
+                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-blue-500 hover:bg-blue-700"
               }`}
-              onClick={() => onSubmit(authAccountAddress)}
+              onClick={() => onSubmit(customAccountInput || selectedAccount)}
               disabled={
-                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(authAccountAddress)]
+                generating || selectedProposalKey === null || state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
               }
             >
               Generate Link
@@ -635,7 +675,7 @@ export default function MainPage() {
           <div className="space-y-4">
             {Object.keys(accounts).map((account) => (
               <div key={account} className="border border-gray-300 rounded-md p-4">
-                <h3 className="font-semibold mb-2">Account: {account}</h3>
+                <h3 className="font-semibold mb-2">Select Proposal Key</h3>
                 
                 {/* Select Proposal Key */}
                 <KeysTableSelector
@@ -677,6 +717,20 @@ export default function MainPage() {
               </div>
             ))}
           </div>
+
+          {/* Add this block to display the Flowscan button when there's a transaction */}
+          {transaction && transaction.id && (
+            <div className="mt-4">
+              <a
+                href={getFlowscanUrl(transaction.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                View on Flowscan
+              </a>
+            </div>
+          )}
         </section>
       </div>
     </div>
