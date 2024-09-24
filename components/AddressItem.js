@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MAINNET, TESTNET } from '../utils/configurations';
+import { MAINNET, TESTNET } from '../utils/constants';
 
 export const AddressItem = ({ address, network }) => {
   const [copiedAddress, setCopiedAddress] = useState(null);
