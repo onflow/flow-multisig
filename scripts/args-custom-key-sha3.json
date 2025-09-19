@@ -1,0 +1,14 @@
+[
+  {
+    "type": "String",
+    "value": "e2bc67fab550f092935b58e21dbc5ed7760220e3a6b86b18a62f9fd120d692ccf9d167c0049efba9773bc921d97ad7541451752fc73b2013d7f35bf7c42e243f"
+  },
+  {
+    "type": "UFix64",
+    "value": "1.0"
+  },
+  {
+    "type": "UInt8",
+    "value": "2"
+  }
+]
