@@ -116,7 +116,7 @@ export default function MainPage() {
   const [signingFlowActive, setSigningFlowActive] = useState(false);
 
   const isLedgerDisabled = true;
-  const predefinedAccounts = ["0x9178260195652f85", "0x47fd53250cc3982f"];
+  const predefinedAccounts = ["0xe467b9dd11fa00df", "0x8624b52f9ddcd04a"];
 
   // Account handlers
   const handleAccountChange = (e) => {
