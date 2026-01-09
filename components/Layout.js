@@ -33,23 +33,26 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-row">
-        <input
-          className="border border-gray-300 rounded-md px-2 py-0 my-2"
-          size="60"
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Enter Access Node API URL"
-        />
-        <button
-          className="bg-blue-500 text-white mx-2 px-2 py-0 my-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleSave}
-          disabled={inputValue === savedValue}
-        >
-          Save
-        </button>
+    <div className="flex flex-col w-full">
+      <div className="flex flex-row items-center justify-between w-full px-8 py-2">
+        <div className="flex flex-row items-center">
+          <input
+            className="border border-gray-300 rounded-md px-2 py-1"
+            size="50"
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Enter Access Node API URL"
+          />
+          <button
+            className="bg-blue-500 text-white mx-2 px-3 py-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSave}
+            disabled={inputValue === savedValue}
+          >
+            Save
+          </button>
+        </div>
+        <h1 className="text-xl font-bold whitespace-nowrap">Multisig Webapp</h1>
       </div>
       <div>{children}</div>
     </div>

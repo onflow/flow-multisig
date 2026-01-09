@@ -16,7 +16,7 @@ export const config = {
 
 export default async function handler({ body, method, query }, res) {
   switch (method) {
-    case "GET":
+    case "GET": {
       const { data, error, status } = await supabase
         .from("payloadSigs")
         .select("signatureRequestId, keyId, address")
@@ -32,9 +32,9 @@ export default async function handler({ body, method, query }, res) {
       return res.status(200).json({
         data,
       });
+    }
 
-    case "POST":
-
+    case "POST": {
       const cliRLP = encodeVoucherToEnvelope({
         ...body.voucher,
         envelopeSigs: [],
@@ -44,7 +44,9 @@ export default async function handler({ body, method, query }, res) {
       const publicKey = body?.publicKey;
       const signatureRequestId = getSignatureRequestIdFromRLP(cliRLP);
 
-      await supabase.from("payloadSigs").upsert({
+      console.log(`[API POST] Registering key ${query.keyId} for address ${query.address}, signatureRequestId: ${signatureRequestId?.slice(0, 8)}...`);
+
+      const { error: upsertError } = await supabase.from("payloadSigs").upsert({
         signatureRequestId,
         keyId: query.keyId,
         address: query.address,
@@ -53,9 +55,19 @@ export default async function handler({ body, method, query }, res) {
         publicKey,
       });
 
+      if (upsertError) {
+        console.error(`[API POST] Upsert failed for key ${query.keyId}:`, upsertError.message, upsertError);
+        return res.status(500).json({
+          error: `Failed to save signature request: ${upsertError.message}`,
+          id: signatureRequestId,
+        });
+      }
+
+      console.log(`[API POST] Key ${query.keyId} saved successfully`);
       return res.status(200).json({
         id: signatureRequestId,
       });
+    }
 
     default:
       return res.status(405);

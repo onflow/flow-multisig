@@ -1,4 +1,5 @@
-
+// In-memory state for tracking triggered transactions
+// Note: This will reset on serverless cold starts
 const triggered = {};
 
 export default async function handler({ body, method, query }, res) {
