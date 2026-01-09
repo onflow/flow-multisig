@@ -248,20 +248,39 @@ export default function MainPage() {
 
   const onSubmit = async (accountKey) => {
     setGenerating(true);
+    setTransactionErrorMessage(null);
+    
     const account = accounts[accountKey];
     const keys = account.keys;
+    
     if (selectedProposalKey === null) {
+      setTransactionErrorMessage("Please select a proposal key");
+      setGenerating(false);
       return;
     }
-    // selected key is proposer
+    
     const proposalKey = account.keys.find(
       (k) => k.index === selectedProposalKey
     );
     if (!proposalKey) {
+      setTransactionErrorMessage("Selected proposal key not found");
+      setGenerating(false);
       return;
     }
 
-    const userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
+    let userDefinedArgs;
+    try {
+      userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
+    } catch (parseError) {
+      setTransactionErrorMessage(`Invalid JSON arguments: ${parseError.message}`);
+      setGenerating(false);
+      return;
+    }
+
+    console.log(`[onSubmit] Starting transaction with ${keys.length} keys, proposer key: ${proposalKey.index}`);
+
+    // Create authorization resolvers
+    // The first signing function called by FCL will register ALL keys using the batch API
     const authorizations = [
       authzManyKeyResolver(
         { address: accountKey },
@@ -286,72 +305,62 @@ export default function MainPage() {
     setCountdown(
       new Date().getTime() + MAX_ALLOWED_BLOCKS * SECONDS_PER_BLOCK * 1000
     );
+
     let tx = null;
     try {
       tx = await fcl
         .send([
           fcl.transaction(cadencePayload),
           fcl.args(userDefinedArgs.map((a) => fcl.arg(a, fcl.t.Identity))),
-          //fcl.args([fcl.arg("100.000000", t.UFix64), fcl.arg(fcl.withPrefix("0xc590d541b72f0ac1"), t.Address)]),
-          //       fcl.args([fcl.arg(transferAmount || "0.0", t.UFix64), fcl.arg(fcl.withPrefix(toAddress), t.Address)]),
           fcl.proposer(resolveProposer),
           fcl.authorizations(authorizations),
           fcl.payer(resolver),
           fcl.limit(parseInt(exeEffort)),
-          (ix) => {
-            console.log(ix);
-            return ix;
-          },
         ])
         .catch((e) => {
-          console.log("transaction error", e);
-          setTransactionErrorMessage(
-            e.message || "An error occurred during the transaction"
-          );
+          console.error("[onSubmit] Transaction send error:", e);
+          setTransactionErrorMessage(e.message || "An error occurred during the transaction");
           setGenerating(false);
+          return null;
         })
         .finally(() => {
           setGenerating(false);
         });
 
-      console.log("transactionId", tx?.transactionId);
-      account.transaction = tx?.transactionId;
-      setTransactionId(tx?.transactionId);
-      if (tx?.transactionId) setCountdown(0);
-
-      setAccounts({
-        ...accounts,
-        [accountKey]: account,
-      });
+      if (tx?.transactionId) {
+        console.log("[onSubmit] Transaction ID:", tx.transactionId);
+        account.transaction = tx.transactionId;
+        setTransactionId(tx.transactionId);
+        setCountdown(0);
+        setAccounts({ ...accounts, [accountKey]: account });
+      }
     } catch (e) {
-      console.log("transaction error", e);
-      setTransactionErrorMessage(
-        e.message || "An error occurred during the transaction"
-      );
+      console.error("[onSubmit] Unexpected transaction error:", e);
+      setTransactionErrorMessage(e.message || "An unexpected error occurred");
       setGenerating(false);
+      return;
+    }
+
+    if (!tx?.transactionId) {
+      console.log("[onSubmit] No transaction ID - transaction was not submitted");
+      return;
     }
 
     setTxWaiting(true);
-    let transaction = null;
     try {
-      if (tx?.transactionId) {
-        transaction = await fcl.tx(tx?.transactionId).onceSealed();
-        if (transaction?.errorMessage) {
-          setTransactionErrorMessage(transaction.errorMessage);
-        }
+      const transaction = await fcl.tx(tx.transactionId).onceSealed();
+      if (transaction?.errorMessage) {
+        setTransactionErrorMessage(transaction.errorMessage);
       }
+      if (transaction) setTransaction(transaction);
     } catch (e) {
-      console.error(e);
-      setTransactionErrorMessage(
-        e.message || "An error occurred during the transaction"
-      );
-      setSendButtonText(SEND_TX_BUTTON); // revert button text on error
+      console.error("[onSubmit] Transaction sealing error:", e);
+      setTransactionErrorMessage(e.message || "An error occurred while waiting for the transaction to seal");
+      setSendButtonText(SEND_TX_BUTTON);
       setGenerating(false);
     } finally {
       setTxWaiting(false);
     }
-
-    if (transaction) setTransaction(transaction);
   };
 
   const getNetwork = () => {
@@ -544,14 +553,12 @@ export default function MainPage() {
   };
 
   return (
-    <div className="min-h-screen m-12">
-      <h1 className="text-2xl font-bold mb-8">Multisig Webapp</h1>
-
-      <div className="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+    <div className="min-h-screen px-8 py-2">
+      <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6">
         {/* Transaction Creation Section */}
         <section className="w-full md:w-1/2">
-          <h2 className="text-xl font-semibold mb-4">Transaction Creation</h2>
-          <div className="space-y-4">
+          <h2 className="text-xl font-semibold mb-2">Transaction Creation</h2>
+          <div className="space-y-3">
             {/* Tab navigation */}
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-4" aria-label="Tabs">
@@ -647,9 +654,9 @@ export default function MainPage() {
             <div
               className={`${
                 error ? "border-red-500" : "border-gray-300"
-              } border rounded-md p-4`}
+              } border rounded-md p-3`}
             >
-              <div className="flex space-x-2 mb-2">
+              <div className="flex space-x-2 mb-1">
                 <input
                   className="flex-grow p-2 border border-gray-300 rounded-md"
                   placeholder="Enter account address"
@@ -701,14 +708,14 @@ export default function MainPage() {
 
         {/* Transaction Submission Section */}
         <section className="w-full md:w-1/2">
-          <h2 className="text-xl font-semibold mb-4">Transaction Submission</h2>
-          <div className="space-y-4">
+          <h2 className="text-xl font-semibold mb-2">Transaction Submission</h2>
+          <div className="space-y-3">
             {Object.keys(accounts).map((account) => (
               <div
                 key={account}
-                className="border border-gray-300 rounded-md p-4"
+                className="border border-gray-300 rounded-md p-3"
               >
-                <h3 className="font-semibold mb-2">Select Proposal Key</h3>
+                <h3 className="font-semibold mb-1">Select Proposal Key</h3>
 
                 {/* Select Proposal Key */}
                 <KeysTableSelector
@@ -719,7 +726,7 @@ export default function MainPage() {
 
                 {/* Generate Link button */}
                 <button
-                  className={`w-full p-2 mt-4 text-white font-semibold rounded ${
+                  className={`w-full p-2 mt-2 text-white font-semibold rounded ${
                     generating ||
                     selectedProposalKey === null ||
                     state.inFlightRequests?.[
@@ -742,7 +749,7 @@ export default function MainPage() {
                   Generate Link
                 </button>
 
-                <div className="mt-4">
+                <div className="mt-2">
                   <CopyLink text={getFormUrlLink()} label="Page URL" />
                 </div>
 
@@ -752,18 +759,18 @@ export default function MainPage() {
                 ).map(([signatureRequestId, compositeKeys]) => (
                   <div
                     key={signatureRequestId}
-                    className="mt-4 p-2 bg-gray-100 rounded-md"
+                    className="mt-3 p-2 bg-gray-100 rounded-md"
                   >
-                    <p className="font-semibold">
+                    <p className="font-semibold text-sm">
                       Signature Request ID: {signatureRequestId}
                     </p>
-                    <div className="mt-4">
+                    <div className="mt-2">
                       <CopyLink
                         text={getOauthPageLink(signatureRequestId)}
                         label="OAuth Page URL"
                       />
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-2">
                       <CopyLink
                         text={getCliCommand(signatureRequestId)}
                         label="CLI Command"
@@ -800,7 +807,7 @@ export default function MainPage() {
 
           {/* Flowscan button */}
           {transactionId && (
-            <div className="mt-4 flex justify-between flex-col">
+            <div className="mt-3 flex justify-between flex-col">
               <CopyLink
                 text={getFlowscanUrl(transactionId)}
                 label={ `Flowscan`}
@@ -813,8 +820,8 @@ export default function MainPage() {
 
           {/* Transaction Status */}
           {transaction && (
-            <div className="mt-4">
-              <span className="font-semibold mb-2">Transaction Status: {" "}</span>
+            <div className="mt-3">
+              <span className="font-semibold mb-1">Transaction Status: {" "}</span>
               <span>{getTransactionStatus(transaction.status)}</span>
             </div>
           )}
