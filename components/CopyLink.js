@@ -10,20 +10,20 @@ export const CopyLink = ({ text, label, isUrl = true }) => {
   };
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex items-center space-x-2">
       <CopyToClipboard text={text} onCopy={handleCopy}>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+        <button className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-medium py-1 px-3 rounded shadow-sm transition-colors">
           {copied ? "Copied!" : "Copy"}
         </button>
       </CopyToClipboard>
       {isUrl && (
         <a href={text} target="_blank" rel="noopener noreferrer">
-          <button className="bg-green-500 hover:bg-green-700 text-white font-medium py-2 px-4 rounded">
-            Navigate to {label}
+          <button className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-xs font-medium py-1 px-3 rounded shadow-sm transition-colors">
+            {label}
           </button>
         </a>
       )}
-      {!isUrl && <p className="text-sm items-center justify-center">{label}</p>}
+      {!isUrl && <span className="text-xs text-gray-600">{label}</span>}
     </div>
   );
 };

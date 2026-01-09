@@ -15,12 +15,11 @@ import {
   TRANSFERESCROW,
 } from "../../utils/payloads";
 import { getCliCommand } from "../../utils/kmsHelpers";
-import { KeysTableStatus } from "../../components/KeysTableStatus";
-import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
 import { MAINNET, TESTNET } from "../../utils/constants";
-import { CopyLink } from "../../components/CopyLink";
-import { TransactionStatusIndicator } from "../../components/TransactionStatusIndicator";
+import { TransactionCreationSection } from "../../components/TransactionCreationSection";
+import { ProposalKeySection } from "../../components/ProposalKeySection";
+import { SignatureStatusSection } from "../../components/SignatureStatusSection";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.io/transaction",
@@ -85,10 +84,8 @@ function reducer(state, action) {
 const FOUNDATION = "foundation";
 const SERVICE_ACCOUNT = "serviceAccount";
 const LEDGER = "ledger";
-const TAB_NAMES = [SERVICE_ACCOUNT, FOUNDATION]; // remove LEDGER from tab names
 const MAX_ALLOWED_BLOCKS = 600;
 const SECONDS_PER_BLOCK = 0.75;
-const SEND_TX_BUTTON = "Send Transaction";
 
 export default function MainPage() {
   const router = useRouter();
@@ -113,15 +110,15 @@ export default function MainPage() {
   const [transaction, setTransaction] = useState(null);
   const [transactionId, setTransactionId] = useState(null);
   const [txWaiting, setTxWaiting] = useState(false);
-  const [eventButtonText, setEventButtonText] = useState("show");
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
-  const [sendButtonText, setSendButtonText] = useState(SEND_TX_BUTTON);
+  const [triggerSent, setTriggerSent] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [signingFlowActive, setSigningFlowActive] = useState(false);
 
-  const isLedgerDisabled = true; // Set this to true to disable the Ledger tab
-
+  const isLedgerDisabled = true;
   const predefinedAccounts = ["0x9178260195652f85", "0x47fd53250cc3982f"];
 
+  // Account handlers
   const handleAccountChange = (e) => {
     const value = e.target.value;
     setSelectedAccount(value);
@@ -158,6 +155,7 @@ export default function MainPage() {
     }
   };
 
+  // Fetch file lists on mount
   useEffect(() => {
     getServiceAccountFileList()
       .then((result) => {
@@ -180,6 +178,7 @@ export default function MainPage() {
     return () => {};
   }, []);
 
+  // Handle query params
   const { query } = useRouter();
   const qp = new URLSearchParams(query);
 
@@ -244,19 +243,22 @@ export default function MainPage() {
     }
   };
 
+  // Transaction submission
   const onSubmit = async (accountKey) => {
     setGenerating(true);
     setTransactionErrorMessage(null);
-    
+    setTriggerSent(false);
+    setSigningFlowActive(true);
+
     const account = accounts[accountKey];
     const keys = account.keys;
-    
+
     if (selectedProposalKey === null) {
       setTransactionErrorMessage("Please select a proposal key");
       setGenerating(false);
       return;
     }
-    
+
     const proposalKey = account.keys.find(
       (k) => k.index === selectedProposalKey
     );
@@ -270,15 +272,17 @@ export default function MainPage() {
     try {
       userDefinedArgs = jsonArgs ? JSON.parse(jsonArgs) : [];
     } catch (parseError) {
-      setTransactionErrorMessage(`Invalid JSON arguments: ${parseError.message}`);
+      setTransactionErrorMessage(
+        `Invalid JSON arguments: ${parseError.message}`
+      );
       setGenerating(false);
       return;
     }
 
-    console.log(`[onSubmit] Starting transaction with ${keys.length} keys, proposer key: ${proposalKey.index}`);
+    console.log(
+      `[onSubmit] Starting transaction with ${keys.length} keys, proposer key: ${proposalKey.index}`
+    );
 
-    // Create authorization resolvers
-    // The first signing function called by FCL will register ALL keys using the batch API
     const authorizations = [
       authzManyKeyResolver(
         { address: accountKey },
@@ -317,8 +321,12 @@ export default function MainPage() {
         ])
         .catch((e) => {
           console.error("[onSubmit] Transaction send error:", e);
-          setTransactionErrorMessage(e.message || "An error occurred during the transaction");
+          setTransactionErrorMessage(
+            e.message || "An error occurred during the transaction"
+          );
           setGenerating(false);
+          setTriggerSent(false);
+          setSigningFlowActive(false);
           return null;
         })
         .finally(() => {
@@ -336,11 +344,14 @@ export default function MainPage() {
       console.error("[onSubmit] Unexpected transaction error:", e);
       setTransactionErrorMessage(e.message || "An unexpected error occurred");
       setGenerating(false);
+      setTriggerSent(false);
+      setSigningFlowActive(false);
       return;
     }
 
     if (!tx?.transactionId) {
       console.log("[onSubmit] No transaction ID - transaction was not submitted");
+      setSigningFlowActive(false);
       return;
     }
 
@@ -353,14 +364,17 @@ export default function MainPage() {
       if (transaction) setTransaction(transaction);
     } catch (e) {
       console.error("[onSubmit] Transaction sealing error:", e);
-      setTransactionErrorMessage(e.message || "An error occurred while waiting for the transaction to seal");
-      setSendButtonText(SEND_TX_BUTTON);
+      setTransactionErrorMessage(
+        e.message || "An error occurred while waiting for the transaction to seal"
+      );
       setGenerating(false);
     } finally {
       setTxWaiting(false);
+      setSigningFlowActive(false);
     }
   };
 
+  // URL helpers
   const getNetwork = () => {
     let network = "mainnet";
     if (window.location.href.indexOf("testnet") > -1) network = "testnet";
@@ -395,7 +409,6 @@ export default function MainPage() {
   };
 
   const getPlaceHolderArgs = (filename) => {
-    // case statement on filename and return string
     switch (filename) {
       case "lockedTokenTransfer.cdc":
       case "unlockTokens.cdc":
@@ -408,13 +421,13 @@ export default function MainPage() {
         return "[]";
     }
   };
+
   const fetchServiceAccountFilename = (filename) => {
     setScriptName(filename);
     setScriptType(SERVICE_ACCOUNT);
     setCadencePayload("loading ...");
     getServiceAccountFilename(filename).then((contents) => {
       setCadencePayload(contents);
-      // set placeholder json args
       setArgumentsValue(getPlaceHolderArgs(filename));
     });
   };
@@ -425,7 +438,6 @@ export default function MainPage() {
     setCadencePayload("loading ...");
     getFoundationFilename(filename).then((contents) => {
       setCadencePayload(contents);
-      // set placeholder json args
       setArgumentsValue(getPlaceHolderArgs(filename));
     });
   };
@@ -438,7 +450,6 @@ export default function MainPage() {
   };
 
   const setArgumentsValue = (value) => {
-    // test if value json
     setJsonArgs(value);
     let errorString = "";
     try {
@@ -447,29 +458,6 @@ export default function MainPage() {
       errorString = e.message || "Invalid JSON";
     }
     setJsonError(errorString);
-  };
-
-  const getDropdownOptions = (filenames, scriptName, isSelected) => {
-    return filenames.map((filename) => {
-      const selected = filename === scriptName ? "selected" : "";
-      if (selected && isSelected)
-        return (
-          <option key={filename} value={filename} selected>
-            {filename}
-          </option>
-        );
-      else
-        return (
-          <option key={filename} value={filename}>
-            {filename}
-          </option>
-        );
-    });
-  };
-
-  const showHideEvents = () => {
-    if (eventButtonText === "hide") setEventButtonText("show");
-    else setEventButtonText("hide");
   };
 
   const enoughSignatures = (keys) => {
@@ -482,29 +470,37 @@ export default function MainPage() {
   };
 
   const sendTransaction = async () => {
-    setSendButtonText("Attempting Sending Transaction ...");
+    setTriggerSent(true);
     const signatureRequestId = state?.signatureRequestId;
-    let isSent = false;
-    // attempt to trigger sending transaction
-    while (!isSent) {
+
+    try {
       await fetch(`/api/${signatureRequestId}/confirmation`, {
         method: "post",
         body: signatureRequestId,
-      }).then((r) => r.json());
-
+      });
+      
+      // Verify the trigger was set
       const value = await fetch(`/api/${signatureRequestId}/confirmation`).then(
         (r) => r.json()
       );
 
-      isSent = value?.triggered || false;
+      if (!value?.triggered) {
+        console.warn("[sendTransaction] Trigger confirmation failed, retrying...");
+        // Retry once if confirmation failed (serverless instance issue)
+        await fetch(`/api/${signatureRequestId}/confirmation`, {
+          method: "post",
+          body: signatureRequestId,
+        });
+      }
+    } catch (error) {
+      console.error("[sendTransaction] Error sending trigger:", error);
+      setTriggerSent(false);
+      setTransactionErrorMessage("Failed to trigger transaction. Please try again.");
     }
-
-    setTimeout(() => setSendButtonText("Transaction Sent"), 600);
   };
 
-  // Get the correct Flowscan URL based on the network
   const getFlowscanUrl = (transactionId) => {
-    const network = router.query.env || MAINNET; // Assuming 'env' in the URL indicates the network
+    const network = router.query.env || MAINNET;
     const baseUrl =
       network === TESTNET
         ? "https://testnet.flowscan.io"
@@ -512,262 +508,84 @@ export default function MainPage() {
     return `${baseUrl}/transaction/${transactionId}`;
   };
 
+  // Check if there's an in-flight request for the current account
+  const hasInFlightRequest = Boolean(
+    state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
+  );
+
   return (
-    <div className="min-h-screen px-8 py-2">
-      <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6">
-        {/* Transaction Creation Section */}
-        <section className="w-full md:w-1/2">
-          <h2 className="text-xl font-semibold mb-2">Transaction Creation</h2>
-          <div className="space-y-3">
-            {/* Tab navigation */}
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                {TAB_NAMES.map((name, index) => (
-                  <button
-                    key={name}
-                    className={`${
-                      TAB_NAMES.indexOf(scriptType) === index
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    } whitespace-nowrap py-2 px-3 border-b-2 font-medium text-sm transition duration-150 ease-in-out ${
-                      name === LEDGER && isLedgerDisabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      name !== LEDGER || !isLedgerDisabled
-                        ? setScriptType(name)
-                        : null
-                    }
-                    disabled={name === LEDGER && isLedgerDisabled}
-                  >
-                    {name === SERVICE_ACCOUNT
-                      ? "Service Account"
-                      : name === FOUNDATION
-                      ? "Foundation"
-                      : "Ledger (v0.13.0)"}
-                  </button>
-                ))}
-              </nav>
-            </div>
+    <div className="min-h-screen px-6 py-4 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        {/* Transaction Creation - Full Width */}
+        <TransactionCreationSection
+          scriptType={scriptType}
+          setScriptType={setScriptType}
+          serviceAccountFilenames={serviceAccountFilenames}
+          foundationFilenames={foundationFilenames}
+          ledgerTransactionNames={LedgerTransactionNames}
+          scriptName={scriptName}
+          fetchServiceAccountFilename={fetchServiceAccountFilename}
+          fetchFoundationFilename={fetchFoundationFilename}
+          setLedgerTransaction={setLedgerTransaction}
+          cadencePayload={cadencePayload}
+          setCadencePayload={setCadencePayload}
+          jsonArgs={jsonArgs}
+          setArgumentsValue={setArgumentsValue}
+          jsonError={jsonError}
+          customAccountInput={customAccountInput}
+          handleCustomInputChange={handleCustomInputChange}
+          selectedAccount={selectedAccount}
+          handleAccountChange={handleAccountChange}
+          predefinedAccounts={predefinedAccounts}
+          addAuthAccountAddress={addAuthAccountAddress}
+          error={error}
+          exeEffort={exeEffort}
+          setExeEffort={setExeEffort}
+          isLedgerDisabled={isLedgerDisabled}
+        />
 
-            {/* Script selection dropdown */}
-            <div>
-              {scriptType === SERVICE_ACCOUNT && (
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  onChange={(e) => fetchServiceAccountFilename(e.target.value)}
-                >
-                  <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    serviceAccountFilenames,
-                    scriptName,
-                    scriptType === SERVICE_ACCOUNT
-                  )}
-                </select>
-              )}
-              {scriptType === FOUNDATION && (
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  onChange={(e) => fetchFoundationFilename(e.target.value)}
-                >
-                  <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    foundationFilenames,
-                    scriptName,
-                    scriptType === FOUNDATION
-                  )}
-                </select>
-              )}
-              {scriptType === LEDGER && (
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  onChange={(e) => setLedgerTransaction(e.target.value)}
-                >
-                  <option value="">Select Cadence</option>
-                  {getDropdownOptions(
-                    LedgerTransactionNames,
-                    scriptName,
-                    scriptType === LEDGER
-                  )}
-                </select>
-              )}
-            </div>
-
-            <textarea
-              className="w-full h-32 p-2 border border-gray-300 rounded-md resize-vertical bg-white text-black"
-              placeholder="Enter your Cadence script here"
-              value={cadencePayload}
-              onChange={(e) => setCadencePayload(e.target.value)}
+        {/* Two Column Layout for Submission */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Proposal Key Selection */}
+          <section>
+            <h2 className="text-xl font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">
+              Proposal Key Selection
+            </h2>
+            <ProposalKeySection
+              accounts={accounts}
+              selectedProposalKey={selectedProposalKey}
+              setProposalKey={setProposalKey}
+              onGenerateLink={onSubmit}
+              generating={generating}
+              hasInFlightRequest={hasInFlightRequest}
+              getFormUrlLink={getFormUrlLink}
             />
+          </section>
 
-            {/* JSON Arguments input */}
-            <input
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="Enter json arguments"
-              onChange={(e) => setArgumentsValue(e.target.value)}
-              value={jsonArgs}
+          {/* Right Column - Signature Status */}
+          <section>
+            <h2 className="text-xl font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">
+              Signature Status
+            </h2>
+            <SignatureStatusSection
+              accounts={accounts}
+              inFlightRequests={state.inFlightRequests}
+              signatureRequestId={state.signatureRequestId}
+              getOauthPageLink={getOauthPageLink}
+              getLedgerPageLink={getLedgerPageLink}
+              getCliCommand={getCliCommand}
+              sendTransaction={sendTransaction}
+              triggerSent={triggerSent}
+              signingFlowActive={signingFlowActive}
+              enoughSignatures={enoughSignatures}
+              transactionId={transactionId}
+              transactionErrorMessage={transactionErrorMessage}
+              transaction={transaction}
+              txWaiting={txWaiting}
+              getFlowscanUrl={getFlowscanUrl}
             />
-            {jsonError && <p className="text-red-500 text-sm">{jsonError}</p>}
-
-            {/* Authorized Account Select */}
-            <div
-              className={`${
-                error ? "border-red-500" : "border-gray-300"
-              } border rounded-md p-3`}
-            >
-              <div className="flex space-x-2 mb-1">
-                <input
-                  className="flex-grow p-2 border border-gray-300 rounded-md"
-                  placeholder="Enter account address"
-                  value={customAccountInput}
-                  onChange={handleCustomInputChange}
-                />
-                <select
-                  className="w-1/3 p-2 border border-gray-300 rounded-md"
-                  value={selectedAccount}
-                  onChange={handleAccountChange}
-                >
-                  <option value="">Select an account</option>
-                  {predefinedAccounts.map((account) => (
-                    <option key={account} value={account}>
-                      {account}
-                    </option>
-                  ))}
-                  <option value="custom">Enter custom address</option>
-                </select>
-              </div>
-              <button
-                className={`w-full p-2 text-white font-semibold rounded ${
-                  !customAccountInput
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-700"
-                }`}
-                onClick={addAuthAccountAddress}
-                disabled={!customAccountInput}
-              >
-                Add
-              </button>
-              {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-            </div>
-
-            {/* Execution Limit input */}
-            <div className="flex items-center space-x-2">
-              <label className="whitespace-nowrap font-semibold">
-                Execution Limit:
-              </label>
-              <input
-                className="flex-grow p-2 border border-gray-300 rounded-md"
-                placeholder="Enter Execute Limit"
-                onChange={(e) => setExeEffort(e.target.value)}
-                value={exeEffort}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Transaction Submission Section */}
-        <section className="w-full md:w-1/2">
-          <h2 className="text-xl font-semibold mb-2">Transaction Submission</h2>
-          <div className="space-y-3">
-            {Object.keys(accounts).map((account) => (
-              <div
-                key={account}
-                className="border border-gray-300 rounded-md p-3"
-              >
-                <h3 className="font-semibold mb-1">Select Proposal Key</h3>
-
-                {/* Select Proposal Key */}
-                <KeysTableSelector
-                  keys={accounts[account].keys}
-                  selectedKey={selectedProposalKey}
-                  setKey={setProposalKey}
-                />
-
-                {/* Generate Link button */}
-                <button
-                  className={`w-full p-2 mt-2 text-white font-semibold rounded ${
-                    generating ||
-                    selectedProposalKey === null ||
-                    state.inFlightRequests?.[
-                      cleanAddress(customAccountInput || selectedAccount)
-                    ]
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-700"
-                  }`}
-                  onClick={() =>
-                    onSubmit(customAccountInput || selectedAccount)
-                  }
-                  disabled={
-                    generating ||
-                    selectedProposalKey === null ||
-                    state.inFlightRequests?.[
-                      cleanAddress(customAccountInput || selectedAccount)
-                    ]
-                  }
-                >
-                  Generate Link
-                </button>
-
-                <div className="mt-2">
-                  <CopyLink text={getFormUrlLink()} label="Page URL" />
-                </div>
-
-                {/* Signature Requests */}
-                {Object.entries(
-                  state.inFlightRequests?.[cleanAddress(account)] || {}
-                ).map(([signatureRequestId, compositeKeys]) => (
-                  <div
-                    key={signatureRequestId}
-                    className="mt-3 p-2 bg-gray-100 rounded-md"
-                  >
-                    <p className="font-semibold text-sm">
-                      Signature Request ID: {signatureRequestId}
-                    </p>
-                    <div className="mt-2">
-                      <CopyLink
-                        text={getOauthPageLink(signatureRequestId)}
-                        label="OAuth Page URL"
-                      />
-                    </div>
-                    <div className="mt-2">
-                      <CopyLink
-                        text={getCliCommand(signatureRequestId)}
-                        label="CLI Command"
-                        isUrl={false}
-                      />
-                    </div>
-                    <KeysTableStatus
-                      keys={compositeKeys}
-                      account={accounts[account]}
-                    />
-                    <button
-                      className={`w-full p-2 mt-2 text-white font-semibold rounded ${
-                        !enoughSignatures(compositeKeys)
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-blue-500 hover:bg-blue-700"
-                      }`}
-                      onClick={() => sendTransaction()}
-                      disabled={!enoughSignatures(compositeKeys)}
-                    >
-                      {sendButtonText}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Transaction Status Indicator */}
-          <TransactionStatusIndicator
-            transactionId={transactionId}
-            transactionErrorMessage={transactionErrorMessage}
-            transaction={transaction}
-            txWaiting={txWaiting}
-            flowscanUrl={transactionId ? getFlowscanUrl(transactionId) : null}
-            signatureRequestId={state.signatureRequestId}
-          />
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );
