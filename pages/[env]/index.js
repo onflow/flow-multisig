@@ -15,13 +15,12 @@ import {
   TRANSFERESCROW,
 } from "../../utils/payloads";
 import { getCliCommand } from "../../utils/kmsHelpers";
-import { CountdownTimer } from "../../components/CountdownTimer";
-import { MessageLink } from "../../components/MessageLink";
 import { KeysTableStatus } from "../../components/KeysTableStatus";
 import { KeysTableSelector } from "../../components/KeysTableSelector";
 import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
-import { CopyToClipboard } from "react-copy-to-clipboard";
 import { MAINNET, TESTNET } from "../../utils/constants";
+import { CopyLink } from "../../components/CopyLink";
+import { TransactionStatusIndicator } from "../../components/TransactionStatusIndicator";
 
 const flowscanUrls = {
   mainnet: "https://flowscan.io/transaction",
@@ -118,7 +117,6 @@ export default function MainPage() {
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
   const [sendButtonText, setSendButtonText] = useState(SEND_TX_BUTTON);
   const [generating, setGenerating] = useState(false);
-  const [copiedText, setCopiedText] = useState("");
 
   const isLedgerDisabled = true; // Set this to true to disable the Ledger tab
 
@@ -504,30 +502,7 @@ export default function MainPage() {
     setTimeout(() => setSendButtonText("Transaction Sent"), 600);
   };
 
-  const handleCopy = (text, label) => {
-    setCopiedText(label);
-    setTimeout(() => setCopiedText(""), 2000);
-  };
-
-  const CopyLink = ({ text, label, isUrl = true }) => (
-    <div className="flex space-x-2">
-      <CopyToClipboard text={text} onCopy={() => handleCopy(text, label)}>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded ">
-          {copiedText === label ? "Copied!" : "Copy"}
-        </button>
-      </CopyToClipboard>
-      {isUrl && (
-        <a href={text} target="_blank" rel="noopener noreferrer">
-          <button className="bg-green-500 hover:bg-green-700 text-white font-medium py-2 px-4 rounded">
-            Navigate to {label}
-          </button>
-        </a>
-      )}
-      {!isUrl && <p className="text-sm items-center justify-center">{label}</p>}
-    </div>
-  );
-
-  // Add this function to get the correct Flowscan URL based on the network
+  // Get the correct Flowscan URL based on the network
   const getFlowscanUrl = (transactionId) => {
     const network = router.query.env || MAINNET; // Assuming 'env' in the URL indicates the network
     const baseUrl =
@@ -535,21 +510,6 @@ export default function MainPage() {
         ? "https://testnet.flowscan.io"
         : "https://flowscan.io";
     return `${baseUrl}/transaction/${transactionId}`;
-  };
-
-  const getTransactionStatus = (statusId) => {
-    switch (statusId) {
-      case 1:
-        return "Pending";
-      case 2:
-        return "Expired";
-      case 3:
-        return "Executed";
-      case 4:
-        return "Sealed";
-      default:
-        return "Unknown";
-    }
   };
 
   return (
@@ -792,39 +752,21 @@ export default function MainPage() {
                     >
                       {sendButtonText}
                     </button>
-                    {transactionErrorMessage && (
-                      <p className="text-red-500 mt-2">
-                        {typeof transactionErrorMessage === "string"
-                          ? transactionErrorMessage
-                          : "An error occurred during the transaction"}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
             ))}
           </div>
 
-          {/* Flowscan button */}
-          {transactionId && (
-            <div className="mt-3 flex justify-between flex-col">
-              <CopyLink
-                text={getFlowscanUrl(transactionId)}
-                label={ `Flowscan`}
-              />
-              <div className="text-sm text-gray-500">
-                {transactionId}
-              </div>
-            </div>
-          )}
-
-          {/* Transaction Status */}
-          {transaction && (
-            <div className="mt-3">
-              <span className="font-semibold mb-1">Transaction Status: {" "}</span>
-              <span>{getTransactionStatus(transaction.status)}</span>
-            </div>
-          )}
+          {/* Transaction Status Indicator */}
+          <TransactionStatusIndicator
+            transactionId={transactionId}
+            transactionErrorMessage={transactionErrorMessage}
+            transaction={transaction}
+            txWaiting={txWaiting}
+            flowscanUrl={transactionId ? getFlowscanUrl(transactionId) : null}
+            signatureRequestId={state.signatureRequestId}
+          />
         </section>
       </div>
     </div>
