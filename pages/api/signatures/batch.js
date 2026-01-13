@@ -11,22 +11,21 @@ export const config = {
     bodyParser: {
       sizeLimit: '10mb',
     },
-    // Increase timeout for large payloads
-    responseLimit: false,
   },
 };
 
 // Helper to wait before retry
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Upsert a single row with retry logic
-async function upsertWithRetry(row, maxRetries = 3) {
+// Batch upsert with retry logic
+async function batchUpsertWithRetry(rows, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const { error } = await supabase.from("payloadSigs").upsert(row);
+      // Supabase supports batch upsert natively - much faster than individual inserts
+      const { error } = await supabase.from("payloadSigs").upsert(rows);
       
       if (!error) {
-        return { success: true, keyId: row.keyId };
+        return { success: true, count: rows.length };
       }
       
       // Check if it's a timeout error that might succeed on retry
@@ -36,28 +35,22 @@ async function upsertWithRetry(row, maxRetries = 3) {
                           error.code === "57014";
       
       if (isRetryable && attempt < maxRetries) {
-        console.log(`[Batch API] Retry ${attempt}/${maxRetries} for key ${row.keyId} after timeout`);
+        console.log(`[Batch API] Retry ${attempt}/${maxRetries} for batch of ${rows.length} keys after timeout`);
         await wait(1000 * attempt); // Exponential backoff: 1s, 2s, 3s
         continue;
       }
       
-      return { success: false, keyId: row.keyId, error: error.message };
+      return { success: false, error: error.message, failedKeys: rows.map(r => r.keyId) };
     } catch (err) {
       if (attempt < maxRetries) {
-        console.log(`[Batch API] Retry ${attempt}/${maxRetries} for key ${row.keyId} after error: ${err.message}`);
+        console.log(`[Batch API] Retry ${attempt}/${maxRetries} for batch after error: ${err.message}`);
         await wait(1000 * attempt);
         continue;
       }
-      return { success: false, keyId: row.keyId, error: err.message };
+      return { success: false, error: err.message, failedKeys: rows.map(r => r.keyId) };
     }
   }
-  return { success: false, keyId: row.keyId, error: "Max retries exceeded" };
-}
-
-// Process a chunk of keys in parallel
-async function processChunk(rows) {
-  const results = await Promise.all(rows.map(row => upsertWithRetry(row)));
-  return results;
+  return { success: false, error: "Max retries exceeded", failedKeys: rows.map(r => r.keyId) };
 }
 
 /**
@@ -78,9 +71,25 @@ export default async function handler({ body, method }, res) {
 
   const { signable, keys, address } = body;
 
+  // Validate required fields
   if (!signable?.voucher || !keys || !address) {
     return res.status(400).json({ 
       error: "Missing required fields: signable, keys, or address" 
+    });
+  }
+
+  // Validate keys array
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return res.status(400).json({ 
+      error: "Keys must be a non-empty array" 
+    });
+  }
+
+  // Validate each key has required fields
+  const invalidKeys = keys.filter(k => typeof k.keyId !== 'number' || !k.publicKey);
+  if (invalidKeys.length > 0) {
+    return res.status(400).json({ 
+      error: "Each key must have keyId (number) and publicKey (string)" 
     });
   }
 
@@ -120,30 +129,37 @@ export default async function handler({ body, method }, res) {
       publicKey,
     }));
 
-    console.log(`[Batch API] Inserting ${rows.length} keys with compressed payload in parallel chunks...`);
+    console.log(`[Batch API] Inserting ${rows.length} keys with compressed payload...`);
     
-    // Process in chunks of 3 keys in parallel (smaller chunks since each has payload)
-    const CHUNK_SIZE = 3;
-    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-      const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const chunkNum = Math.floor(i / CHUNK_SIZE) + 1;
-      const totalChunks = Math.ceil(rows.length / CHUNK_SIZE);
-      
-      console.log(`[Batch API] Processing chunk ${chunkNum}/${totalChunks} (${chunk.length} keys)...`);
-      
-      const results = await processChunk(chunk);
-      
-      // Collect any errors
-      results.forEach(result => {
+    // For small batches (≤10 keys), insert all at once
+    // For larger batches, chunk to avoid payload size limits
+    const CHUNK_SIZE = 10;
+    
+    if (rows.length <= CHUNK_SIZE) {
+      // Single batch insert - fastest path
+      const result = await batchUpsertWithRetry(rows);
+      if (!result.success) {
+        errors.push(...(result.failedKeys || []).map(keyId => ({ keyId, error: result.error })));
+      }
+    } else {
+      // Chunked batch inserts for very large key sets
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const chunkNum = Math.floor(i / CHUNK_SIZE) + 1;
+        const totalChunks = Math.ceil(rows.length / CHUNK_SIZE);
+        
+        console.log(`[Batch API] Processing chunk ${chunkNum}/${totalChunks} (${chunk.length} keys)...`);
+        
+        const result = await batchUpsertWithRetry(chunk);
+        
         if (!result.success) {
-          errors.push({ keyId: result.keyId, error: result.error });
+          errors.push(...(result.failedKeys || []).map(keyId => ({ keyId, error: result.error })));
         }
-      });
+      }
     }
 
     if (errors.length > 0) {
       console.error(`[Batch API] ${errors.length} keys failed to insert:`, errors);
-      // Return partial success - first key with signable succeeded
       return res.status(207).json({
         warning: `${errors.length} of ${keys.length} keys failed to save`,
         signatureRequestId,
