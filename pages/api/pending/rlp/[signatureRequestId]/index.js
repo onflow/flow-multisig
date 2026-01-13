@@ -44,11 +44,12 @@ export default async function handler({ body, method, query }, res) {
       const { data, error, status } = await supabase
         .from("payloadSigs")
         .select("rlp")
-        .match(query);
+        .match(query)
+        .limit(1);
 
       // Could not find row.
-      if (status === 406) {
-        return res.status(404).send(error);
+      if (status === 406 || !data || data.length === 0) {
+        return res.status(404).send(error || "RLP not found");
       }
       return res.status(200).send(data[0].rlp);
 

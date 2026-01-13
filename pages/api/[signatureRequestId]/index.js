@@ -1,5 +1,6 @@
 import * as fcl from "@onflow/fcl";
 import { supabase } from "../../../utils/supabaseClient";
+import { decompressSignable } from "../../../utils/compression";
 
 // Configure the API route to accept larger payloads (e.g., 10MB)
 export const config = {
@@ -55,8 +56,14 @@ export default async function handler({ body, method, query }, res) {
         });
       }
 
+      // Decompress signable if compressed
+      const decompressedData = postData?.map(row => ({
+        ...row,
+        signable: decompressSignable(row.signable),
+      }));
+
       return res.status(200).json({
-        data: postData,
+        data: decompressedData,
       });
 
     default:

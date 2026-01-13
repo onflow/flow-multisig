@@ -1,5 +1,6 @@
 import { supabase } from "../../../utils/supabaseClient";
 import { decode } from "rlp";
+import { decompressSignable } from "../../../utils/compression";
 
 const unique = (value, index, self) => {
   return self.indexOf(value) === index;
@@ -67,8 +68,14 @@ export default async function handler({ body, method, query }, res) {
         });
       }
 
+      // Decompress signable if compressed
+      const decompressedData = data?.map(row => ({
+        ...row,
+        signable: decompressSignable(row.signable),
+      }));
+
       return res.status(200).json({
-        data,
+        data: decompressedData,
       });
 
     default:

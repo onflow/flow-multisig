@@ -4,7 +4,6 @@ import { AddressItem } from "./AddressItem";
 export const TransactionItem = ({ transaction, selectedTx, handleTxSelect, network }) => {
     return (
         <button
-            key={transaction.signatureRequestId}
             onClick={() => handleTxSelect(transaction)}
             className={`w-full text-left p-2 mb-2 rounded text-sm group ${
                 transaction === selectedTx ? 'bg-blue-100' : 'hover:bg-gray-100'
