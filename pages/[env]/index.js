@@ -526,6 +526,15 @@ export default function MainPage() {
     state.inFlightRequests?.[cleanAddress(customAccountInput || selectedAccount)]
   );
 
+  // Reset generating state when signature request is created
+  useEffect(() => {
+    if (state.signatureRequestId && generating) {
+      setGenerating(false);
+      setGeneratingStatus("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.signatureRequestId]);
+
   return (
     <div className="min-h-screen px-6 py-4 bg-gray-50">
       <div className="max-w-7xl mx-auto">
