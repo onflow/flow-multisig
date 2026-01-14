@@ -15,7 +15,7 @@ import {
   TRANSFERESCROW,
 } from "../../utils/payloads";
 import { getCliCommand } from "../../utils/kmsHelpers";
-import { authzManyKeyResolver, buildSinglaAuthz } from "../../utils/authz";
+import { authzManyKeyResolver, buildSinglaAuthz, clearRegistrationState } from "../../utils/authz";
 import { MAINNET, TESTNET } from "../../utils/constants";
 import { TransactionCreationSection } from "../../components/TransactionCreationSection";
 import { ProposalKeySection } from "../../components/ProposalKeySection";
@@ -113,6 +113,7 @@ export default function MainPage() {
   const [transactionErrorMessage, setTransactionErrorMessage] = useState(null);
   const [triggerSent, setTriggerSent] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingStatus, setGeneratingStatus] = useState("");
   const [signingFlowActive, setSigningFlowActive] = useState(false);
 
   const isLedgerDisabled = true;
@@ -246,9 +247,13 @@ export default function MainPage() {
   // Transaction submission
   const onSubmit = async (accountKey) => {
     setGenerating(true);
+    setGeneratingStatus("Preparing transaction...");
     setTransactionErrorMessage(null);
     setTriggerSent(false);
     setSigningFlowActive(true);
+    
+    // Clear any stale registration state from previous transactions
+    clearRegistrationState();
 
     const account = accounts[accountKey];
     const keys = account.keys;
@@ -256,6 +261,7 @@ export default function MainPage() {
     if (selectedProposalKey === null) {
       setTransactionErrorMessage("Please select a proposal key");
       setGenerating(false);
+      setGeneratingStatus("");
       return;
     }
 
@@ -265,6 +271,7 @@ export default function MainPage() {
     if (!proposalKey) {
       setTransactionErrorMessage("Selected proposal key not found");
       setGenerating(false);
+      setGeneratingStatus("");
       return;
     }
 
@@ -276,12 +283,15 @@ export default function MainPage() {
         `Invalid JSON arguments: ${parseError.message}`
       );
       setGenerating(false);
+      setGeneratingStatus("");
       return;
     }
 
     console.log(
       `[onSubmit] Starting transaction with ${keys.length} keys, proposer key: ${proposalKey.index}`
     );
+    
+    setGeneratingStatus(`Saving transaction payload for ${keys.length} keys...`);
 
     const authorizations = [
       authzManyKeyResolver(
@@ -325,12 +335,14 @@ export default function MainPage() {
             e.message || "An error occurred during the transaction"
           );
           setGenerating(false);
+          setGeneratingStatus("");
           setTriggerSent(false);
           setSigningFlowActive(false);
           return null;
         })
         .finally(() => {
           setGenerating(false);
+          setGeneratingStatus("");
         });
 
       if (tx?.transactionId) {
@@ -344,6 +356,7 @@ export default function MainPage() {
       console.error("[onSubmit] Unexpected transaction error:", e);
       setTransactionErrorMessage(e.message || "An unexpected error occurred");
       setGenerating(false);
+      setGeneratingStatus("");
       setTriggerSent(false);
       setSigningFlowActive(false);
       return;
@@ -557,6 +570,7 @@ export default function MainPage() {
               setProposalKey={setProposalKey}
               onGenerateLink={onSubmit}
               generating={generating}
+              generatingStatus={generatingStatus}
               hasInFlightRequest={hasInFlightRequest}
               getFormUrlLink={getFormUrlLink}
             />

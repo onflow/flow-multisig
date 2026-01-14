@@ -24,37 +24,106 @@ const fetchSignatureStatus = async (id) => {
   }
 };
 
+// Global registration state to prevent duplicate registrations across resolvers
+const globalRegistrationState = {
+  inProgress: {},  // address -> Promise
+  completed: {},   // address -> signatureRequestId
+};
+
+/**
+ * Clear the global registration state.
+ * Call this when starting a new transaction or clicking "Start Over".
+ */
+export const clearRegistrationState = () => {
+  console.log('[clearRegistrationState] Clearing global registration state');
+  globalRegistrationState.inProgress = {};
+  globalRegistrationState.completed = {};
+};
+
+// Fetch with timeout to prevent silent hangs
+const fetchWithTimeout = async (url, options, timeoutMs = 120000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`);
+    }
+    throw error;
+  }
+};
+
 /**
  * Register all keys using the batch API.
+ * Uses global state to prevent duplicate registrations.
  * Returns the signatureRequestId.
  */
 const registerAllKeysBatch = async (address, keys, signable) => {
-  console.log(`[registerAllKeysBatch] Registering ${keys.length} keys for address ${address}`);
+  const normalizedAddress = fcl.sansPrefix(address);
+  
+  // Check if registration already completed for this address
+  if (globalRegistrationState.completed[normalizedAddress]) {
+    console.log(`[registerAllKeysBatch] Using cached signatureRequestId for ${normalizedAddress}`);
+    return globalRegistrationState.completed[normalizedAddress];
+  }
+  
+  // Check if registration is already in progress
+  if (globalRegistrationState.inProgress[normalizedAddress]) {
+    console.log(`[registerAllKeysBatch] Waiting for in-progress registration for ${normalizedAddress}`);
+    return globalRegistrationState.inProgress[normalizedAddress];
+  }
+  
+  console.log(`[registerAllKeysBatch] Registering ${keys.length} keys for address ${normalizedAddress}`);
   
   const keysData = keys.map(k => ({
     keyId: k.index,
     publicKey: k.publicKey,
   }));
 
-  const response = await fetch('/api/signatures/batch', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      signable,
-      keys: keysData,
-      address: fcl.sansPrefix(address),
-    }),
-  });
+  // Create the registration promise and store it
+  const registrationPromise = (async () => {
+    const response = await fetchWithTimeout('/api/signatures/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        signable,
+        keys: keysData,
+        address: normalizedAddress,
+      }),
+    }, 60000); // 60 second timeout (compression makes this much faster)
 
-  const result = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(result.error || `Failed to register keys: HTTP ${response.status}`);
-  }
+    const result = await response.json();
+    
+    // Handle partial success (207) - some keys may have failed but we can continue
+    if (response.status === 207) {
+      console.warn(`[registerAllKeysBatch] Partial success: ${result.warning}`);
+      // Continue with the signatureRequestId even if some keys failed
+    } else if (!response.ok) {
+      // Clear in-progress state on failure so retry is possible
+      delete globalRegistrationState.inProgress[normalizedAddress];
+      throw new Error(result.error || `Failed to register keys: HTTP ${response.status}`);
+    }
 
-  console.log(`[registerAllKeysBatch] Successfully registered ${result.keysRegistered} keys, signatureRequestId: ${result.signatureRequestId?.slice(0, 8)}...`);
+    console.log(`[registerAllKeysBatch] Successfully registered ${result.keysRegistered} keys, signatureRequestId: ${result.signatureRequestId?.slice(0, 8)}...`);
+    
+    // Cache the result
+    globalRegistrationState.completed[normalizedAddress] = result.signatureRequestId;
+    delete globalRegistrationState.inProgress[normalizedAddress];
+    
+    return result.signatureRequestId;
+  })();
   
-  return result.signatureRequestId;
+  globalRegistrationState.inProgress[normalizedAddress] = registrationPromise;
+  
+  return registrationPromise;
 };
 
 /**

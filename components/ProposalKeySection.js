@@ -1,6 +1,7 @@
 import React from "react";
 import { KeysTableSelector } from "./KeysTableSelector";
 import { CopyLink } from "./CopyLink";
+import { GeneratingProgress } from "./GeneratingProgress";
 
 export const ProposalKeySection = ({
   accounts,
@@ -8,6 +9,7 @@ export const ProposalKeySection = ({
   setProposalKey,
   onGenerateLink,
   generating,
+  generatingStatus,
   hasInFlightRequest,
   getFormUrlLink,
 }) => {
@@ -52,7 +54,7 @@ export const ProposalKeySection = ({
 
           {/* Generate Link button */}
           <button
-            className={`py-1.5 px-6 text-sm text-white font-medium rounded shadow-sm transition-colors ${
+            className={`py-2 px-6 text-sm text-white font-medium rounded shadow-sm transition-colors ${
               generating || selectedProposalKey === null || hasInFlightRequest
                 ? "bg-gray-300 cursor-not-allowed"
                 : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700"
@@ -63,7 +65,7 @@ export const ProposalKeySection = ({
             {generating ? (
               <span className="flex items-center justify-center">
                 <svg
-                  className="animate-spin -ml-1 mr-2 h-3 w-3 text-white"
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -82,12 +84,15 @@ export const ProposalKeySection = ({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Generating...
+                Processing...
               </span>
             ) : (
               "Generate Tx Payload"
             )}
           </button>
+
+          {/* Progress indicator for large payloads */}
+          {generating && <GeneratingProgress status={generatingStatus} />}
 
           {/* Page URL */}
           <div className="mt-3">

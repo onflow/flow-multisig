@@ -53,13 +53,19 @@ export default function Dashboard() {
     const requests = items?.data.map((i) => ({ ...i }));
 
     signableIds = [...signableIds, ...(requests || [])];
-    const allPending = signableIds.filter((t) => !t.sig);
+    
+    // Deduplicate by signatureRequestId to prevent duplicate React keys
+    const uniqueSignableIds = Array.from(
+      new Map(signableIds.map(item => [item.signatureRequestId, item])).values()
+    );
+    
+    const allPending = uniqueSignableIds.filter((t) => !t.sig);
     const now = new Date();
     const fifteenMinutes = 15 * 60 * 1000;
     const fifteenMinutesAgo = new Date(now - fifteenMinutes);
     const pending = allPending.filter((t) => new Date(t.created_at) > fifteenMinutesAgo);
 
-    const signed = signableIds.filter((t) => !!t.sig);
+    const signed = uniqueSignableIds.filter((t) => !!t.sig);
     setLoading(false);
     return { pending, signed };
   }, []);
@@ -105,7 +111,11 @@ export default function Dashboard() {
           return;
         }
         setPublicKey(accts.publicKey);
-        setAccounts([...accts.accounts] || []);
+        // Deduplicate accounts by address+keyId to prevent duplicate React keys
+        const uniqueAccounts = Array.from(
+          new Map(accts.accounts.map(a => [`${a.address}${a.keyId}`, a])).values()
+        );
+        setAccounts(uniqueAccounts || []);
         const { pending, signed } = await lookUpSignableTransactions(
           accts.publicKey
         );
@@ -220,7 +230,7 @@ export default function Dashboard() {
                 <>
                   {pendingTxs.map((tx) => (
                     <TransactionItem
-                      key={tx.signatureRequestId}
+                      key={`${tx.signatureRequestId}-${tx.keyId}`}
                       transaction={tx}
                       selectedTx={selectedTx}
                       handleTxSelect={handleTxSelect}
@@ -249,7 +259,7 @@ export default function Dashboard() {
               ) : (
                 signedTxs.map((s) => (
                   <TransactionItem
-                    key={s.signatureRequestId}
+                    key={`${s.signatureRequestId}-${s.keyId}`}
                     transaction={s}
                     selectedTx={selectedTx}
                     handleTxSelect={handleTxSelect}
